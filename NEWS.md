@@ -1,5 +1,7 @@
 # multigrain (development version)
 
+# multigrain 0.3.0
+
 ## New functionality
 
 * `graph_optimal_get_control()` can be used to extract the optimisation settings (i.e. the `multigrain_control` object) from the optimised graph.
