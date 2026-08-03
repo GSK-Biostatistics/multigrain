@@ -1,0 +1,353 @@
+---
+title: "Sample Size Optimisation with multigrain"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Sample Size Optimisation with multigrain}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+resource_files:
+---
+
+```{r setup, include=FALSE, results='hide'}
+library(ggplot2)
+library(multigrain)
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+## Why sample size optimisation?
+
+When designing a clinical trial, choosing the sample size is equivalent to
+calculating the minimum number of participants required to detect a
+clinically meaningful treatment effect with a specified statistical power and
+significance level.
+
+When multiple hypotheses are involved, we could design the sample size for a
+study by choosing:
+
+- a minimum achieved local power for each hypothesis (e.g., primary endpoint
+must be 90\% power, all key secondary endpoints must be 80\% power, etc.);
+- or a minimum achieved **trial success measure**.
+
+However, the achievable trial success measure and local power for each
+hypothesis is dependent on the chosen multiple testing strategy
+employed. Therefore to find a minimum sample size / optimal graphical test
+combinations requires a search on both sample size and graphical test parameters.
+
+`optimize_N()` does exactly this; it searches over sample size $N$ and
+candidate graphs $(\boldsymbol w,\mathbf G)$ to find the minimum sample size $N$
+to either target a specific **trial success** or target local power for
+individual hypotheses, while maintaining strong FWER control via the graphical test.
+
+
+### Background of the optimisation problem
+
+Let each test statistic be written as
+
+$$
+z_i = \operatorname{\Phi}^{-1}(1 - p_i),
+$$
+
+so that the test statistics have distribution:
+
+$$
+\boldsymbol z \sim \mathrm{MVN}\!\big(\boldsymbol\Delta(N), \,
+\boldsymbol\Sigma\big),
+$$
+
+and the non-centrality parameter $\boldsymbol\Delta$ is a function of the sample
+size:
+
+$$
+\boldsymbol\Delta(N) = \boldsymbol\delta \sqrt{N},
+$$
+
+where $\boldsymbol\delta$ is the vector of **unit effect sizes per $\sqrt{N}$** and
+$\boldsymbol\Sigma$ is the correlation matrix of test statistics.
+
+For any chosen graph $(\boldsymbol w, \mathbf G)$, we can evaluate a
+**trial success measure**
+
+$$
+\text{Trial Success Measure}
+  = \mathbb{E}\!\left[\psi(\boldsymbol r)\,\middle|\, \boldsymbol z \sim
+  \mathrm{MVN}(\boldsymbol\Delta(N), \boldsymbol\Sigma)\right],
+$$
+
+that is, the expected utility of the rejection pattern $\mathbf{r}$ under the assumed
+distribution.
+
+Sample size optimisation is then formulated as:
+
+$$
+\min_{N, \, \boldsymbol w, \, \mathbf G} N
+\quad\text{subject to}\quad
+\text{Trial Success Measure} \;\ge\; \gamma,
+$$
+
+where $\gamma$ is the required probability of success (e.g. 80%).
+The optimisation is carried out under the usual graphical constraints:
+rows of $\mathbf G$ sum to 1, the diagonal of $\mathbf G$ is zero, and
+the hypothesis weights satisfy $\sum_i w_i = 1$.
+
+Alternatively, we can find the minimum sample size subject to the local
+power of each hypothesis being higher than pre-specified values. In this
+case, the optimisation problem becomes:
+
+$$
+\begin{aligned}
+\min_{N, \, \boldsymbol w, \, \mathbf G} N
+\quad\text{subject to}\quad
+& \text{Trial Success Measure} \;\ge\; \gamma, \\
+& \Pr(\text{reject }H_1) = 1 - \beta_1 \;\ge\; 90\%, \\
+& \Pr(\text{reject }H_2) = 1 - \beta_2 \;\ge\; 80\%, \\
+& \text{etc.}
+\end{aligned}
+$$
+
+
+## Inputs for `optimize_N()`
+
+To optimize a graph finding the minimum sample size, you must provide the
+following inputs for `optimize_N()`:
+
+1. **Unit effect sizes per $\sqrt{N}$:** `ncp_vector` (length $m$). These are
+   the non-centrality parameters scaled so that $\Delta_i(N) = \delta_i \sqrt{N}$.
+   Each $\delta_i$ captures the treatment effect “per unit of $\sqrt{N}$” given the
+   trial design (allocation ratio, variance model, etc.).
+2. **Correlation matrix** of test statistics: `sigma` ($m \times m$).
+3. **Trial success** definition via `trial_success()`.
+4. **Graph constraints** via `graph_constraint()`.
+5. **Target** trial success and/or **local power targets**.
+6. An **upper bound** on the sample size via `N_max`.
+
+### Unit effect sizes per \(\sqrt{N}\)
+
+For each hypothesis $H_i$, the mean of the corresponding test statistic scales as:
+
+$$
+\Delta_i(N) = \delta_i \sqrt{N}, \\
+\quad
+$$
+where $\delta_i$ is the unit effect size per $\sqrt{N}$.
+
+Assume we are designing a two-arm parallel trial comparing an experimental
+treatment with control. Let $N$ be the total sample size, where $N = n_T + n_C$.
+We can express the group sample sizes in terms of $N$ and their respective
+allocation proportions, $r_T$ and $r_C$:
+
+ - $r_T = n_T/N$
+ - $r_C = n_C/N$
+ - where $r_T + r_C = 1$.
+
+#### Examples
+
+- **Continuous Endpoints**: In a two-arm parallel trial with continuous
+endpoints has the test statistic under the alternative hypothesis has the
+expectation:
+$$
+\\
+Z = \frac{\mu_T - \mu_C}{\sqrt{\frac{\sigma_T^2}{n_T} + \frac{\sigma_C^2}{n_C}}}
+\\
+$$
+Substituting $n_T = r_T N$ and $n_C = r_C N$ into the standard error gives:
+$$
+\\
+\sqrt{\frac{\sigma_T^2}{r_T N} + \frac{\sigma_C^2}{r_C N}} = \sqrt{\frac{1}{N}
+\left( \frac{\sigma_T^2}{r_T} + \frac{\sigma_C^2}{r_C} \right)} =
+\frac{1}{\sqrt{N}} \sqrt{\frac{\sigma_T^2}{r_T} + \frac{\sigma_C^2}{r_C}}
+\\
+$$
+Therefore our unit treatment difference per-$\sqrt{N}$ becomes:
+$$
+\\
+\delta = \frac{\mu_T - \mu_C}{\sqrt{\frac{\sigma_T^2}{r_T} + \frac{\sigma_C^2}{r_C}}}
+\\
+$$
+where the expectation of test statistic $Z$ is $Z = \Delta_i(N) = \delta \sqrt{N}$.
+
+- **Binary endpoints**: The large-sample Z-statistic for comparing two
+proportions, under the alternative hypothesis, has an expected value (NCP) given
+by:
+$$
+\\
+Z = \frac{p_T - p_C}{\sqrt{\frac{\sigma_T^2}{n_T} + \frac{\sigma_C^2}{n_C}}}
+\\
+$$
+The corresponding unit treatment difference per-$\sqrt{N}$ is:
+$$
+\\
+\delta = \frac{p_T - p_C}{\sqrt{\frac{p_T(1-p_T)}{r_T} + \frac{p_C(1-p_C)}{r_C}}}
+\\
+$$
+where again, the expectation of test statistic $Z$ is
+$Z = \Delta_i(N) = \delta \sqrt{N}$.
+
+## Motivating example (two doses × two endpoints)
+
+There are two endpoints included in the multiplicity adjustment:
+
+- a primary endpoint, FEV1;
+- a secondary endpoint, a patient-report outcome (PRO).
+
+Thus there are four hypotheses, the primary hypotheses $H_1$ and
+$H_2$ on FEV1 comparing high and low dose of the investigational treatment against placebo,
+and the secondary hypotheses $H_3$ and $H_4$ on the PRO endpoint for the high and
+low dose comparisons against placebo.
+
+![Figure 1: Hypotheses for asthma motivating example](./images/get-started-hypotheses-web-version.jpg)
+
+$$\\$$
+
+The secondary hypothesis for the PRO endpoint will only be tested after the
+corresponding primary endpoint FEV1 has been rejected for the same dose.
+
+We will now find the minimum sample size $N$ for a pre-specified
+trial success:
+
+### Definition of trial success
+
+Trial success = *“both endpoints significant for at least one dose”*, i.e.
+success if $(H_1\ \&\ H_2)$ **or** $(H_3\ \&\ H_4)$ are rejected.
+
+
+```{r ts, echo=TRUE, results='hide'}
+# Win if both endpoints succeed for at least one dose:
+# (H1 & H2) OR (H3 & H4)
+win_condition <- trial_success((r1 && r3) || (r2 && r4))
+```
+
+### Design inputs
+
+```{r inputs, eval = FALSE}
+# Per-sqrt(N) NCPs (design-standardised effects).
+# In practice derive these from your effect-size assumptions and variance model.
+delta_per_sqrtN <- c(0.15, 0.125, 0.12, 0.11)
+
+# Correlation of test statistics
+sigma <- matrix(c(
+  1,   0.5, 0.4, 0.2,
+  0.5, 1,   0.2, 0.4,
+  0.4, 0.2, 1,   0.5,
+  0.2, 0.4, 0.5, 1
+), nrow = 4, byrow = TRUE)
+
+# One-sided familywise alpha
+alpha <- 0.025
+```
+
+
+### Graph constraints (gate secondaries by primaries)
+
+We initially allocate alpha only on primary endpoints $H1$ and $H2$:
+
+```{r constraints}
+hyp_constraint <- c(NA, NA, 0, 0)
+trans_constraint <- matrix(
+  c( 0, NA, NA,  NA,
+     NA, 0, NA,  NA,
+     NA, NA, 0,  NA,
+     NA, NA,NA,  0),
+  nrow = 4, byrow = TRUE
+)
+gc <- graph_constraint(hyp_constraint, trans_constraint)
+
+# Plot graph constraints - changing aesthetics
+gc_plot <- plot(gc)
+gc_plot$data$x <- c(-0.5, 0.5, -0.5, 0.5)
+gc_plot
+```
+
+
+## Running `optimize_N()`
+
+We set a target **trial success** level and an upper bound on $N$. In this
+example:
+
+- We want the probability of meeting our `win_condition` of being greater than 70\%
+- `N_max` is 1200 participants.
+
+```{r run-optN, eval=FALSE}
+set.seed(123)
+
+optN_result <- optimize_N(
+    ncp_vector = delta_per_sqrtN,
+    sigma = sigma,
+    graph_constraint = gc,
+    trial_success = win_condition,
+    alpha = alpha,
+    N_max = 1500,
+    trial_success_target = 0.75
+)
+
+optN_result
+```
+
+```{r load-optN, echo = FALSE}
+optN_result <- readRDS("./data/optN_result.rds")
+optN_result
+```
+
+The `optimal_graph` object shows us:
+
+* `N`: the selected minimal sample size $N^{*}$ meeting the target.
+* `hyp_weight`, `trans_matrix`: the optimised graph at $N^{*}$.
+* `power`: power/trial success at the chosen solution.
+
+## Visualising the selected graph
+
+```{r plot-graph}
+plot(optN_result)
+```
+
+
+## Further guidance
+
+#### **Choosing `ncp_vector`.**
+
+`optimize_N()` expects the per-$\sqrt{N}$ NCPs $\boldsymbol\delta$. If you know $\boldsymbol\Delta(N_0)$ at a reference $N_0$, set $\boldsymbol\delta=\boldsymbol\Delta(N_0)/\sqrt{N_0}$.
+This keeps the mean of $Z_i$ at sample size $N$ equal to $\delta_i\sqrt{N}$.
+
+#### Imposing local power constraints
+
+We might require that:
+
+ - $\Pr(\text{reject }H_1) \ge 0.9$ and
+ - $\Pr(\text{reject }H_3) \ge 0.8$
+
+We can do this by specifying a `power_constraint` vector. It defines
+**per-hypothesis local power targets** we need to meet. We use `NA` to
+indicate no constraint for a hypothesis. In our case we want:
+
+```
+minimum_powers = c(
+  0.9, #H1 minimum power 90%
+  0.8, #H2 minimum power 80%
+  NA, #H3 has no constraint - power can be any value
+  NA, #H4 has no constraint - power can be any value
+)
+```
+
+```{r marginal_floor, eval=FALSE}
+set.seed(123)
+
+optN_min_powers <- optimize_N(
+    ncp_vector = delta_per_sqrtN,
+    sigma = sigma,
+    graph_constraint = gc,
+    trial_success = win_condition,
+    alpha = alpha,
+    N_max = 1500,
+    trial_success_target = 0.75,
+    # Here we supply the vector of minimum local powers
+    power_constraint = minimum_powers
+)
+
+optN_min_powers
+```
+
+## References
+
+Zhang, Fengqing, and Jiangtao Gou. "Sample size optimization for clinical trials using graphical approaches for multiplicity adjustment." Statistics in Medicine 42.28 (2023): 5229-5246. [https://doi.org/10.1002/sim.9909](https://doi.org/10.1002/sim.9909)

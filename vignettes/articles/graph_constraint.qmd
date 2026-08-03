@@ -1,0 +1,457 @@
+---
+title: "Graph constraints"
+format:
+  html:
+    theme: none
+    minimal: true
+    embed-resources: true
+    css: custom.css
+    toc: true
+    html-math-method: mathjax
+    fig_width: 7
+    fig_height: 6
+vignette: >
+  %\VignetteIndexEntry{Graph constraints}
+  %\VignetteEngine{quarto::format}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| include: false
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+
+```{r}
+#| label: setup
+#| echo: false
+library(multigrain)
+library(ggplot2)
+library(ggraph)
+```
+
+# Why use graph constraints?
+
+When setting up a graphical testing procedure, there are two main challenges:
+
+- *Reflecting design intent*: Often we already know certain structure of our graphical test from the protocol: for example, that only primary endpoints should receive initial _alpha_, or that _alpha_ should not recycle back from secondary to primary endpoints. Encoding these as constraints ensures the graph matches the intended hierarchy and clinical priorities, without having to optimise every transition weight.
+
+- *Speeding up the optimisation*. If every hypothesis and transition weight is optimised, the search space quickly can be become very large, especially when you have many hypotheses to test. Constraints on the graph allow you to fix what is already decided and only optimise what is genuinely uncertain, making the optimisation procedure faster and results easier to interpret.
+
+A `multigrain_graph_constraint` object lets you optimise a graph within these rules directly: fixed values where the design is pre-specified, and `NA` where optimisation is allowed. This makes it easier to find valid graphs that are aligned with the trial design and computationally tractable to optimise.
+
+# Create a graph constraint
+
+A graph constraint object defines the constraints on the hypothesis weight vector and transition matrix for optimisation of graph-based multiple testing procedures.
+
+There are several ways to build a graph constraint:
+
+1. by supplying both the vector of constraints on the hypothesis weight (`hyp_constraint`) and the matrix defining the constraints on the transition between hypotheses (`trans_constraint`).
+2. by supplying either `hyp_constraint` or `trans_constraint`. If supplying only one of the key components, the other one will be regarded as unconstrained (all parameters are free to be optimised).
+3. by supplying the number of hypotheses (`m`). In this case both the hypothesis weight vector and the transition matrix will be unconstrained.
+
+## From `hyp_constraint` and `trans_constraint`
+
+The main function used to build a `multigrain_graph_constraint` is `graph_constraint()`. You can access its documentation with `?graph_constraint`. It takes several arguments, 2 of which we have already mentioned (`hyp_constraint` and `trans_constraint`).
+
+```{r}
+#| label: graph-constraint-unnamed
+gc <- graph_constraint(
+    hyp_constraint = c(NA, NA, 0, 0),
+    trans_constraint = matrix(
+    c(
+      0, NA, NA, 0,
+      NA, 0, NA, 0,
+      NA, NA, 0, 0,
+      NA, NA, 0, 0
+    ),
+    nrow = 4,
+    byrow = TRUE
+  )
+)
+
+gc
+```
+
+In the example above names were automatically generated (`"H1"`, `"H2"`, `"H3"`, and `"H4"`). This is controlled by the `names` _optional_ argument, which, if unspecified, will name the hypotheses `"H1"`, `"H2"`, etc.
+
+We can also supply custom names.
+
+```{r}
+#| label: graph-constraint-named
+gc_named <- graph_constraint(
+    hyp_constraint = c(NA, NA, 0, 0),
+    trans_constraint = matrix(
+    c(
+      0, NA, NA, 0,
+      NA, 0, NA, 0,
+      NA, NA, 0, 0,
+      NA, NA, 0, 0
+    ),
+    nrow = 4,
+    byrow = TRUE
+  ),
+    names = c("FVC", "FEV1", "PRO", "QALY")
+)
+
+gc_named
+```
+
+## From `hyp_constraint` only
+
+A `multigrain_graph_constraint` object can also be build by supplying only the `hyp_constraint`.
+
+When a `trans_constraint` is not present, its dimensions will be derived from the `hyp_constraint`. In this case `hyp_constraint` has 4 elements, therefore `trans_matrix` will be a 4-by-4 square matrix with all 0 on the diagonal and all other values being `NA`. This translates in `graph_optimise()` later being allowed to optimise any parameter.
+
+```{r}
+#| label: graph-constraint-hyp-weight-only
+gc_hyp_cnstr_only <- graph_constraint(
+    hyp_constraint = c(NA, NA, 0, 0)
+)
+
+gc_hyp_cnstr_only
+```
+
+
+## From `trans_constraint` only
+
+In a similar manner, we can supply only a `trans_constraint` in which case `hyp_constraint` will be assumed to have no constraints and similar dimensions.
+
+```{r}
+#| label: graph-constraint-trans-matrix-only
+gc_trans_cnstr_only <- graph_constraint(
+    trans_constraint = matrix(
+    c(
+      0, NA, NA, 0,
+      NA, 0, NA, 0,
+      NA, NA, 0, 0,
+      NA, NA, 0, 0
+    ),
+    nrow = 4,
+    byrow = TRUE
+  )
+)
+
+gc_trans_cnstr_only
+```
+
+## "Free" graph constraint
+
+In a "free" graph constraint, all constraints are removed making all weights and transition values optimisable:
+```{r}
+#| label: graph-constraint-free
+# we only need to supply the number of hypotheses
+graph_constraint_free(5)
+```
+
+
+# Validation
+
+If `graph_constraint()` runs successfully, it always creates a valid `multigrain_graph_constraint` object. The validation happens automatically and consists of multiple checks. If any of them fail, `graph_constraint()` will throw an error.
+
+The validation is silent when all the checks pass:
+```{r}
+#| label: graph-constraint-validation
+gc5 <- graph_constraint(
+    c(NA, NA, 0, 0, 0),
+    matrix(
+    c(
+      0, 0.8, 0.2, 0, 0,
+      NA, 0, 0, NA, 0,
+      0, 0.9, 0, 0.1, 0,
+      0.9, NA, NA, 0, 0,
+      1, 0, 0, 0, 0
+    ),
+    nrow = 5,
+    byrow = TRUE
+  )
+)
+
+gc5
+```
+
+And throws an error at the first failing check:
+```{r}
+#| label: graph-constraint-validation-fail
+#| error: TRUE
+graph_constraint(
+    hyp_constraint = c(NA, NA, 0, 0, 0),
+    trans_constraint = matrix(
+    c(
+      0, 0.8, 0.2, NA, 0,
+      NA, 0, 0, NA, 0,
+      0, 0.9, 0, 0.1, 0,
+      0.9, NA, NA, 0, 0,
+      1, 0, 0, 0, 0
+    ),
+    nrow = 5,
+    byrow = TRUE
+  )
+)
+```
+
+If a detailed diagnosis is desired (especially if we suspect there might be multiple failing checks), we can call `graph_constraint()` with `diagnose = TRUE` (the default value for `diagnose` being `FALSE`).
+In this case, we are informed our transition matrix constraint would actually fail 2 of the checks:
+
+* a single value to optimise on row 1 (which can effectively be set to `0`), and
+* an _incomplete_ row already adding up to `1` (same row).
+
+```{r}
+#| label: graph-constraint-validation-fail-diagnose
+#| error: TRUE
+graph_constraint(
+    hyp_constraint = c(NA, NA, 0, 0, 0),
+    trans_constraint = matrix(
+    c(
+      0, 0.8, 0.2, NA, 0,
+      NA, 0, 0, NA, 0,
+      0, 0.9, 0, 0.1, 0,
+      0.9, NA, NA, 0, 0,
+      1, 0, 0, 0, 0
+    ),
+    nrow = 5,
+    byrow = TRUE
+  ),
+    diagnose = TRUE
+)
+```
+
+Running `graph_constraint(..., diagnose = TRUE)` surfaces all the checks being ran when creating a _graph constraint_ object:
+
+* checks on the hypothesis weight constraint vector:
+  * individual values are less than or equal to 1
+  * individual values are greater than or equal to 0
+  * a single `NA` value cannot be optimised, at least 2 are needed
+  * if the vector is _incomplete_, the sum of all elements must be less than 1. If _complete_, the sum must be 1.
+* checks on the transition matrix constraint:
+  * all values on the diagonal must be 0.
+  * the transition matrix is square.
+  * all values are less than or equal to 1.
+  * all values are greater than or equal to 0.
+  * _incomplete_ rows have at least 2 `NA` values
+  * _complete_ rows have a sum equal to 1.
+  * _incomplete_ rows have a sum less than 1.
+* consistency (between the hypothesis weight and transition matrix constraints):
+  * if the hypothesis weight constraint vector has `m` elements, then the transition matrix is `m * m` (and vice versa).
+
+## Tolerance
+
+A core pillar of the _graph constraint_ validation is the comparison to `1`. [Floating point arithmetic](https://en.wikipedia.org/wiki/Floating-point_arithmetic) in all programming languages is an approximation of the real arithmetic. For this reason we do not aim for an absolute comparison, but rather we want to know if, for example, the sum of the hypothesis weights is close to 1. How close? Enter the `tolerance` argument. Differences smaller than tolerance are ignored. The default value (`sqrt(.Machine$double.eps)`) is the same as used by the base R `all.equal()` function and is close to `1.5e-8`.
+
+Let's look at an example. If we rely on the default `graph_constraint()` `tolerance` the object is built even thought the sum of the _complete_ hypothesis weight vector is not strictly equal to 1:
+```{r}
+#| label: graph-constraint-tolerance
+hyp_weight_cnstr <- c(4.0003, 6.511, 2.3333, 0.003, 2.3)
+tolerance <- 10e-13
+hyp_weight_tol <- (hyp_weight_cnstr / sum(hyp_weight_cnstr)) + tolerance
+
+sum(hyp_weight_tol) == 1
+all.equal(sum(hyp_weight_tol), 1)
+```
+
+```{r}
+#| label: graph-constraint-tolerance-default
+graph_constraint(
+    hyp_constraint = hyp_weight_tol
+)
+```
+
+We can control how stringent the comparison is. For example, setting the tolerance to `0` will result in the check no longer ignoring the `10e-13` difference.
+```{r}
+#| label: graph-constraint-tolerance-zero
+#| error: true
+graph_constraint(
+    hyp_constraint = hyp_weight_tol,
+    tolerance = 0
+)
+```
+
+
+<!-- PLACEHOLDER: tolerance propagation to graph_optimise() -->
+<!-- When implemented, the tolerance set on graph_constraint will be -->
+<!-- passed through to normalise_sum() during optimisation, ensuring -->
+<!-- that the optimiser's internal normalisation uses the same -->
+<!-- tolerance as the constraint validation. -->
+<!-- Update this section once #485 is resolved. -->
+
+
+# Modifying a _graph constraint_
+
+We can access and modify individual constraint values.
+
+```{r}
+#| label: print-gc5
+gc5
+```
+
+Let's modify the value for the H1 -> H2 transition constraint from `0.8` to `0.7`.
+```{r}
+#| label: set-graph-constraint-trans-matrix-value-failure
+#| error: TRUE
+# get the value
+gc5$trans_constraint["H1", "H2"]
+
+# update the value
+gc5$trans_constraint["H1", "H2"] <- 0.7
+```
+
+Validation also takes place when we modify an existing `multigrain_graph_constraint` object. In this case the sum of the `H1` row (which is _complete_) does not add up to 1. We need to modify multiple values in order to maintain validity. Let's modify the entire `H1` row.
+
+```{r}
+#| label: set-graph-constraint-trans-matrix-value-success
+gc5$trans_constraint["H1", ]
+
+# update the value
+gc5$trans_constraint["H1", ] <- c(0, 0.7, 0.2, 0.05, 0.05)
+gc5
+```
+
+We can modify the `hyp_constraint` component in a similar manner. We want to optimise the `H3` weight, so let's set the constraint to `NA`:
+
+```{r}
+#| label: set-graph-constraint-hyp-weight-value-success
+gc5$hyp_constraint["H3"]
+
+# update the value
+gc5$hyp_constraint["H3"] <- NA
+gc5
+```
+
+# Inspecting a _graph constraint_
+
+## Printing a _graph constraint_
+
+So far we have been using the `print()` method to inspect `multigrain_graph_constraint` objects:
+```{r}
+#| label: graph-constraint-print-method
+#| eval: false
+# either implicitly
+gc
+
+# or explicitly
+print(gc)
+```
+
+
+## Plotting a _graph constraint_
+
+Another way of inspecting a `multigrain_graph_constraint` object is to plot it, which can be done either with `autoplot()` or `plot()` functions. They are identical and, under the hood, rely on the {ggplot2} and {ggraph} packages.
+
+The different colour indicates the hypothesis weights which are unset (and will be optimised).
+
+```{r}
+#| label: plot-graph-constraint
+#| fig-align: center
+#| fig_height: 8
+gc <- graph_constraint(
+    c(NA, NA, 0, 0, 0),
+    matrix(
+    c(
+      0, 0.8, 0.2, 0, 0,
+      NA, 0, 0, NA, 0,
+      NA, 0.8, 0, 0.1, NA,
+      0.9, NA, NA, 0, NA,
+      0, 0, 0, 1, 0
+    ),
+    nrow = 5,
+    byrow = TRUE
+  )
+)
+
+autoplot(gc)
+```
+
+## Customise a plot
+
+Most of the time the automated plot will be enough, but occasionally you might need to modify it.
+
+### Different root
+
+Plotting relies on a layout derived with `igraph::layout_as_tree()`, which positions the nodes as an inverted (root-at-the-top) tree. In many cases, a graph will be constrained such that _alpha_ is initially allocated on primary endpoints. The plotting method tries to automatically detect such structures so that primary or more important hypotheses are displayed at the root of the tree. One way to modify the plot is to supply a custom `root` if we are not happy with the automatically detected one. `root` should be an integer vector indicating which nodes should be regarded as root:
+```{r}
+#| label: plot-with-user-supplied-root
+# we want nodes 1 and 3 as root
+autoplot(gc, root = c(1, 3))
+```
+
+### Layout data
+
+If customising the `root` does not result in satisfactory results, we have the option to modify the layout data directly (an added benefit of the plot being a `ggplot2` object).
+
+```{r}
+#| label: problematic-layout-plot
+gc <- graph_constraint(
+    hyp_constraint = c(NA, NA, 0, 0),
+    trans_constraint = matrix(
+    c(
+      0, NA, NA, 0,
+      NA, 0, NA, 0,
+      NA, NA, 0, 0,
+      NA, NA, 0, 0
+    ),
+    nrow = 4,
+    byrow = TRUE
+  )
+)
+graph_constraint_plot <- plot(gc)
+graph_constraint_plot
+```
+
+In this example, we do not have a great looking plot (the position of `H4` is not ideal). Let's start by exposing the layout data:
+
+```{r}
+#| label: problematic-layout-plot-access-data
+graph_constraint_plot$data
+```
+
+We want the `H4` node to be on the same level as `H3` and directly under `H2` (we'd like a square layout). All we need is to modify the `x` and `y` coordinates of `H4` and set them to `0`.
+```{r}
+#| label: problematic-layout-plot-modify-data
+graph_constraint_plot$data$y[4] <- 0
+graph_constraint_plot$data$x[4] <- 0
+graph_constraint_plot
+```
+
+
+### Other plot elements
+
+#### Title
+
+We can add a title by passing a string to the `title` argument of the plotting functions (either `plot()` or `autoplot()`).
+```{r}
+#| label: plot-customisation-title
+gc_plot_title <- plot(gc, title = "Graph constraint")
+gc_plot_title
+```
+
+or at a later date by manipulating the `ggplot2` object.
+```{r}
+#| label: plot-customisation-add-title
+gc_plot_no_title <- plot(gc)
+gc_plot_no_title +
+    # add the title
+    ggplot2::ggtitle("Graph constraint") +
+    # centre it horizontally
+    ggplot2::theme(
+        plot.title = ggplot2::element_text(
+            hjust = 0.5
+        )
+    )
+```
+
+#### Scale
+
+Another benefit of `plot()` producing a `ggplot` object, is we can manipulate many properties with the standard {ggplot2} functionality. We can add a title or change the colour scale, for example:
+```{r}
+#| label: plot-customisation-colour-palette
+graph_constraint_plot +
+    # change the colour palette
+    ggplot2::scale_colour_brewer(
+        palette = "Pastel1"
+    )
+```
+
+Modifying the title or the colour palette are just two examples of customisation that can be applied to `ggplot2` graphs.

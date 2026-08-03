@@ -1,0 +1,58 @@
+linters: all_linters(
+  # indentation and line length are handled by Air
+  indentation_linter = NULL,
+  line_length_linter(80),
+  object_name_linter(
+    styles = "snake_case",
+    regexes = c(              # exceptions to this linter
+      "G_start" = "^G",       # object names that start with the letter G
+      "G_end" = "G$",         # object names that end with the letter G
+      "gMCP" = "^gMCP",       # object names that start with gMCP
+      "G_num_end" = "G[0-9]$" # object names that end with G followed by a number, e.g.G0, G1
+    )
+  ),
+  cyclocomp_linter(22),
+  nzchar_linter = NULL,
+  undesirable_function_linter(
+    fun = modify_defaults(
+      defaults = default_undesirable_functions,
+      structure = NULL
+    )
+  ),
+  nested_pipe_linter(
+    allow_outer_calls = c(
+      "try",
+      "tryCatch",
+      "withCallingHandlers",
+      "expect_error",
+      "expect_identical",
+      "expect_snapshot"
+    )
+  ),
+  implicit_assignment_linter(
+    except = c(
+      "bquote",
+      "expression",
+      "expect_no_error",
+      "expect_snapshot_warning",
+      "expect_snapshot",
+      "expect_no_warning",
+      "expect_warning",
+      "expr",
+      "quo",
+      "quos",
+      "quote",
+      "suppressWarnings"
+    )
+  ),
+  implicit_integer_linter = NULL
+  ) # see vignette("lintr")
+encoding: "UTF-8"
+exclusions: list(
+    "data-raw/",
+    "tests/testthat.R",
+    "R/RcppExports.R",
+    "R/import-standalone-obj-type.R",
+    "R/import-standalone-types-check.R",
+    "vignettes/"
+  ) # see ?lintr::exclude

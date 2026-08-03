@@ -1,0 +1,95 @@
+url: https://gsk-biostatistics.github.io/multigrain
+
+template:
+  bootstrap: 5
+  bootswatch: united
+  includes:
+    # The katex CDN can be updated to the latest version of katex at: https://www.jsdelivr.com/package/npm/katex
+    # Implements fix from https://github.com/r-lib/pkgdown/issues/2704
+    in_header: |
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css" integrity="sha384-5TcZemv2l/9On385z///+d7MSYlvIEw9FuZTIdZ14vJLqWphw7e7ZPuOiCHJcFCP" crossorigin="anonymous">
+      <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.js" integrity="sha384-cMkvdD8LoxVzGF/RPUKAcvmm49FQ0oxwDF3BGKtDXcEc+T1b2N+teh/OJfpU0jr6" crossorigin="anonymous"></script>
+      <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/contrib/auto-render.min.js" integrity="sha384-hCXGrW6PitJEwbkoStFjeJxv+fSOOQKOPbJxSfM6G5sWZjAyWhXiTIIAmQqnlLlh" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+    css: pkgdown/extra.css
+
+development:
+  mode: auto
+
+home:
+  navbar:
+    structure:
+      left:  [intro, reference, articles, news]
+      right: [search, github]
+
+articles:
+- title: Get started
+  navbar: ~
+  contents:
+  - articles/get-started
+
+- title: Details
+  navbar: Details
+  contents:
+  - articles/graph_constraint
+
+reference:
+  - title: Inputs
+    desc: >
+      Create the optimisation inputs
+    contents:
+    - simulate_pvalues
+    - trial_success
+    - graph_constraint
+    - graph_constraint_free
+
+  - title: Advanced control
+    desc: >
+      Control more advanced aspects of the global and local optimisation
+    contents:
+    - multigrain_control
+    - control_nsim_local
+    - control_nsim_global
+    - control_local
+    - control_global
+
+  - title: Optimisation
+    desc: >
+      Optimisation functions
+    contents:
+    - graph_optimise
+    - graph_optimize
+
+  - title: Post-processing
+    desc: >
+      Work with an optimised graph
+    contents:
+    - calc_power_pvals
+    - is_graph_valid
+    - graph_optimal_get_control
+
+  - title: Plotting
+    desc: >
+      Plotting functions
+    contents:
+    - autoplot.multigrain_graph_constraint
+    - autoplot.multigrain_graph_optimal
+
+  - title: Helper functions
+    desc: >
+      Other useful functions
+    contents:
+    - calc_ncp
+    - normalise_sum
+    - graph_random
+
+  - title: Options
+    desc: >
+      Options consulted by multigrain
+    contents:
+    - multigrain_verbosity
+
+  - title: Data
+    desc: >
+      multigrain objects used for examples and tests
+    contents:
+    - graph_optimal_example

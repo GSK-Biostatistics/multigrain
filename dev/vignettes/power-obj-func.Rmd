@@ -1,0 +1,13 @@
+---
+title: "Trial Success Measures for Optimisation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Trial Success Measures for Optimisation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+## Trial Success Measures
+
+This vignette is under construction.

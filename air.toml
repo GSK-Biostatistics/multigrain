@@ -1,0 +1,5 @@
+[format]
+skip = ["matrix"]
+indent-width = 4
+indent-style = "space"
+exclude = [".lintr_restrictive"]

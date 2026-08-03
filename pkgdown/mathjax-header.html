@@ -1,0 +1,10 @@
+<script>
+// Unused currently due to use of katex
+if (window.MathJax && window.MathJax.startup) {
+  MathJax.startup.promise.then(() => {
+    MathJax.loader.load('tex/boldsymbol').then(() => {
+      MathJax.typeset();
+    });
+  });
+}
+</script>

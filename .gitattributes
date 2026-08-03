@@ -1,0 +1,2 @@
+tests/testthat/_snaps/** linguist-generated=true
+man/*.Rd linguist-generated=true
