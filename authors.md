@@ -13,7 +13,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/GSK-Biostatistics/multigrain/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/GSK-Biostatistics/multigrain/blob/v0.3.0/DESCRIPTION)
 
 Spiers A, Moldovan-Grünfeld D (2026). *multigrain: Optimising Graphical
 Approaches to Multiple Testing Procedures*. R package version 0.3.0,
