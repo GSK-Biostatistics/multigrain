@@ -6,7 +6,7 @@
 <!-- badges: start -->
 
 [![R-CMD-check](https://github.com/GSK-Biostatistics/multigrain/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/GSK-Biostatistics/multigrain/actions/workflows/R-CMD-check.yaml)
-[![covr2gh-coverage](/../covr2gh-storage/badges/main/coverage_badge.svg)](https://github.com/GSK-Biostatistics/multigrain/actions/workflows/covr2gh.yaml)
+[![covr2gh-coverage](https://raw.githubusercontent.com/GSK-Biostatistics/multigrain/covr2gh-storage/badges/main/coverage_badge.svg)](https://github.com/GSK-Biostatistics/multigrain/actions/workflows/covr2gh.yaml)
 <!-- badges: end -->
 
 ## Overview
@@ -171,3 +171,20 @@ calc_power_pvals(
   — specifying and visualising constraints
 - [Function
   Reference](https://gsk-biostatistics.github.io/multigrain/reference/index.html)
+
+## Getting help
+
+Found a bug, or want to request a feature? Please [open an
+issue](https://github.com/GSK-Biostatistics/multigrain/issues),
+including a [reprex](https://www.tidyverse.org/help/#reprex) where
+relevant.
+
+## Contributing
+
+Contributions are welcome. Please open an issue to discuss substantial
+changes before submitting a pull request.
+
+## License
+
+**multigrain** is released under the [LGPL (\>= 3)](LICENSE.md) license.
+Copyright © GlaxoSmithKline Research & Development Limited.
