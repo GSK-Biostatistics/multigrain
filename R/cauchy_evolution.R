@@ -2,7 +2,6 @@
 # band-truncated Cauchy mutation and an optional Nelder-Mead callback.
 # Used by the sample-size optimisation path (`graph_optimise_n()`).
 
-
 #' Band-truncated Cauchy draws on \eqn{[0, 1]}
 #'
 #' Draws from \eqn{Cauchy(loc, scale)} by rejection sampling until each draw
