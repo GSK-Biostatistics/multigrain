@@ -18,12 +18,12 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Alex Spiers \email{advspiers@gmail.com} (\href{https://orcid.org/0000-0002-8874-085X}{ORCID})
+\strong{Maintainer}: Alex Spiers \email{alex.d.spiers@gsk.com} (\href{https://orcid.org/0000-0002-8874-085X}{ORCID})
 
 Authors:
 \itemize{
-  \item Alex Spiers \email{advspiers@gmail.com} (\href{https://orcid.org/0000-0002-8874-085X}{ORCID})
-  \item Dragoș Moldovan-Grünfeld \email{dragos.mold@gmail.com}
+  \item Alex Spiers \email{alex.d.spiers@gsk.com} (\href{https://orcid.org/0000-0002-8874-085X}{ORCID})
+  \item Dragoș Moldovan-Grünfeld \email{dragos.v.moldovan-grunfeld@gsk.com}
 }
 
 Other contributors:
