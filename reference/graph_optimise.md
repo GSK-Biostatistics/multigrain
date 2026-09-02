@@ -146,10 +146,10 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [26.3s]
+#> ✔ Running global optimization [26.6s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [18ms]
+#> ✔ Evaluating trial success of globally optimised graph [19ms]
 #> 
 #> ℹ Running local optimization
 #> ✔ Running local optimization [88ms]
