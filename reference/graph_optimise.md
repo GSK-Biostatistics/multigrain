@@ -97,24 +97,41 @@ graph_optimise(
 
 ## Value
 
-A `multigrain_graph_optimal` object containing: \* `hyp_weight`:
-Optimised hypothesis weights (numeric vector). \* `trans_matrix`:
-Optimised transition matrix (numeric matrix). \* `constraints`: List of
-constraints used in the optimisation for weights and transition matrix.
-\* `trial_success`: The trial success function used in the optimisation.
-\* `power`: Power metrics for the optimised graph. \* `solution`: A list
-containing: \* `opt_source`: Source of the optimal solution (`local` or
-`global`). \* `graph_valid`: Named logical vector indicating validity of
-the local and global solutions
-(`c("local" = TRUE/FALSE, "global" = TRUE/FALSE)`). \* `global_search`:
-`TRUE` or `FALSE` indicating whether a global optimisation was
-performed. \* `control`: A modified
-[`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/reference/multigrain_control.md)
-object used. The values passed on by the user are complemented with
-contextual defaults. \* `global_output`: Output from the genetic
-algorithm if global optimisation was performed. \* `local_output`:
-Output from the NLOPT optimisation. \* `start_graph`: Initial starting
-values used in the optimisation.
+A `multigrain_graph_optimal` object containing:
+
+- `hyp_weight`: Optimised hypothesis weights (numeric vector).
+
+- `trans_matrix`: Optimised transition matrix (numeric matrix).
+
+- `constraints`: List of constraints used in the optimisation for
+  weights and transition matrix.
+
+- `trial_success`: The trial success function used in the optimisation.
+
+- `power`: Power metrics for the optimised graph.
+
+- `solution`: A list containing:
+
+  - `opt_source`: Source of the optimal solution (`local` or `global`).
+
+  - `graph_valid`: Named logical vector indicating validity of the local
+    and global solutions
+    (`c("local" = TRUE/FALSE, "global" = TRUE/FALSE)`).
+
+- `global_search`: `TRUE` or `FALSE` indicating whether a global
+  optimisation was performed.
+
+- `control`: A modified
+  [`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/reference/multigrain_control.md)
+  object used. The values passed on by the user are complemented with
+  contextual defaults.
+
+- `global_output`: Output from the genetic algorithm if global
+  optimisation was performed.
+
+- `local_output`: Output from the NLOPT optimisation.
+
+- `start_graph`: Initial starting values used in the optimisation.
 
 ## Details
 
@@ -146,13 +163,13 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [26.6s]
+#> ✔ Running global optimization [26.4s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
 #> ✔ Evaluating trial success of globally optimised graph [19ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [88ms]
+#> ✔ Running local optimization [87ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
 #> ✔ Evaluating trial success of locally optimised graph [14ms]

@@ -172,3 +172,21 @@ calc_power_pvals(
   — specifying and visualising constraints
 - [Function
   Reference](https://gsk-biostatistics.github.io/multigrain/reference/index.html)
+
+## Getting help
+
+Found a bug, or want to request a feature? Please [open an
+issue](https://github.com/GSK-Biostatistics/multigrain/issues),
+including a [reprex](https://www.tidyverse.org/help/#reprex) where
+relevant.
+
+## Contributing
+
+Contributions are welcome. Please open an issue to discuss substantial
+changes before submitting a pull request.
+
+## License
+
+**multigrain** is released under the [LGPL (\>=
+3)](https://gsk-biostatistics.github.io/multigrain/LICENSE.md) license.
+Copyright © GlaxoSmithKline Research & Development Limited.

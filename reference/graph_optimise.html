@@ -134,26 +134,25 @@ printed to the console. Errors and warnings are still thrown normally.</p></li>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code>multigrain_graph_optimal</code> object containing:
-* <code>hyp_weight</code>: Optimised hypothesis weights (numeric vector).
-* <code>trans_matrix</code>: Optimised transition matrix (numeric matrix).
-* <code>constraints</code>: List of constraints used in the optimisation for weights
-and transition matrix.
-* <code>trial_success</code>: The trial success function used in the optimisation.
-* <code>power</code>: Power metrics for the optimised graph.
-* <code>solution</code>: A list containing:
-* <code>opt_source</code>: Source of the optimal solution (<code>local</code> or <code>global</code>).
-* <code>graph_valid</code>: Named logical vector indicating validity of the local
-and global solutions (<code>c("local" = TRUE/FALSE, "global" = TRUE/FALSE)</code>).
-* <code>global_search</code>: <code>TRUE</code> or <code>FALSE</code> indicating whether a global
-optimisation was performed.
-* <code>control</code>: A modified <code><a href="multigrain_control.html">multigrain_control()</a></code> object used. The values
-passed on by the user are complemented with contextual defaults.
-* <code>global_output</code>: Output from the genetic algorithm if global
-optimisation was performed.
-* <code>local_output</code>: Output from the NLOPT optimisation.
-* <code>start_graph</code>: Initial starting values used in the optimisation.</p>
-    </div>
+    <p>A <code>multigrain_graph_optimal</code> object containing:</p><ul><li><p><code>hyp_weight</code>: Optimised hypothesis weights (numeric vector).</p></li>
+<li><p><code>trans_matrix</code>: Optimised transition matrix (numeric matrix).</p></li>
+<li><p><code>constraints</code>: List of constraints used in the optimisation for weights
+and transition matrix.</p></li>
+<li><p><code>trial_success</code>: The trial success function used in the optimisation.</p></li>
+<li><p><code>power</code>: Power metrics for the optimised graph.</p></li>
+<li><p><code>solution</code>: A list containing:</p><ul><li><p><code>opt_source</code>: Source of the optimal solution (<code>local</code> or <code>global</code>).</p></li>
+<li><p><code>graph_valid</code>: Named logical vector indicating validity of the local
+and global solutions (<code>c("local" = TRUE/FALSE, "global" = TRUE/FALSE)</code>).</p></li>
+</ul></li>
+<li><p><code>global_search</code>: <code>TRUE</code> or <code>FALSE</code> indicating whether a global
+optimisation was performed.</p></li>
+<li><p><code>control</code>: A modified <code><a href="multigrain_control.html">multigrain_control()</a></code> object used. The values
+passed on by the user are complemented with contextual defaults.</p></li>
+<li><p><code>global_output</code>: Output from the genetic algorithm if global
+optimisation was performed.</p></li>
+<li><p><code>local_output</code>: Output from the NLOPT optimisation.</p></li>
+<li><p><code>start_graph</code>: Initial starting values used in the optimisation.</p></li>
+</ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>The output is a graph where a specified objective function - the
@@ -184,13 +183,13 @@ structure, conditional on a p-value distribution supplied.</p>
 <span class="r-in"><span>  num_threads <span class="op">=</span> <span class="fl">2</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Running global optimization</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Running global optimization <span style="color: #B2B2B2;">[26.6s]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Running global optimization <span style="color: #B2B2B2;">[26.4s]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Evaluating trial success of globally optimised graph</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Evaluating trial success of globally optimised graph <span style="color: #B2B2B2;">[19ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Running local optimization</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Running local optimization <span style="color: #B2B2B2;">[88ms]</span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Running local optimization <span style="color: #B2B2B2;">[87ms]</span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Evaluating trial success of locally optimised graph</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> Evaluating trial success of locally optimised graph <span style="color: #B2B2B2;">[14ms]</span></span>
