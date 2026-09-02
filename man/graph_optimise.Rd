@@ -65,24 +65,28 @@ printed to the console. Errors and warnings are still thrown normally.
 }
 \value{
 A \code{multigrain_graph_optimal} object containing:
-* \code{hyp_weight}: Optimised hypothesis weights (numeric vector).
-* \code{trans_matrix}: Optimised transition matrix (numeric matrix).
-* \code{constraints}: List of constraints used in the optimisation for weights
+\itemize{
+\item \code{hyp_weight}: Optimised hypothesis weights (numeric vector).
+\item \code{trans_matrix}: Optimised transition matrix (numeric matrix).
+\item \code{constraints}: List of constraints used in the optimisation for weights
 and transition matrix.
-* \code{trial_success}: The trial success function used in the optimisation.
-* \code{power}: Power metrics for the optimised graph.
-* \code{solution}: A list containing:
-* \code{opt_source}: Source of the optimal solution (\code{local} or \code{global}).
-* \code{graph_valid}: Named logical vector indicating validity of the local
+\item \code{trial_success}: The trial success function used in the optimisation.
+\item \code{power}: Power metrics for the optimised graph.
+\item \code{solution}: A list containing:
+\itemize{
+\item \code{opt_source}: Source of the optimal solution (\code{local} or \code{global}).
+\item \code{graph_valid}: Named logical vector indicating validity of the local
 and global solutions (\code{c("local" = TRUE/FALSE, "global" = TRUE/FALSE)}).
-* \code{global_search}: \code{TRUE} or \code{FALSE} indicating whether a global
+}
+\item \code{global_search}: \code{TRUE} or \code{FALSE} indicating whether a global
 optimisation was performed.
-* \code{control}: A modified \code{\link[=multigrain_control]{multigrain_control()}} object used. The values
+\item \code{control}: A modified \code{\link[=multigrain_control]{multigrain_control()}} object used. The values
 passed on by the user are complemented with contextual defaults.
-* \code{global_output}: Output from the genetic algorithm if global
+\item \code{global_output}: Output from the genetic algorithm if global
 optimisation was performed.
-* \code{local_output}: Output from the NLOPT optimisation.
-* \code{start_graph}: Initial starting values used in the optimisation.
+\item \code{local_output}: Output from the NLOPT optimisation.
+\item \code{start_graph}: Initial starting values used in the optimisation.
+}
 }
 \description{
 Optimise the hypothesis weights and transition matrix of a graph-based
