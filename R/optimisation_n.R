@@ -4,7 +4,6 @@
 # runs Cauchy-mutation evolutionary search blocks with greedy step-down.
 # The search engine itself lives in R/cauchy_evolution.R.
 
-
 #' Memoized CRN p-value generator
 #'
 #' Returns a function `get_pvals(n)` producing the \eqn{nsim \times m} matrix
