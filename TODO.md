@@ -57,6 +57,8 @@ This text is not a task.
 
 ## Performance
 
+- [ ] Port benchmarking suite
+
 ## Plotting
 
 - [ ] graph_constraint plotting: 3 colours (0, 1 and unconstrained)
