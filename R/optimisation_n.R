@@ -1421,7 +1421,6 @@ graph_optimize_n <- graph_optimise_n
 # the sample-size feature stays self-contained.
 # ==========================================================================
 
-
 #' Create the default control object for sample-size optimisation
 #'
 #' `graph_optimise_n()` runs a Cauchy-mutation evolutionary search rather
