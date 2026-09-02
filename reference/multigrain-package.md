@@ -15,15 +15,15 @@ Useful links:
 
 ## Author
 
-**Maintainer**: Alex Spiers <advspiers@gmail.com>
+**Maintainer**: Alex Spiers <alex.d.spiers@gsk.com>
 ([ORCID](https://orcid.org/0000-0002-8874-085X))
 
 Authors:
 
-- Alex Spiers <advspiers@gmail.com>
+- Alex Spiers <alex.d.spiers@gsk.com>
   ([ORCID](https://orcid.org/0000-0002-8874-085X))
 
-- Dragoș Moldovan-Grünfeld <dragos.mold@gmail.com>
+- Dragoș Moldovan-Grünfeld <dragos.v.moldovan-grunfeld@gsk.com>
 
 Other contributors:
 
