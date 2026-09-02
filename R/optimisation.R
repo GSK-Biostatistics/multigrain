@@ -42,25 +42,26 @@
 #'     printed to the console. Errors and warnings are still thrown normally.
 #'
 #' @returns A `multigrain_graph_optimal` object containing:
-#'     * `hyp_weight`: Optimised hypothesis weights (numeric vector).
-#'     * `trans_matrix`: Optimised transition matrix (numeric matrix).
-#'     * `constraints`: List of constraints used in the optimisation for weights
-#'     and transition matrix.
-#'     * `trial_success`: The trial success function used in the optimisation.
-#'     * `power`: Power metrics for the optimised graph.
-#'     * `solution`: A list containing:
-#'       * `opt_source`: Source of the optimal solution (`local` or `global`).
-#'       * `graph_valid`: Named logical vector indicating validity of the local
-#'       and global solutions (`c("local" = TRUE/FALSE,
-#'       "global" = TRUE/FALSE)`).
-#'     * `global_search`: `TRUE` or `FALSE` indicating whether a global
-#'     optimisation was performed.
-#'     * `control`: A modified [multigrain_control()] object used. The values
-#'     passed on by the user are complemented with contextual defaults.
-#'     * `global_output`: Output from the genetic algorithm if global
-#'     optimisation was performed.
-#'     * `local_output`: Output from the NLOPT optimisation.
-#'     * `start_graph`: Initial starting values used in the optimisation.
+#'
+#' * `hyp_weight`: Optimised hypothesis weights (numeric vector).
+#' * `trans_matrix`: Optimised transition matrix (numeric matrix).
+#' * `constraints`: List of constraints used in the optimisation for weights
+#'   and transition matrix.
+#' * `trial_success`: The trial success function used in the optimisation.
+#' * `power`: Power metrics for the optimised graph.
+#' * `solution`: A list containing:
+#'   * `opt_source`: Source of the optimal solution (`local` or `global`).
+#'   * `graph_valid`: Named logical vector indicating validity of the local
+#'     and global solutions (`c("local" = TRUE/FALSE,
+#'     "global" = TRUE/FALSE)`).
+#' * `global_search`: `TRUE` or `FALSE` indicating whether a global
+#'   optimisation was performed.
+#' * `control`: A modified [multigrain_control()] object used. The values
+#'   passed on by the user are complemented with contextual defaults.
+#' * `global_output`: Output from the genetic algorithm if global
+#'   optimisation was performed.
+#' * `local_output`: Output from the NLOPT optimisation.
+#' * `start_graph`: Initial starting values used in the optimisation.
 #'
 #' @export
 #' @examples
