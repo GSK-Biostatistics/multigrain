@@ -8,7 +8,7 @@ Useful links:
 
 - <https://github.com/GSK-Biostatistics/multigrain>
 
-- <https://gsk-Biostatistics.github.io/multigrain>
+- <https://gsk-biostatistics.github.io/multigrain/>
 
 - Report bugs at
   <https://github.com/GSK-Biostatistics/multigrain/issues>

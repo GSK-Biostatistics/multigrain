@@ -66,7 +66,7 @@
   (for consistency with
   [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimise.md)
   and to avoid a conflict with
-  [`graphicalMCP::random_graph()`](https://rdrr.io/pkg/graphicalMCP/man/example_graphs.html)).
+  [`graphicalMCP::random_graph()`](https://openpharma.github.io/graphicalMCP/reference/example_graphs.html)).
 - Updates to the `multigrain_control` object’s print method:
   - `optimArgs` settings for the global optimisation are now printed,
     not just the top level class.
