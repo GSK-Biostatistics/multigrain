@@ -8,3 +8,5 @@ debug
 **/.quarto/
 **/*.quarto_ipynb
 .positai
+.claude/
+CLAUDE.md
