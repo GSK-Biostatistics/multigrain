@@ -12,7 +12,7 @@ Optimises graphical approaches to multiple testing procedures.
 Useful links:
 \itemize{
   \item \url{https://github.com/GSK-Biostatistics/multigrain}
-  \item \url{https://gsk-Biostatistics.github.io/multigrain}
+  \item \url{https://gsk-biostatistics.github.io/multigrain/}
   \item Report bugs at \url{https://github.com/GSK-Biostatistics/multigrain/issues}
 }
 
