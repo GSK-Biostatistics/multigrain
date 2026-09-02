@@ -18,7 +18,7 @@ permissions:
 jobs:
   covr2gh:
     name: Coverage & badge
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       BADGE_BRANCH: ${{ github.head_ref || github.ref_name }}
