@@ -499,8 +499,14 @@ test_that(".run_cauchy_mutation_block: structure and frozen p-values", {
     expect_named(
         out,
         c(
-            "best_x", "best_f", "parents", "f_par", "history",
-            "n", "gens_run", "local_searches"
+            "best_x",
+            "best_f",
+            "parents",
+            "f_par",
+            "history",
+            "n",
+            "gens_run",
+            "local_searches"
         )
     )
     expect_identical(out$gens_run, 10L)
