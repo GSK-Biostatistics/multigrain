@@ -2,15 +2,12 @@
 % Please edit documentation in R/control_nsim.R
 \name{control_nsim_local}
 \alias{control_nsim_local}
-\alias{control_nsim_global}
-\title{Modify the number of simulations}
+\title{Set number of local simulations}
 \usage{
 control_nsim_local(ctrl, nsim_local)
-
-control_nsim_global(ctrl, nsim_global)
 }
 \arguments{
-\item{ctrl}{A \link{multigrain_control} object.}
+\item{ctrl}{a \link{multigrain_control} object.}
 
 \item{nsim_local}{The number of simulations to use when evaluating the trial
 success function in local optimisation.
@@ -21,23 +18,14 @@ success function in local optimisation.
 \item If unset or greater than or equal to the number of rows in the \code{pvals}
 matrix, \emph{all} rows from \code{pvals} will be used.
 }}
-
-\item{nsim_global}{The number of simulations to use when evaluating the trial
-success function in global optimisation. If unset, the minimum between
-50000 and the number of sets of p-values will be used.}
 }
 \value{
-A modified \link{multigrain_control}.
+a modified \link{multigrain_control}.
 }
 \description{
-\code{control_nsim_local()} allows you to set the number of local simulations.
-
-\code{control_nsim_global()} allows you to set the number of global simulations.
+Set number of local simulations
 }
 \examples{
 multigrain_control() |>
     control_nsim_local(10000)
-
-multigrain_control() |>
-    control_nsim_global(10000)
 }

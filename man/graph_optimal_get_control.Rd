@@ -2,18 +2,18 @@
 % Please edit documentation in R/graph_optimal.R
 \name{graph_optimal_get_control}
 \alias{graph_optimal_get_control}
-\title{Get the optimisation control}
+\title{Get the settings used for the graph optimisation}
 \usage{
 graph_optimal_get_control(graph_optimal)
 }
 \arguments{
-\item{graph_optimal}{A \code{multigrain_graph_optimal} object.}
+\item{graph_optimal}{a \code{multigrain_graph_optimal} object}
 }
 \value{
-The \code{multigrain_control} object holding the optimisation settings.
+the \code{multigrain_control} object holding the optimisation settings
 }
 \description{
-Retrieve the settings used for the graph optimisation.
+Get the settings used for the graph optimisation
 }
 \examples{
 # graph_optimal_example is an example optimised graph

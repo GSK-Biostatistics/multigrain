@@ -128,19 +128,6 @@
       Error in `graph_constraint()`:
       ! `trans_constraint` must be a double matrix, not a character matrix.
 
-# graph_constraint complains when anything is passed via `...`
-
-    Code
-      graph_constraint(hyp_constraint = c(NA, NA, 0, 0), trans_constraint = matrix(c(
-        0, NA, NA, 0, NA, 0, NA, 0, NA, NA, 0, 0, NA, NA, 0, 0), nrow = 4, byrow = TRUE),
-      c("a", "b", "c", "d"))
-    Condition
-      Error in `graph_constraint()`:
-      ! `...` must be empty.
-      x Problematic argument:
-      * ..1 = c("a", "b", "c", "d")
-      i Did you forget to name an argument?
-
 # graph_constraint() errors when tolerance not positive numeric
 
     Code

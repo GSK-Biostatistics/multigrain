@@ -4,7 +4,7 @@
 \alias{trial_success}
 \title{Create a trial success function}
 \usage{
-trial_success(objective, verbose = multigrain_verbosity())
+trial_success(objective, verbose = TRUE)
 }
 \arguments{
 \item{objective}{An expression or string encoding the trial-success utility
@@ -13,20 +13,11 @@ the corresponding hypotheses. To inject values from your R session, use
 rlang's unquote operator \verb{!!} (see Examples). Arithmetic and logical
 operators are allowed.}
 
-\item{verbose}{An optional string controlling verbosity ("detail" >
-"info" > "silent"). Verbosity can also be set at package level with the
-\code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
-\itemize{
-\item \code{"info"} (default): will inform about the successful compilation of the
-trial success function.
-\item \code{"detail"}: no additional information available, will have the same
-effect as \code{"info"}.
-\item \code{"silent"}: silent, no information about the trial success function
-compilation. Errors and warnings are still thrown.
-}}
+\item{verbose}{A logical controlling how much information to print. Defaults
+to \code{TRUE}.}
 }
 \value{
-A \code{multigrain_trial_success} object made up of:
+An object of class \code{multigrain_trial_success} with components:
 \itemize{
 \item \code{func}: compiled function that evaluates \eqn{\psi} row-wise on a matrix
 of rejection indicators and returns the mean utility (i.e., expected

@@ -13,10 +13,13 @@
 #' Optionally, you can specify user-defined trial success criteria via
 #' `custom_power`.
 #'
-#' @inheritParams graph_optimise pvals
-#' @inheritParams is_graph_valid hyp_weight trans_matrix
-#' @inheritParams rlang::args_dots_empty
-#' @inheritParams graph_optimise alpha
+#' @param pvals A numeric matrix of p-values, where each row corresponds to a
+#'   set of hypothesis tests.
+#' @param alpha A single numeric value for the overall significance level of
+#'   the procedure.
+#' @param hyp_weight A numeric vector of weights for the hypotheses. It
+#'   specifies the initial allocation of the significance level.
+#' @param trans_matrix A transition matrix.
 #' @param custom_power A list of user-defined power functions. Alternatively, a
 #'   single function or `multigrain_trial_success` object can be provided.
 #'   There are two ways to specify this:
@@ -41,10 +44,10 @@
 #'     [trial_success()] and the examples.
 #' @param sum_to_one_constraint A logical value controlling whether to allow
 #'   graphs where transition matrix rows are not constrained to sum to one,
-#'   for example in a fixed sequence. Defaults to `TRUE`.
+#'   for example in a fixed sequence. Defaults to `FALSE`.
 #' @inheritParams rlang::args_error_context call
 #'
-#' @returns A list containing:
+#' @return A list containing:
 #'   * `local_power`: The local power for each hypothesis: the proportion of
 #'     simulations in which each hypothesis is rejected.
 #'   * `exp_rejections`: The expected number of rejections across all
@@ -62,6 +65,7 @@
 #' # First we simulate our p-value distribution
 #'
 #' power_nominal <- c(0.90, 0.87, 0.73)
+#' alpha <- 0.025
 #' corr_matrix <- matrix(
 #'   c(
 #'     1, 0.2, 0.2,
@@ -74,6 +78,7 @@
 #'
 #' pvals <- simulate_pvalues(
 #'   power_nominal = power_nominal,
+#'   alpha = alpha,
 #'   corr_matrix = corr_matrix
 #' )
 #'
@@ -104,6 +109,7 @@
 #'
 #' result <- calc_power_pvals(
 #'   pvals = pvals,
+#'   alpha = alpha,
 #'   hyp_weight = hyp_weights,
 #'   trans_matrix = trans_matrix,
 #'   custom_power = power_metrics,
@@ -113,19 +119,17 @@
 #' result
 calc_power_pvals <- function(
     pvals,
+    alpha,
     hyp_weight,
     trans_matrix,
-    ...,
-    alpha = 0.025,
     custom_power = NULL,
     sum_to_one_constraint = TRUE,
     call = rlang::caller_env()
 ) {
     check_double_matrix(pvals)
+    rlang::check_number_decimal(alpha, min = 0)
     check_double(hyp_weight)
     check_double_matrix(trans_matrix)
-    rlang::check_dots_empty()
-    rlang::check_number_decimal(alpha, min = 0)
     check_logical(sum_to_one_constraint)
 
     if (

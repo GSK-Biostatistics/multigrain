@@ -489,14 +489,6 @@ test_that("normalise_sum problematic vector test", {
     expect_equal(sum(normalised_vec), 1, tolerance = sqrt(.Machine$double.eps))
 })
 
-test_that("normalise_sum complains when anything is passed via `...`", {
-    # After scaling, the anchor could go negative due to rounding
-    x <- c(0.99, 0.009, 0.001)
-    expect_snapshot(error = TRUE, {
-        normalise_sum(x, 1L)
-    })
-})
-
 test_that("calc_ncp", {
     set.seed(1)
     expect_snapshot({

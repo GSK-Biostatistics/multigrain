@@ -9,13 +9,15 @@ graph_optimise(
   pvals,
   graph_constraint,
   trial_success,
-  ...,
   alpha = 0.025,
   start_graph = list(list(hyp_weight = NULL, trans_matrix = NULL)),
+  power_nsim_local = lifecycle::deprecated(),
+  power_nsim_global = lifecycle::deprecated(),
   global_search = TRUE,
   num_threads = 1L,
   control = multigrain_control(),
-  verbose = multigrain_verbosity()
+  verbose = TRUE,
+  trace = FALSE
 )
 }
 \arguments{
@@ -30,17 +32,23 @@ constraints on the graph's weights and transition matrix. Created with
 success measure (power objective) function to maximize. Created with
 \code{\link[=trial_success]{trial_success()}}.}
 
-\item{...}{These dots are for future extensions and must be empty.}
-
-\item{alpha}{A single numeric value representing the overall one-sided
-significance level. Default is 0.025.}
+\item{alpha}{Numeric, the overall one-sided significance level. Default is
+0.025.}
 
 \item{start_graph}{Optional. Initial list of graphs suggested. Each graph is
 defined as a list containing starting weight vector \code{hyp_weight} and
 transition matrix \code{trans_matrix}. If \code{NULL}, default starting values are
 generated (currently with a Bonferroni-Holm graph).}
 
-\item{global_search}{A logical indicating whether to perform a global
+\item{power_nsim_local}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}} \code{power_nsim_local}
+is no longer supported. You can set the number of simulations for the local
+optimisation with \code{\link[=control_nsim_local]{control_nsim_local()}}.}
+
+\item{power_nsim_global}{\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#deprecated}{\figure{lifecycle-deprecated.svg}{options: alt='[Deprecated]'}}}{\strong{[Deprecated]}}
+\code{power_nsim_global} is no longer supported. You can set the number of
+simulations for the global optimisation with \code{\link[=control_nsim_global]{control_nsim_global()}}.}
+
+\item{global_search}{A logical indicate whether to perform a global
 optimisation before the local optimisation. Defaults to \code{TRUE}.}
 
 \item{num_threads}{Number of threads to use for parallel execution of the
@@ -51,42 +59,44 @@ explicitly set \code{num_threads} based on your resource allocation. Default is
 \item{control}{An optional \code{multigrain_control} object can be used to set
 various graph optimisation parameters. Created with \code{\link[=multigrain_control]{multigrain_control()}}.}
 
-\item{verbose}{An optional string controlling verbosity (\code{"detail"} >
-\code{"info"} > \code{"silent"}). Verbosity can also be set at package level with the
-\code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
+\item{verbose}{A logical controlling how much information to print (defaults
+to \code{TRUE}):
 \itemize{
-\item \code{"info"} (default): will only show milestones / informational messages
-highlighting the progress of the optimisation at coarse-grained level.
-\item \code{"detail"}: will show milestones and information about fine-grained
-optimisation events.
-\item \code{"silent"}: no information about the progress of the optimisation is
-printed to the console. Errors and warnings are still thrown normally.
+\item \code{FALSE}: no output
+\item \code{TRUE}: show milestones
+}}
+
+\item{trace}{A logical controlling how much detailed optimisation information
+to print (defaults to \code{FALSE}):
+\itemize{
+\item \code{FALSE}: no detailed optimisation messages.
+\item \code{TRUE}: all global and local optimisation messages.
+In addition to \code{trace}, \code{\link[=control_local]{control_local()}} and \code{\link[=control_global]{control_global()}} can be
+used to control the detail of information coming from the global and local
+optimisations separately.
 }}
 }
 \value{
-A \code{multigrain_graph_optimal} object containing:
-\itemize{
-\item \code{hyp_weight}: Optimised hypothesis weights (numeric vector).
-\item \code{trans_matrix}: Optimised transition matrix (numeric matrix).
-\item \code{constraints}: List of constraints used in the optimisation for weights
+An object of class \code{multigrain_graph_optimal} containing the
+following elements:
+* \code{hyp_weight}: Optimised hypothesis weights (numeric vector).
+* \code{trans_matrix}: Optimised transition matrix (numeric matrix).
+* \code{constraints}: List of constraints used in the optimisation for weights
 and transition matrix.
-\item \code{trial_success}: The trial success function used in the optimisation.
-\item \code{power}: Power metrics for the optimised graph.
-\item \code{solution}: A list containing:
-\itemize{
-\item \code{opt_source}: Source of the optimal solution (\code{local} or \code{global}).
-\item \code{graph_valid}: Named logical vector indicating validity of the local
+* \code{trial_success}: The trial success function used in the optimisation.
+* \code{power}: Power metrics for the optimised graph.
+* \code{solution}: A list containing:
+* \code{opt_source}: Source of the optimal solution (\code{local} or \code{global}).
+* \code{graph_valid}: Named logical vector indicating validity of the local
 and global solutions (\code{c("local" = TRUE/FALSE, "global" = TRUE/FALSE)}).
-}
-\item \code{global_search}: \code{TRUE} or \code{FALSE} indicating whether a global
+* \code{global_search}: \code{TRUE} or \code{FALSE} indicating whether a global
 optimisation was performed.
-\item \code{control}: A modified \code{\link[=multigrain_control]{multigrain_control()}} object used. The values
+* \code{control}: A modified \code{\link[=multigrain_control]{multigrain_control()}} object used. The values
 passed on by the user are complemented with contextual defaults.
-\item \code{global_output}: Output from the genetic algorithm if global
+* \code{global_output}: Output from the genetic algorithm if global
 optimisation was performed.
-\item \code{local_output}: Output from the NLOPT optimisation.
-\item \code{start_graph}: Initial starting values used in the optimisation.
-}
+* \code{local_output}: Output from the NLOPT optimisation.
+* \code{start_graph}: Initial starting values used in the optimisation.
 }
 \description{
 Optimise the hypothesis weights and transition matrix of a graph-based
@@ -94,15 +104,18 @@ multiple testing procedure using \code{\link[nloptr:nloptr]{nloptr::nloptr()}} l
 optionally, a genetic algorithm using \code{\link[GA:ga]{GA::ga()}} for global optimisation.
 }
 \details{
-The output is a graph where a specified objective function - the
-\emph{trial success measure} - is maximised under given constraints on the graph
-structure, conditional on a p-value distribution supplied.
+The output is a graph where a specified objective function
+\itemize{
+\item a \emph{trial success measure} - is maximised under given constraints on the
+graph structure, conditional on a p-value distribution supplied.
+}
 }
 \examples{
 
 # Generate test data
 pvals <- simulate_pvalues(
   power_nominal = c(0.9, 0.85, 0.8, 0.75),
+  alpha = 0.025,
   corr_matrix = diag(4),
   nsim = 5000
 )
@@ -116,6 +129,7 @@ result <- graph_optimise(
   pvals = pvals,
   graph_constraint = graph_constraint_free(4),
   trial_success = ts,
+  alpha = 0.025,
   num_threads = 2
 )
 }

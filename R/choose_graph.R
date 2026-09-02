@@ -8,10 +8,10 @@
 #'   `global_search == FALSE`.
 #' @param local_result List returned by `.graph_optimise_local()`.
 #'
-#' @returns A list with:
-#'   - `hyp_weight`: numeric vector from the chosen result
-#'   - `trans_matrix`: numeric matrix from the chosen result
-#'   - `source`: character scalar, one of `"local"`, `"global"`
+#' @return A list with:
+#'   - `hyp_weight`:   numeric vector from the chosen result
+#'   - `trans_matrix`:  numeric matrix from the chosen result
+#'   - `source`:       character scalar, one of `"local"`, `"global"`
 #'
 #' @noRd
 choose_graph <- function(ga_result, local_result) {

@@ -26,9 +26,7 @@ for example in a fixed sequence. Defaults to \code{TRUE}.}
 
 \item{tolerance}{numeric >= 0. The tolerance when evaluating the sum-to-one
 constraints of the hypothesis weights and transition matrix rows. The
-default value is close to \code{1.5e-8} - i.e. \code{sqrt(.Machine$double.eps)} (the
-standard R definition of  "practically equal", as used by
-\code{\link[base:all.equal]{base::all.equal()}}).}
+default value is close to \code{1.5e-8} - i.e. \code{sqrt(.Machine$double.eps)}.}
 }
 \value{
 A logical value: \code{TRUE} if the graph is valid, otherwise \code{FALSE}.

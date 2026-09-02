@@ -1,40 +1,34 @@
 #' Autoplot method for `multigrain_graph_optimal` objects
 #'
-#' @details
-#' Both `plot()` and `autoplot()` methods require an optional dependency,
-#' [ggplot2][ggplot2::ggplot2-package].
-#'
 #' @param object A `multigrain_graph_optimal` object.
-#' @param root A numeric vector indicating which nodes to be regarded as root in
-#'   the tree layout. Passed down to [igraph::layout_as_tree()].
+#' @param root (integer-like) An optional argument containing a vector of nodes
+#'   to plot as root.
 #' @param digits Number of decimal places to round to (between 0 and 3).
 #'   Defaults to `NULL` which will choose the number of digits based on how
 #'   crowded the graph plot will be:
 #'     * a single digit if more than 8 hypotheses
 #'     * 2 digits if 5 to 8 hypotheses
 #'     * 3 digits if 4 or fewer hypotheses
-#' @param title An optional plot title.
+#' @param title (string) Optional plot title.
 #' @param ... Additional arguments.
 #'
-#' @returns A [ggraph::ggraph()] object.
+#' @returns a `ggraph` / `ggplot` object.
 #'
 #' @export
 #' @examples
 #' library(ggplot2)
 #'
-#' # plotting the example graph optimal
-#' autoplot(graph_optimal_example)
+#' random_graph <- graph_optimal_random(5)
+#' autoplot(random_graph)
 #'
 #' # If you want to control which nodes are treated as root, you can pass them
-#' # as a numeric vector via the `root` argument. For example, we do not like
-#' # the default layout and we would like nodes 1 and 2 to be plotted as root:
-#' autoplot(graph_optimal_example, root = c(1, 2))
+#' # as a numeric vector via the `root` argument. For example, we want nodes 1
+#' # and 3 to be plotted as root:
+#' autoplot(random_graph, root = c(1, 3))
 #'
 #' # control the rounding with the `digits` argument.
-#' autoplot(graph_optimal_example, root = c(1, 2), digits = 2)
+#' autoplot(random_graph, digits = 2)
 #'
-#' # title
-#' autoplot(graph_optimal_example, root = c(1, 2), title = "My graph optimal")
 autoplot.multigrain_graph_optimal <- function(
     object,
     ...,
@@ -113,7 +107,7 @@ autoplot.multigrain_graph_optimal <- function(
 #' @param fan_strength (numeric) fan strength. Passed to
 #'   [ggraph::geom_edge_fan()].
 #'
-#' @returns A `ggraph`, `ggplot` object.
+#' @returns a `ggraph`, `ggplot` object.
 #' @noRd
 plot_graph <- function(graph, layout, digits = 2, fan_strength = 1.4) {
     output <- ggraph::ggraph(
@@ -188,7 +182,7 @@ plot_graph <- function(graph, layout, digits = 2, fan_strength = 1.4) {
 #' @param root A numeric vector indicating which nodes to be regarded as root in
 #'   the tree layout. Passed down to [igraph::layout_as_tree()].
 #'
-#' @returns A `data.frame` with 2 columns (`x` and `y`) representing the
+#' @returns a `data.frame` with 2 columns (`x` and `y`) representing the
 #'   coordinates for the nodes.
 #' @noRd
 create_layout <- function(graph, nodes, edges, root = NULL) {
@@ -222,7 +216,6 @@ create_layout <- function(graph, nodes, edges, root = NULL) {
 #'   * `from`: (character) the starting node of the edge
 #'   * `to`: (character) the ending node of the edge
 #'   * `value`: (numeric) the value of the edge
-#'
 #' @noRd
 #'
 #' @examples
@@ -254,7 +247,7 @@ create_edges <- function(trans_matrix) {
 #' @param edges (`data.frame`) A data.frame containing edges, the output of
 #' `create_edges()`. It should have 3 columns: `from`, `to`, and `value`.
 #'
-#' @returns A `data.frame` with 4 columns:
+#' @returns a `data.frame` with 4 columns:
 #'   * `hypothesis`: (character) hypothesis / node name
 #'   * `weight`: (numeric) hypothesis / node weight
 #'   * `root`: (logical) indicates whether a node is root
@@ -295,7 +288,7 @@ create_nodes <- function(hyp_weight, edges) {
 #' @param edges (data.frame) a data.frame of edges. the output of
 #'   `create_edges()`.
 #'
-#' @returns A numeric vector representing the indices of the root nodes.
+#' @returns a numeric vector representing the indices of the root nodes
 #' @noRd
 estimate_root <- function(nodes, edges) {
     node_names <- nodes$hypothesis

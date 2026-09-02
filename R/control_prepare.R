@@ -2,7 +2,7 @@
 #'
 #' This will be used to set any values that were not modified by the user.
 #'
-#' @returns A [multigrain_control] object with default values.
+#' @returns a [multigrain_control] object with default values
 #'
 #' @noRd
 default_control <- function() {
@@ -52,13 +52,14 @@ default_control <- function() {
 #' @inheritParams graph_optimise
 #' @inheritParams rlang::args_error_context
 #'
-#' @returns A modified [multigrain_control].
+#' @returns a modified [multigrain_control]
 #'
 #' @noRd
 #' @examples
 #' # inject the defaults and calibrate the defaults based on pvals
 #' pvals <- simulate_pvalues(
 #'     power_nominal = c(0.9, 0.85, 0.8, 0.75),
+#'     alpha = 0.025,
 #'     corr_matrix = diag(4),
 #'     nsim = 1e5
 #' )
@@ -66,12 +67,12 @@ default_control <- function() {
 control_prepare <- function(
     ctrl,
     pvals,
-    verbose = "silent",
+    trace = FALSE,
     call = rlang::caller_env()
 ) {
     check_control(ctrl, call = call)
     check_double_matrix(pvals, call = call)
-    rlang::check_string(verbose, call = call)
+    check_logical(trace, allow_na = FALSE, call = call)
 
     default_ctrl <- default_control()
 
@@ -85,7 +86,7 @@ control_prepare <- function(
     ctrl <- adjust_nsim_local(ctrl, nrow(pvals), call = call)
     ctrl <- adjust_nsim_global(ctrl, nrow(pvals), call = call)
 
-    if (verbose == "detail") {
+    if (trace) {
         # adjusting the default verbosity allows the user-set values to pass
         default_ctrl$local_opt$print_level <- 1L
         default_ctrl$global_opt$monitor <- TRUE

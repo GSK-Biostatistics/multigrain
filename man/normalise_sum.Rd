@@ -6,7 +6,6 @@
 \usage{
 normalise_sum(
   x,
-  ...,
   fixed_idx = integer(0),
   target = 1,
   tolerance = sqrt(.Machine$double.eps)
@@ -14,8 +13,6 @@ normalise_sum(
 }
 \arguments{
 \item{x}{A numeric vector of weights to be normalised.}
-
-\item{...}{These dots are for future extensions and must be empty.}
 
 \item{fixed_idx}{An integer vector representing the indices of elements that
 must not be modified (e.g. diagonal entries in a transition matrix, or
@@ -26,9 +23,9 @@ fixed elements).}
 Default is \code{1}.}
 
 \item{tolerance}{numeric >= 0. The tolerance to be used when checking whether
-the sum has converged to \code{target}. The default value is close to \code{1.5e-8} -
-i.e. \code{sqrt(.Machine$double.eps)} (the standard R definition of
-"practically equal", as used by \code{\link[base:all.equal]{base::all.equal()}}).}
+the sum has converged to \code{target}. Defaults to \code{sqrt(.Machine$double.eps)}
+(the standard R definition of "practically equal", as used by
+\code{\link[base:all.equal]{base::all.equal()}}).}
 }
 \value{
 A numeric vector of the same length as \code{x}, adjusted so that

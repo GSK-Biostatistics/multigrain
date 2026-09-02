@@ -1,11 +1,11 @@
 # multigrain (development version)
 
-# multigrain 0.3.0
-
 ## New functionality
 
+* `graph_optimise_n()` finds the smallest per-arm sample size $n$ for which an optimised graphical MTP meets a trial-success target and/or marginal power floors. It returns a slim `multigrain_graph_optimal` object (built through the `graph_optimal()` constructor, so no simulated p-value matrix is embedded) with sample-size-specific fields such as `n_final`, `N`, `phase1`, and `phase2`. `graph_optimize_n()` is a US-spelling alias.
 * `graph_optimal_get_control()` can be used to extract the optimisation settings (i.e. the `multigrain_control` object) from the optimised graph.
-* `graph_optimise()` (named changed - see "Changes" below) now accepts a `num_threads` argument for parallel execution of the shortcut algorithm. This replaces the previous `control_parallel()` workflow. Default is `1L` (serial).
+* `optimise_graph()` now accepts a `num_threads` argument for parallel execution of the shortcut algorithm. This replaces the previous `control_parallel()` workflow. Default is `1L` (serial).
+* `optimise_graph()` receives a new argument (`trace`) which controls the the amount of detail surfaced from the global and local optimisation processes.
 * Users can supply names to `graph_random()`.
 * Users can supply titles when plotting `multigrain_graph_constraint` or `multigrain_graph_optimal` objects.
 
@@ -15,14 +15,8 @@
 
 ## Changes
 
+* `random_graph()` has been renamed to `graph_random()` (for consistentcy with `graph_optimise()` and to avoid a conflict with `graphicalMCP::random_graph()`).
 * `optimise_graph()` and `optimize_graph()` have been renamed to `graph_optimise()` and `graph_optimize()`
-* the `verbose` argument to `graph_optimise()` and `trial_success()` is no longer a logical, but a character with the user being able to choose one of three verbosity levels:
-  * `"info"`: will only show milestones / informational messages highlighting the progress of the optimisation at coarse-grained level. This corresponds to what was previously `TRUE`.
-  * `"detail"`: will show milestones and information about fine-grained optimisation events. All local and global optimisation messages are displayed in the console. This is a newly introduced level.
-  * `"silent"`: no information about the progress of the optimisation is printed to the console. This corresponds to what was previously `FALSE`.
-  * verbosity can be control both at _function-_ and _package-_ level. At _package-level_ this is done with the `multigrain_verbosity` option which should be set to one of the three possible values ("detail" > "info" > "silent").
-* in calls to the following functions all optional arguments must be named (they can no longer be passed by position): `calc_power_pvals()`, `graph_constraint()`, `graph_optimise()`, `simulate_pvalues()`, and `normalise_sum()`. These functions also gain an `...` (also know as the "ellipsis") argument to allow for future extensions.
-* `random_graph()` has been renamed to `graph_random()` (for consistency with `graph_optimise()` and to avoid a conflict with `graphicalMCP::random_graph()`).
 * Updates to the `multigrain_control` object's print method:
     * `optimArgs` settings for the global optimisation are now printed, not just the top level class.
 * Changes to the `multigrain_graph_optimal` object:
@@ -31,20 +25,17 @@
     * the `opt_settings$global_search` element is replaced by `global_search`.
 * Changes to parallelisation:
     * `optimise_graph_parallel()` has been removed.
-    * use `graph_optimise()` with `num_threads` instead.
+    * use `optimise_graph()` with `num_threads` instead.
     * `control_parallel()` and the `parallel_opt` slot on `multigrain_control` are removed.
     * `grain_size` is no longer user-facing; it is always auto-tuned internally.
 * `global_output` and `local_output` now store the raw global (`GA`) / local (`nloptr`) objects directly.
-* `control_global_search()` has been removed. Reverted to `global_search` being a direct argument to `graph_optimise()`.
+* `control_global_search()` is deprecated. Reverted to `global_search` as a direct argument to `optimise_graph()`.
 * the names of the multigrain S3 classes are now prefixed with `"multigrain_":
     * `graph_constraint` -> `multigrain_graph_constraint`.
     * `graph_optimal` -> `multigrain_graph_optimal`.
     * `trial_success` -> `multigrain_trial_success`.
     * no change for _control_, which has always been `multigrain_control`.
     * the `summary()` and `print()` methods for these objects have been updated.
-* `graph_optimise()`'s renormalises hypothesis-weight vectors and transition-matrix rows
-via `normalise_sum()`. Now each call will use a `tolerance` passed from `graph_constraint`.
-If not supplied, it will fall back to `tolerance = sqrt(.Machine$double.eps)`
 
 
 # multigrain 0.2.0

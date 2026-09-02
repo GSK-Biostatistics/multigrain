@@ -16,7 +16,7 @@
 #'
 #' @inheritParams validate_graph_constraint
 #'
-#' @returns `x` invisibly.
+#' @returns the input `x` invisibly
 #' @noRd
 assert_trans_constr <- function(
     x,
@@ -204,7 +204,7 @@ assert_trans_constr_row_sums <- function(
 #'
 #' @inheritParams validate_graph_constraint
 #'
-#' @returns `x` invisibly.
+#' @returns the input `x` invisibly
 #' @noRd
 diagnose_trans_constr <- function(x) {
     cli::cli_h3("Transition matrix constraint diagnosis:")

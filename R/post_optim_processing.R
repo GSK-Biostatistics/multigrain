@@ -7,7 +7,6 @@ param_to_solution <- function(
 ) {
     hyp_constraint <- graph_constraint$hyp_constraint
     trans_constraint <- graph_constraint$trans_constraint
-    tolerance <- graph_constraint_get_tolerance(graph_constraint)
 
     theta <- split_theta(optimised_params, hyp_constraint)
     w_sol <- recover_full_weights(theta$w_pars, hyp_constraint)
@@ -18,11 +17,7 @@ param_to_solution <- function(
         w_sol[w_sol < 1e-4] <- 0
         w_sol[w_sol > 1e-4 & w_sol < 1e-3] <- 0.001
         fixed_w <- which(!is.na(hyp_constraint))
-        w_sol <- normalise_sum(
-            w_sol,
-            fixed_idx = fixed_w,
-            tolerance = tolerance
-        )
+        w_sol <- normalise_sum(w_sol, fixed_idx = fixed_w)
 
         G_sol[G_sol < 1e-5] <- 0
         G_sol[G_sol > 1e-5 & G_sol < 1e-3] <- 0.001
@@ -31,8 +26,7 @@ param_to_solution <- function(
             fixed_in_row <- c(row_i, which(!is.na(trans_constraint[row_i, ])))
             G_sol[row_i, ] <- normalise_sum(
                 G_sol[row_i, ],
-                fixed_idx = fixed_in_row,
-                tolerance = tolerance
+                fixed_idx = fixed_in_row
             )
         }
     }
@@ -57,7 +51,7 @@ param_to_solution <- function(
 #' @param trans_matrix (numeric) $m \times m$ transition matrix.
 #' @param graph_constraint A `multigrain_graph_constraint` object.
 #'
-#' @returns A list with `hyp_weight` and `trans_matrix`, both guaranteed to
+#' @return A list with `hyp_weight` and `trans_matrix`, both guaranteed to
 #'   satisfy:
 #'   - All elements in \eqn{[0, 1]}
 #'   - `sum(hyp_weight) == 1` (within machine precision)
@@ -70,7 +64,6 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
     hc <- graph_constraint$hyp_constraint
     tc <- graph_constraint$trans_constraint
     m <- graph_constraint_get_m(graph_constraint)
-    tolerance <- graph_constraint_get_tolerance(graph_constraint)
 
     # 1. Clamp all values to [0, 1]
     hyp_weight <- pmin(pmax(hyp_weight, 0), 1)
@@ -98,11 +91,7 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
             hyp_weight[free_w] <- remaining / length(free_w)
         }
     }
-    hyp_weight <- normalise_sum(
-        hyp_weight,
-        fixed_idx = fixed_w,
-        tolerance = tolerance
-    )
+    hyp_weight <- normalise_sum(hyp_weight, fixed_idx = fixed_w)
 
     # 5. Normalise each row of trans_matrix to sum to 1
     for (i in seq_len(m)) {
@@ -117,8 +106,7 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
         }
         trans_matrix[i, ] <- normalise_sum(
             trans_matrix[i, ],
-            fixed_idx = fixed_in_row,
-            tolerance = tolerance
+            fixed_idx = fixed_in_row
         )
     }
 
@@ -133,7 +121,7 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
 #' @param fixed_idx Integer vector; indices that are fixed by constraints.
 #' @param m Integer; total number of elements.
 #'
-#' @returns Integer vector of recipient indices (may be length 0).
+#' @return Integer vector of recipient indices (may be length 0).
 #' @noRd
 .free_recipients <- function(drop_idx, fixed_idx, m) {
     setdiff(seq_len(m), c(fixed_idx, drop_idx))
@@ -148,17 +136,10 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
 #' @param vec Numeric vector (e.g. hypothesis weights or a transition row).
 #' @param drop_idx Integer scalar; position to zero out.
 #' @param fixed_idx Integer vector; positions that must not change.
-#' @param tolerance numeric >= 0. Sum-to-one tolerance forwarded to
-#'   [normalise_sum()]. Defaults to `sqrt(.Machine$double.eps)`.
 #'
-#' @returns Numeric vector of same length, with `vec[drop_idx] == 0`.
+#' @return Numeric vector of same length, with `vec[drop_idx] == 0`.
 #' @noRd
-.redistribute_mass <- function(
-    vec,
-    drop_idx,
-    fixed_idx,
-    tolerance = sqrt(.Machine$double.eps)
-) {
+.redistribute_mass <- function(vec, drop_idx, fixed_idx) {
     m <- length(vec)
     freed <- vec[drop_idx]
     vec[drop_idx] <- 0
@@ -176,7 +157,7 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
         vec[recipients] <- freed / length(recipients)
     }
 
-    normalise_sum(vec, fixed_idx = fixed_idx, tolerance = tolerance)
+    normalise_sum(vec, fixed_idx = fixed_idx)
 }
 
 
@@ -186,7 +167,7 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
 #' @param constrained_idx Integer vector of indices with constraints.
 #' @param power_constraint Numeric vector of required marginal powers.
 #'
-#' @returns Logical scalar; `TRUE` if any constraint is violated.
+#' @return Logical scalar; `TRUE` if any constraint is violated.
 #' @noRd
 .marginal_violated <- function(marg_power, constrained_idx, power_constraint) {
     if (length(constrained_idx) == 0L) {
@@ -205,31 +186,31 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
 #' @param pvals Numeric matrix of p-values (n.sim × m).
 #' @param hyp_weight Candidate hypothesis weight vector.
 #' @param trans_matrix Candidate transition matrix.
-#' @param alpha Significance level. Default is 0.025.
+#' @param alpha Significance level.
 #' @param trial_success A `multigrain_trial_success` object.
 #' @param power_best Current best trial-success power (scalar).
 #' @param constrained_idx Integer vector; which hypotheses carry marginal
 #'   constraints.
 #' @param power_constraint Numeric vector of marginal thresholds.
 #'
-#' @returns A list with `hyp_weight`, `trans_matrix`, `power_best`, and
+#' @return A list with `hyp_weight`, `trans_matrix`, `power_best`, and
 #'   `accepted` (logical).
 #' @noRd
 .try_prune <- function(
     pvals,
     hyp_weight,
     trans_matrix,
+    alpha,
     trial_success,
     power_best,
     constrained_idx,
-    power_constraint,
-    alpha = 0.025
+    power_constraint
 ) {
     power_all <- calc_power_pvals(
         pvals,
         hyp_weight = hyp_weight,
-        trans_matrix = trans_matrix,
         alpha = alpha,
+        trans_matrix = trans_matrix,
         custom_power = trial_success
     )
 
@@ -271,16 +252,12 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
 #' @param fixed_w Integer vector; indices of hypothesis weights that are
 #'   fixed by the graph constraint (i.e. `which(!is.na(hyp_constraint))`)
 #' @param alpha (numeric) Overall one-sided significance level.
-#'   Default is 0.025.
 #' @param gamma Threshold below which a weight should be considered for removal.
 #' @param power_constraint Optional numeric vector of length m; only entries
 #'   that are non-`NA` impose a marginal-power requirement. Defaults to `NULL`
 #'   (no marginal constraints).
-#' @param tolerance numeric >= 0. Sum-to-one tolerance forwarded to
-#'   [normalise_sum()] during mass redistribution. Defaults to
-#'   `sqrt(.Machine$double.eps)`.
 #'
-#' @returns A list with elements `hyp_weight` (pruned weights), `trans_matrix`
+#' @return A list with elements `hyp_weight` (pruned weights), `trans_matrix`
 #'   (unchanged), and `power_best` (the best power achieved).
 #'
 #' @noRd
@@ -292,14 +269,13 @@ prune_hyp_weights <- function(
     fixed_w,
     alpha = 0.025,
     gamma = 1,
-    power_constraint = NULL,
-    tolerance = sqrt(.Machine$double.eps)
+    power_constraint = NULL
 ) {
     power_all <- calc_power_pvals(
         pvals,
         hyp_weight = hyp_weight,
-        trans_matrix = trans_matrix,
         alpha = alpha,
+        trans_matrix = trans_matrix,
         custom_power = trial_success
     )
     power_best <- power_all$custom_power
@@ -326,8 +302,7 @@ prune_hyp_weights <- function(
         w_candidate <- .redistribute_mass(
             hyp_weight,
             drop_idx = i,
-            fixed_idx = fixed_w,
-            tolerance = tolerance
+            fixed_idx = fixed_w
         )
 
         result <- .try_prune(
@@ -371,16 +346,12 @@ prune_hyp_weights <- function(
 #' @param graph_constraint A `multigrain_graph_constraint` object.
 #' @param power_best (numeric) Current best trial-success power.
 #' @param alpha (numeric) Overall one-sided significance level.
-#'   Default is 0.025.
 #' @param gamma Threshold below which an edge should be considered for removal.
 #' @param power_constraint Optional numeric vector of length m; only entries
 #'   that are non-`NA` impose a marginal-power requirement. Defaults to `NULL`
 #'   (no marginal constraints).
-#' @param tolerance numeric >= 0. Sum-to-one tolerance forwarded to
-#'   [normalise_sum()] during mass redistribution. Defaults to
-#'   `sqrt(.Machine$double.eps)`.
 #'
-#' @returns A list with elements `hyp_weight` (unchanged), `trans_matrix`
+#' @return A list with elements `hyp_weight` (unchanged), `trans_matrix`
 #'   (pruned edges), and `power_best` (the best power achieved).
 #'
 #' @noRd
@@ -393,8 +364,7 @@ prune_edges <- function(
     power_best,
     alpha = 0.025,
     gamma = 1,
-    power_constraint = NULL,
-    tolerance = sqrt(.Machine$double.eps)
+    power_constraint = NULL
 ) {
     G_best <- trans_matrix
 
@@ -426,8 +396,7 @@ prune_edges <- function(
             G_candidate[i, ] <- .redistribute_mass(
                 G_best[i, ],
                 drop_idx = j,
-                fixed_idx = fixed_in_row,
-                tolerance = tolerance
+                fixed_idx = fixed_in_row
             )
 
             result <- .try_prune(
@@ -465,7 +434,6 @@ prune_edges <- function(
 #' @param trial_success A `multigrain_trial_success` object defining the custom
 #'   power.
 #' @param alpha (numeric) Overall one-sided significance level.
-#'   Default is 0.025.
 #' @param gamma Threshold below which a weight or edge should be considered for
 #'   removing.
 #' @param fixed_edge Logical matrix (m × m); `TRUE` where `trans_constraint`
@@ -474,7 +442,7 @@ prune_edges <- function(
 #'   that are non-`NA` impose a marginal-power requirement. Defaults to `NULL`
 #'   (no marginal constraints).
 #'
-#' @returns A list with elements `hyp_weight` and `trans_matrix`, the pruned
+#' @return A list with elements `hyp_weight` and `trans_matrix`, the pruned
 #' graph.
 #'
 #' @noRd
@@ -487,18 +455,15 @@ prune_graph <- function(
     alpha = 0.025,
     gamma = 1,
     power_constraint = NULL,
-    verbose = c("info", "detail", "silent")
+    verbose = FALSE
 ) {
-    verbose <- rlang::arg_match(verbose)
-
-    if (verbose != "silent") {
+    if (verbose) {
         cli::cli_progress_step("Pruning redundant weights and edges")
     }
 
     # Derive constraint metadata once
     fixed_w <- which(!is.na(graph_constraint$hyp_constraint))
     fixed_edge <- !is.na(graph_constraint$trans_constraint)
-    tolerance <- graph_constraint_get_tolerance(graph_constraint)
 
     pruned_weights <- prune_hyp_weights(
         pvals = pvals,
@@ -508,8 +473,7 @@ prune_graph <- function(
         fixed_w = fixed_w,
         alpha = alpha,
         gamma = gamma,
-        power_constraint = power_constraint,
-        tolerance = tolerance
+        power_constraint = power_constraint
     )
 
     pruned <- prune_edges(
@@ -521,8 +485,7 @@ prune_graph <- function(
         alpha = alpha,
         gamma = gamma,
         power_best = pruned_weights$power_best,
-        power_constraint = power_constraint,
-        tolerance = tolerance
+        power_constraint = power_constraint
     )
 
     list(

@@ -14,7 +14,7 @@ A \code{multigrain_graph_optimal} object. For more details see \code{\link[=grap
 graph_optimal_example
 }
 \description{
-An example of an optimised graph with 4 hypotheses and a custom power
+An example of an optimised graph with 4 hypotheses and a conjunctive power
 trial success utility.
 }
 \keyword{datasets}

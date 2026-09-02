@@ -10,8 +10,8 @@ calc_ncp(power, alpha = 0.025)
 \item{power}{A numeric vector indicating each hypothesis' statistical power
 (probability of rejecting the null hypothesis if it false).}
 
-\item{alpha}{A single numeric value representing the overall one-sided
-significance level. Default is 0.025.}
+\item{alpha}{A numeric value representing the significance level (default is
+0.025).}
 }
 \value{
 A numeric vector of non-centrality parameters corresponding to each

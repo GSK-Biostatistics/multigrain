@@ -168,7 +168,7 @@ When designing and optimising a graph, it's essential to use a
 **`multigrain`** is built on a model of one-sided test statistics,
 assuming $z \sim \mathrm{MVN}(\boldsymbol{\Delta}, \boldsymbol{\Sigma})$, to
 correctly represent the *direction* of a treatment's effect. For this reason,
-you should specify a one-sided alpha level (e.g., $\alpha = 0.025$, which is also the default being used).
+you should specify a one-sided alpha level (e.g., $\alpha = 0.025$).
 
 ##### **Power Terminology**
 
@@ -427,23 +427,20 @@ ctrl <- ctrl |>
 - For a graph that will be used in a protocol/SAP, set `run` to at
   least **1000** to ensure a thorough search.
 
-**Parallel execution**
-
-For large problems with many hypotheses (m ≥ 6), enable parallel execution via the `num_threads` argument of `graph_optimise()`:
-
-```r
-g_opt <- graph_optimise(
-  pvals = pvals,
-  graph_constraint = my_constraint,
-  alpha = 0.025,
-  trial_success = custom_trial_success,
-  num_threads = 4
-)
-```
-
 **Skipping the global search**
 
-Additionally, if you already have a good starting graph, you can skip the global search entirely by setting `global_search` to `FALSE`:
+If you already have a good starting graph, you can skip the global
+search entirely:
+
+```r
+ctrl <- multigrain_control() |>
+  control_global_search(FALSE)
+```
+
+**Parallel execution**
+
+For large problems with many hypotheses (m ≥ 6), enable parallel execution via
+the `num_threads` argument of `graph_optimise()`:
 
 ```r
 g_opt <- graph_optimise(
@@ -451,7 +448,6 @@ g_opt <- graph_optimise(
   graph_constraint = my_constraint,
   alpha = 0.025,
   trial_success = custom_trial_success,
-  global_search = FALSE,
   num_threads = 4
 )
 ```
@@ -602,4 +598,5 @@ defined in the section on [trial success measures](#trial-success-measure).
 
 ## Further reading
 
-For more detail on constraining graph structure, see the [Graph Constraints](graph_constraint.html) vignette.
+For more detail on constraining graph structure, see the
+[Graph Constraints](graph_constraint.html) vignette.

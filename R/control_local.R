@@ -4,11 +4,11 @@
 #' [nloptr::nloptr()] options to access features that are otherwise not
 #' available in multigrain.
 #'
-#' @param .ctrl A [multigrain_control] object.
+#' @param .ctrl a [multigrain_control] object
 #' @param ... <[`dynamic-dots`][rlang::dyn-dots]> Name-value pairs of
 #'   [nloptr::nloptr()] options and their values.
 #'
-#' @returns A modified [multigrain_control].
+#' @returns a modified [multigrain_control].
 #'
 #' @export
 #' @examples

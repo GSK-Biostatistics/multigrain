@@ -120,6 +120,12 @@ test_that("random_graph uses names from graph_constraint", {
     )
 })
 
+test_that("graph_optimal_random()", {
+    a <- graph_optimal_random(5)
+
+    expect_s3_class(a, "multigrain_graph_optimal")
+})
+
 test_that("random_weights with NULL hyp_constraint", {
     set.seed(1)
     expect_equal(

@@ -402,7 +402,7 @@ test_that("new_trial_success creates valid objects", {
     )
 
     test_expr <- "1/3 * (r1 + r2 + r3)"
-    test_obj <- new_trial_success(test_expr, verbose = "silent")
+    test_obj <- new_trial_success(test_expr, verbose = FALSE)
 
     expect_s3_class(test_obj, "multigrain_trial_success")
     expect_identical(test_obj$m, 3L)
@@ -411,29 +411,29 @@ test_that("new_trial_success creates valid objects", {
 
     # test white space and unquoted
     # fmt: skip
-    test_obj2 <- trial_success(r1 * r2 +        r3, verbose = "silent")
+    test_obj2 <- trial_success(r1 * r2 +        r3, verbose = FALSE)
     expect_identical(test_obj2$func(test_matrix), 5 / 6)
 
     # test when expression is quoted
-    test_obj3 <- trial_success("r1 + r2 + r3", verbose = "silent")
+    test_obj3 <- trial_success("r1 + r2 + r3", verbose = FALSE)
     expect_equal(test_obj3$func(test_matrix), 1.5)
 
     # test when expression is quoted and uses boolean logic
-    test_obj4 <- trial_success("(r1 || r2) + r3", verbose = "silent")
+    test_obj4 <- trial_success("(r1 || r2) + r3", verbose = FALSE)
     expect_identical(
         test_obj4$func(test_matrix),
         sum(apply(test_matrix, 1, function(x) (x[1] || x[2]) + x[3])) / 6
     )
 
     # test when expression when not quoted and uses boolean logic
-    test_obj_4_5 <- trial_success(r1 || (r2 && r3), verbose = "silent")
+    test_obj_4_5 <- trial_success(r1 || (r2 && r3), verbose = FALSE)
     expect_identical(
         test_obj_4_5$func(test_matrix),
         sum(apply(test_matrix, 1, function(x) x[1] || (x[2] && x[3]))) / 6
     )
 
     # test when indices are missing
-    expect_warning(test_obj5 <- trial_success("r2", verbose = "silent"))
+    expect_warning(test_obj5 <- trial_success("r2", verbose = FALSE))
 
     expect_identical(test_obj5$func(test_matrix), 2 / 6)
     expect_identical(test_obj5$m, 2L)
@@ -486,7 +486,7 @@ test_that("powerFunc matches numeric and logical matrix inputs", {
 test_that("is_trial_success", {
     expect_true(
         is_trial_success(
-            trial_success(r1 + r2 + r3 + r4, verbose = "silent")
+            trial_success(r1 + r2 + r3 + r4, verbose = FALSE)
         )
     )
 
@@ -498,7 +498,7 @@ test_that("is_trial_success", {
 test_that("check_trial_success", {
     expect_no_error(
         check_trial_success(
-            trial_success(r1 + r2 + r3 + r4, verbose = "silent")
+            trial_success(r1 + r2 + r3 + r4, verbose = FALSE)
         )
     )
 
@@ -528,7 +528,7 @@ test_that("check_trial_success", {
 })
 
 test_that("trial_success print and summary methods", {
-    ts <- trial_success(r1 + r2 + r3 + r4, verbose = "silent")
+    ts <- trial_success(r1 + r2 + r3 + r4, verbose = FALSE)
 
     expect_snapshot(print(ts))
     expect_null(print.multigrain_trial_success(NULL))
@@ -538,26 +538,12 @@ test_that("trial_success print and summary methods", {
 })
 
 test_that("trial_success chatty", {
-    # the new approach is with verbose as character
     expect_snapshot(
-        trial_success(r1 + r2 + r3, verbose = "info")
+        ts <- trial_success(r1 + r2 + r3 + r4, verbose = TRUE)
     )
 
     expect_snapshot(
-        trial_success(r1 + r2 + r3, verbose = "detail")
-    )
-
-    expect_snapshot(
-        trial_success(r1 + r2 + r3, verbose = "silent")
-    )
-
-    # TRUE and FALSE still work
-    expect_snapshot(
-        trial_success(r1 + r2 + r3, verbose = TRUE)
-    )
-
-    expect_snapshot(
-        trial_success(r1 + r2 + r3, verbose = FALSE)
+        ts <- trial_success(r1 + r2 + r3 + r4, verbose = FALSE)
     )
 
     expect_snapshot(error = TRUE, {
@@ -569,7 +555,7 @@ test_that("trial_success chatty", {
 ## End-to-end: !! injection
 test_that("trial_success end-to-end: !! injection", {
     w <- 2
-    ts <- trial_success(!!w * r1 + r2, verbose = "silent")
+    ts <- trial_success(!!w * r1 + r2, verbose = FALSE)
     m <- rbind(
         c(1, 0),
         c(1, 1),
@@ -582,7 +568,7 @@ test_that("trial_success end-to-end: !! injection", {
 test_that("trial_success errors on un-unquoted symbol", {
     w <- 2
     expect_error(
-        trial_success(w * r1, verbose = "silent"),
+        trial_success(w * r1, verbose = FALSE),
         "in the trial success expression is not a rejection indicator"
     )
 })
@@ -590,7 +576,7 @@ test_that("trial_success errors on un-unquoted symbol", {
 test_that("trial_success error suggests !! fix", {
     w <- 2
     expect_error(
-        trial_success(w * r1, verbose = "silent"),
+        trial_success(w * r1, verbose = FALSE),
         "!!w",
         fixed = TRUE
     )
@@ -598,11 +584,11 @@ test_that("trial_success error suggests !! fix", {
 
 test_that("trial_success errors on expression with no r<digit> tokens", {
     expect_error(
-        trial_success("4", verbose = "silent"),
+        trial_success("4", verbose = FALSE),
         "must reference at least one hypothesis indicator"
     )
     expect_error(
-        trial_success("x + y", verbose = "silent"),
+        trial_success("x + y", verbose = FALSE),
         "must reference at least one hypothesis indicator"
     )
 })
@@ -621,7 +607,7 @@ test_that("r1 in global env no longer breaks trial_success(r1)", {
 
     assign("r1", 999, envir = .GlobalEnv)
 
-    ts <- trial_success(r1, verbose = "silent")
+    ts <- trial_success(r1, verbose = FALSE)
     m <- matrix(c(1, 0, 0, 1, 1, 1), ncol = 1, byrow = TRUE)
     expect_identical(ts$func(m), 2 / 3)
 })

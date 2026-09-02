@@ -23,33 +23,24 @@ pvals <- withr::with_seed(5, {
 
 pvals_4m <- pvals[, 1:4]
 
-hyp_weight_constr <- c(NA, NA, 0, 0)
-trans_matrix_constr <- matrix(
-    c(
-        0, NA, NA, 0,
-        NA, 0, 0, NA,
-        0, 1, 0, 0,
-        1, 0, 0, 0
-    ),
-    nrow = 4,
-    byrow = TRUE
+m <- 4
+no_constr <- graph_constraint_free(m)
+
+conjunctive_4m_power <- trial_success(
+    r1 && r2 && r3 && r4,
+    verbose = FALSE
 )
 
-my_constraint <- graph_constraint(
-    hyp_constraint = hyp_weight_constr,
-    trans_constraint = trans_matrix_constr
-)
-
-custom_power <- trial_success(0.25 * (2 * (r1 && r2) + r1 * r3 + r2 * r4))
+alpha <- 0.025
 
 graph_optimal_example <- graph_optimise(
     pvals = pvals_4m,
-    graph_constraint = my_constraint,
-    trial_success = custom_power,
+    alpha = alpha,
+    graph_constraint = no_constr,
+    trial_success = conjunctive_4m_power,
     control = ctrl,
     num_threads = cran_cores(),
-    global_search = TRUE,
-    verbose = "detail"
+    global_search = TRUE
 )
 
 usethis::use_data(

@@ -132,7 +132,7 @@ test_that("control_prepare complains with too large nsim values", {
     )
 })
 
-test_that("control_prepare with verbose", {
+test_that("control_prepare with trace", {
     empty_ctrl <- multigrain_control()
 
     test_pvals <- sample.int(100, size = 60 * 3, replace = TRUE) / 100
@@ -146,16 +146,16 @@ test_that("control_prepare with verbose", {
     expect_identical(prep_ctrl_quiet$local_opt$print_level, 0L)
     expect_false(prep_ctrl_quiet$global_opt$monitor)
 
-    prep_ctrl_detail <- control_prepare(
+    prep_ctrl_chatty <- control_prepare(
         empty_ctrl,
         pvals = test_pvals,
-        verbose = "detail"
+        trace = TRUE
     )
 
-    expect_identical(prep_ctrl_detail$local_opt$print_level, 1L)
+    expect_identical(prep_ctrl_chatty$local_opt$print_level, 1L)
 
     expect_true(
-        prep_ctrl_detail$global_opt$monitor
+        prep_ctrl_chatty$global_opt$monitor
     )
 })
 
@@ -182,11 +182,11 @@ test_that("control_prepare does not overwrite user-set verbosity", {
         prep_ctrl$local_opt$print_level
     )
 
-    # verbose should basically have no impact on user-supplied args
+    # trace should basically have no impact on user-supplied args
     prep_ctrl2 <- control_prepare(
         user_ctrl,
         pvals = test_pvals,
-        verbose = "detail"
+        trace = TRUE
     )
 
     expect_identical(

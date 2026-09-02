@@ -1,15 +1,10 @@
 #' Autoplot method for `multigrain_graph_constraint` objects
 #'
-#' @details
-#' Both `plot()` and `autoplot()` methods require an optional dependency,
-#' [ggplot2][ggplot2::ggplot2-package].
-#'
-#'
 #' @param object A `multigrain_graph_constraint` object.
 #' @inheritParams autoplot.multigrain_graph_optimal root digits title
 #' @param ... Additional arguments.
 #'
-#' @returns A [ggraph::ggraph()] object.
+#' @returns a `ggraph` / `ggplot` object.
 #'
 #' @export
 #' @examples
@@ -34,13 +29,7 @@
 #' # If you want to control which nodes are treated as root, you can pass them
 #' # as a numeric vector via the `root` argument. For example, we want nodes 1
 #' # and 3 to be plotted as root:
-#' autoplot(gc1, root = c(1, 3))
-#'
-#' # You can control the number of decimal places to round to
-#' autoplot(gc1, digits = 1)
-#'
-#' # You can supply a title
-#' autoplot(gc1, title = "My graph constraint")
+#' ggplot2::autoplot(gc1, root = c(1, 3))
 autoplot.multigrain_graph_constraint <- function(
     object,
     ...,

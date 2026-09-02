@@ -15,7 +15,7 @@
 #'   free (`NA`) positions are randomised.
 #' @inheritParams graph_constraint names
 #'
-#' @returns A list containing:
+#' @return A list containing:
 #'
 #' * `hyp_weight`: A numeric vector of length `m` representing the generated
 #'   hypothesis weights.
@@ -26,21 +26,15 @@
 #' @examples
 #' # Generate a random graph for 5 hypotheses
 #' random_graph <- graph_random(5)
-#'
-#' # print the weight vector
-#' random_graph$hyp_weight
-#'
-#' # print the transition matrix
-#' random_graph$trans_matrix
+#' print(random_graph$hyp_weight)  # Prints the weight vector
+#' print(random_graph$trans_matrix)  # Prints the transition matrix
 #'
 #' # Generate a random graph respecting constraints
 #' gc <- graph_constraint(
 #'     hyp_constraint = c(0.5, NA, NA),
 #'     trans_constraint = matrix(c(0, NA, NA, NA, 0, NA, NA, NA, 0), 3, 3)
 #' )
-#'
 #' random_graph <- graph_random(graph_constraint = gc)
-#' random_graph
 graph_random <- function(
     m = NULL,
     graph_constraint = NULL,
@@ -93,6 +87,28 @@ graph_random <- function(
     )
 }
 
+#' Generate a random graph optimal
+#'
+#' A helper for testing and examples. It is not recommended to use it in routine
+#' practice.
+#'
+#' @param ... Arguments passed down to [graph_random()].
+#'
+#' @returns a minimal `multigrain_graph_optimal`. To be used only for examples
+#'   and tests.
+#'
+#' @export
+#' @examples
+#' graph_optimal_random(5)
+graph_optimal_random <- function(...) {
+    random_graph <- graph_random(...)
+
+    graph_optimal(
+        hyp_weight = random_graph$hyp_weight,
+        trans_matrix = random_graph$trans_matrix
+    )
+}
+
 # Internal helpers --------------------------------------------------------
 
 #' Generate random weight vector with constraints
@@ -101,7 +117,7 @@ graph_random <- function(
 #' @param hyp_constraint A numeric vector of length `m` with constraints on the
 #'   weights. Use `NA` for unconstrained elements. If `NULL`, all weights are
 #'   free.
-#' @returns A numeric vector of length `m` summing to 1.
+#' @return A numeric vector of length `m` summing to 1.
 #' @noRd
 random_weights <- function(m, hyp_constraint = NULL) {
     if (is.null(hyp_constraint)) {
@@ -146,7 +162,7 @@ random_weights <- function(m, hyp_constraint = NULL) {
 #' @param trans_constraint A numeric matrix of dimension ($m \times m$) with
 #'   constraints. Use `NA` for unconstrained elements. If `NULL`, diagonal
 #'   elements default to 0 and all off-diagonal elements are free.
-#' @returns A numeric matrix of dimension ($m \times m$) with rows summing to 1
+#' @return A numeric matrix of dimension ($m \times m$) with rows summing to 1
 #'   and zero diagonal.
 #' @noRd
 random_transitions <- function(m, trans_constraint = NULL) {

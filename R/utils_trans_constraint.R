@@ -92,7 +92,7 @@ print_offending_row <- function(
 #'
 #' @param x (numeric matrix)
 #'
-#' @returns A list of vectors each representing a matrix row.
+#' @returns a list of vectors each representing a matrix row
 #' @noRd
 pull_rows <- function(x) {
     #  x is a transition matrix
@@ -108,7 +108,7 @@ pull_rows <- function(x) {
 #' @param row (numeric) row to extract
 #' @param x (matrix) matrix to extract row from
 #'
-#' @returns A vector representing the values in the given matrix row.
+#' @returns a vector representing the values in the given matrix row
 #' @noRd
 pull_row <- function(row, x) {
     x[row, ]
@@ -128,7 +128,7 @@ pull_row <- function(row, x) {
 #'   string.
 #' @param ellipsis A character scalar to indicate content has been removed.
 #'
-#' @returns A character vector of truncated values.
+#' @returns a character vector of truncated values
 #'
 #' @noRd
 #'

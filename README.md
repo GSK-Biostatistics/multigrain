@@ -1,6 +1,8 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
 # multigrain
 
 <!-- badges: start -->
@@ -42,8 +44,7 @@ controls FWER.
 
 ## Installation
 
-**multigrain** is not on CRAN yet. Install the development version from
-GitHub with:
+**multigrain** is not on CRAN yet. Install the development version from GitHub with:
 
 ``` r
 # install.packages("pak")
@@ -80,6 +81,7 @@ corr_mat <- matrix(
 set.seed(1)
 pvals <- simulate_pvalues(
     power_nominal = power_nominal,
+    alpha = 0.025,
     corr_matrix = corr_mat,
     nsim = 1e5
 )
@@ -135,6 +137,7 @@ constant”.
 ``` r
 g_opt <- graph_optimise(
     pvals = pvals,
+    alpha = 0.025,
     trial_success = custom_success,
     graph_constraint = gc
 )
@@ -150,7 +153,7 @@ measures for the optimised graph:
 
 ``` r
 calc_power_pvals(
-    pvals,
+    pvals, alpha = 0.025,
     hyp_weight   = g_opt$hyp_weight,
     trans_matrix = g_opt$trans_matrix,
     custom_power = list(

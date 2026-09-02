@@ -6,7 +6,7 @@
 #' @param x  n × m logical/0-1 matrix; rows = simulations, cols = hypotheses.
 #' @param f  (optional) list of custom functions, each taking a single vector of
 #'           rejections and returning a scalar.
-#' @returns A list with at least four elements:
+#' @return A list with at least four elements:
 #'   * `local_power`: column means
 #'   * `exp_rejections`: expected # of rejections
 #'   * `disj_power`: disjunctive power

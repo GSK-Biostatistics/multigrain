@@ -28,20 +28,20 @@
 #'
 #' @param power_nominal A numeric vector of nominal power values for each
 #'   hypothesis.
-#' @inheritParams rlang::args_dots_empty
-#' @inheritParams graph_optimise alpha
+#' @param alpha A numeric value indicating the significance level.
 #' @param corr_matrix A numeric matrix representing the correlation matrix
 #'   \eqn{\Sigma} of the test statistics.
 #' @param nsim An integer indicating the number of simulations to run. Default
 #'   is `1e5`.
 #'
-#' @returns A matrix where each row represents a set of simulated raw p-values
+#' @return A matrix where each row represents a set of simulated raw p-values
 #'   for each hypothesis.
 #'
 #' @export
 #' @examples
 #' # Define parameters for simulation
 #' nominal_power <- c(0.8, 0.85, 0.9)
+#' alpha_level <- 0.025
 #' corr <- matrix(
 #'   c(1, 0.5, 0.5,
 #'     0.5, 1, 0.5,
@@ -51,26 +51,20 @@
 #' num_simulations <- 1000
 #'
 #' # Simulate raw p-values
-#' pvals <- simulate_pvalues(
-#'     nominal_power,
-#'     corr_matrix = corr,
-#'     nsim = num_simulations
-#' )
+#' pvals <- simulate_pvalues(nominal_power, alpha_level, corr, num_simulations)
 simulate_pvalues <- function(
     power_nominal,
-    ...,
-    alpha = 0.025,
+    alpha,
     corr_matrix = diag(length(power_nominal)),
     nsim = 1e5
 ) {
     check_double(power_nominal)
-    rlang::check_dots_empty()
     rlang::check_number_decimal(alpha, min = 0, max = 1)
     check_double_matrix(corr_matrix)
     rlang::check_number_whole(nsim)
 
     # Calculate non-centrality parameter (ncp) using the calc_ncp function
-    ncp <- calc_ncp(power_nominal, alpha = alpha)
+    ncp <- calc_ncp(power_nominal, alpha)
 
     # Simulate raw p-values from the multivariate normal distribution
     pvals <- stats::pnorm(

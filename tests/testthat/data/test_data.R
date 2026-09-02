@@ -38,7 +38,10 @@ my_constraint <- graph_constraint(
 
 print(my_constraint)
 
-pvals <- simulate_pvalues(power_nominal = power_vector)
+pvals <- simulate_pvalues(
+    power_nominal = power_vector,
+    alpha = 0.025
+)
 
 ctrl <- multigrain_control()
 
@@ -47,9 +50,10 @@ graph_average_power <- graph_optimise(
     pvals = pvals,
     graph_constraint = my_constraint,
     trial_success = average_power,
+    alpha = 0.025, # one-sided
     num_threads = cran_cores(),
     control = ctrl,
-    verbose = "detail"
+    trace = TRUE
 )
 
 saveRDS(
@@ -70,9 +74,10 @@ graph_custom_power <- graph_optimise(
     pvals = pvals,
     graph_constraint = my_constraint,
     trial_success = custom_power,
+    alpha = 0.025, # one-sided
     num_threads = cran_cores(),
     control = ctrl,
-    verbose = "detail"
+    trace = TRUE
 )
 
 saveRDS(

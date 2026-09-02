@@ -237,25 +237,6 @@ test_that("graph_constraint() errors trans_constraint not numeric", {
     })
 })
 
-test_that("graph_constraint complains when anything is passed via `...`", {
-    expect_snapshot(error = TRUE, {
-        graph_constraint(
-            hyp_constraint = c(NA, NA, 0, 0),
-            trans_constraint = matrix(
-                c(
-                    0, NA, NA, 0,
-                    NA, 0, NA, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0
-                ),
-                nrow = 4,
-                byrow = TRUE
-            ),
-            c("a", "b", "c", "d")
-        )
-    })
-})
-
 test_that("graph_constraint() errors when tolerance not positive numeric", {
     expect_snapshot(error = TRUE, {
         graph_constraint(
@@ -922,30 +903,6 @@ test_that("get graph constraint m", {
     expect_identical(
         graph_constraint_get_m(gc),
         5L
-    )
-})
-
-test_that("get graph constraint tolerance", {
-    gc <- graph_constraint_free(5)
-
-    expect_identical(
-        graph_constraint_get_tolerance(gc),
-        sqrt(.Machine$double.eps)
-    )
-
-    gc_custom <- graph_constraint(
-        hyp_constraint = c(NA, NA, NA),
-        tolerance = 1e-6
-    )
-
-    expect_identical(
-        graph_constraint_get_tolerance(gc_custom),
-        1e-6
-    )
-
-    expect_error(
-        graph_constraint_get_tolerance(list()),
-        class = "rlang_error"
     )
 })
 

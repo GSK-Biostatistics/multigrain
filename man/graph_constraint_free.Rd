@@ -22,8 +22,7 @@ only 2 hypotheses, then the matrix will have 0 on the diagonal and the
 other 2 elements are set to 1.
 }
 \description{
-Create a graph constraint that allows for all hypotheses transitions to be
-optimised.
+Create an unconstrained \emph{graph constraint}
 }
 \examples{
 # Create a graph constraint object with 3 hypotheses and no constraints

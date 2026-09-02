@@ -6,8 +6,7 @@
 \usage{
 simulate_pvalues(
   power_nominal,
-  ...,
-  alpha = 0.025,
+  alpha,
   corr_matrix = diag(length(power_nominal)),
   nsim = 1e+05
 )
@@ -16,10 +15,7 @@ simulate_pvalues(
 \item{power_nominal}{A numeric vector of nominal power values for each
 hypothesis.}
 
-\item{...}{These dots are for future extensions and must be empty.}
-
-\item{alpha}{A single numeric value representing the overall one-sided
-significance level. Default is 0.025.}
+\item{alpha}{A numeric value indicating the significance level.}
 
 \item{corr_matrix}{A numeric matrix representing the correlation matrix
 \eqn{\Sigma} of the test statistics.}
@@ -62,6 +58,7 @@ result in a multivariate normal distribution.
 \examples{
 # Define parameters for simulation
 nominal_power <- c(0.8, 0.85, 0.9)
+alpha_level <- 0.025
 corr <- matrix(
   c(1, 0.5, 0.5,
     0.5, 1, 0.5,
@@ -71,9 +68,5 @@ corr <- matrix(
 num_simulations <- 1000
 
 # Simulate raw p-values
-pvals <- simulate_pvalues(
-    nominal_power,
-    corr_matrix = corr,
-    nsim = num_simulations
-)
+pvals <- simulate_pvalues(nominal_power, alpha_level, corr, num_simulations)
 }

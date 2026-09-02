@@ -85,54 +85,58 @@
 
 
 # Validate user-supplied start_graphs for dimension compatibility
-.validate_start_graphs <- function(
-    start_graph,
-    m,
-    call = rlang::caller_env()
-) {
+.validate_start_graphs <- function(start_graph, m, where = "graph_optimise") {
     if (.is_default_start_graph(start_graph)) {
-        return(invisible(NULL))
+        return(invisible(TRUE))
     }
 
+    errs <- character(0)
     for (i in seq_along(start_graph)) {
         g <- start_graph[[i]]
         w <- g$hyp_weight
         G <- g$trans_matrix
 
-        arg_name_w <- glue::glue("start_graph[[{i}]]$hyp_weight")
-
-        check_double(
-            w,
-            allow_null = TRUE,
-            arg = arg_name_w,
-            call = call
-        )
-
-        check_length(
-            w,
-            m = m,
-            allow_null = TRUE,
-            arg = arg_name_w,
-            call = call
-        )
-
-        arg_name_g <- glue::glue("start_graph[[{i}]]$trans_matrix")
-
-        check_double_matrix(
-            G,
-            allow_null = TRUE,
-            arg = arg_name_g,
-            call = call
-        )
-
-        check_dim(
-            G,
-            m = m,
-            allow_null = TRUE,
-            arg = arg_name_g,
-            call = call
-        )
+        if (!is.null(w) && length(w) != m) {
+            errs <- c(
+                errs,
+                sprintf(
+                    "%s: start_graph[[%d]] has weight length %d; expected %d.",
+                    where,
+                    i,
+                    length(w),
+                    m
+                )
+            )
+        }
+        if (!is.null(G)) {
+            if (!is.matrix(G)) {
+                errs <- c(
+                    errs,
+                    sprintf(
+                        "%s: start_graph[[%d]]$trans_matrix must be a matrix.",
+                        where,
+                        i
+                    )
+                )
+            } else if (!all(dim(G) == c(m, m))) {
+                errs <- c(
+                    errs,
+                    sprintf(
+                        "%s: start_graph[[%d]]$trans_matrix has dim (%d x %d); expected (%d x %d).", # nolint
+                        where,
+                        i,
+                        nrow(G),
+                        ncol(G),
+                        m,
+                        m
+                    )
+                )
+            }
+        }
     }
 
-    invisible(NULL)
+    if (length(errs)) {
+        stop(paste(errs, collapse = "\n"), call. = FALSE)
+    }
+    invisible(TRUE)
 }

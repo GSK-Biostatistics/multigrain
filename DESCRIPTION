@@ -1,6 +1,6 @@
 Package: multigrain
 Title: Optimising Graphical Approaches to Multiple Testing Procedures
-Version: 0.3.0
+Version: 0.2.0.9043
 Authors@R: c(
     person("Alex", "Spiers", , "alex.d.spiers@gsk.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8874-085X")),
@@ -24,9 +24,11 @@ Imports:
     ggraph,
     glue,
     igraph,
+    lifecycle,
     mvtnorm,
     nloptr,
     purrr,
+    qrng,
     Rcpp,
     RcppParallel (>= 5.1.10),
     rlang (>= 1.2.0),

@@ -213,10 +213,11 @@ test_that(".marginal_violated boundary: exactly equal passes", {
 
 
 # --- Setup shared across .try_prune() and prune_graph() E2E tests ---
-conjunctive_4m_power <- trial_success(r1 && r2 && r3 && r4, verbose = "silent")
-avg_6m_power <- trial_success(r1 + r2 + r3 + r4 + r5 + r6, verbose = "silent")
+conjunctive_4m_power <- trial_success(r1 && r2 && r3 && r4, verbose = FALSE)
+avg_6m_power <- trial_success(r1 + r2 + r3 + r4 + r5 + r6, verbose = FALSE)
 
 m <- 4
+alpha <- 0.025
 power_vector <- c(0.93, 0.91, 0.90, 0.85)
 corr_mat <- matrix(0.2, nrow = m, ncol = m)
 diag(corr_mat) <- 1
@@ -253,6 +254,7 @@ test_that(".try_prune() accepts when power improves and no constraints", {
     baseline <- calc_power_pvals(
         pvals[, 1:4],
         hyp_weight = w,
+        alpha = alpha,
         trans_matrix = G,
         custom_power = conjunctive_4m_power
     )
@@ -263,6 +265,7 @@ test_that(".try_prune() accepts when power improves and no constraints", {
         pvals = pvals[, 1:4],
         hyp_weight = w_better,
         trans_matrix = G,
+        alpha = alpha,
         trial_success = conjunctive_4m_power,
         power_best = baseline$custom_power,
         constrained_idx = integer(0),
@@ -288,6 +291,7 @@ test_that(".try_prune() accepts when power exactly equals power_best", {
     exact <- calc_power_pvals(
         pvals[, 1:4],
         hyp_weight = w,
+        alpha = alpha,
         trans_matrix = G,
         custom_power = conjunctive_4m_power
     )
@@ -297,6 +301,7 @@ test_that(".try_prune() accepts when power exactly equals power_best", {
         pvals = pvals[, 1:4],
         hyp_weight = w,
         trans_matrix = G,
+        alpha = alpha,
         trial_success = conjunctive_4m_power,
         power_best = exact$custom_power,
         constrained_idx = integer(0),
@@ -322,6 +327,7 @@ test_that(".try_prune() rejects when power is lower than power_best", {
         pvals = pvals[, 1:4],
         hyp_weight = w,
         trans_matrix = G,
+        alpha = alpha,
         trial_success = conjunctive_4m_power,
         power_best = 1.0,
         constrained_idx = integer(0),
@@ -346,6 +352,7 @@ test_that(".try_prune() rejects when marginal constraint is violated", {
     baseline <- calc_power_pvals(
         pvals[, 1:4],
         hyp_weight = w,
+        alpha = alpha,
         trans_matrix = G,
         custom_power = conjunctive_4m_power
     )
@@ -358,6 +365,7 @@ test_that(".try_prune() rejects when marginal constraint is violated", {
         pvals = pvals[, 1:4],
         hyp_weight = w,
         trans_matrix = G,
+        alpha = alpha,
         trial_success = conjunctive_4m_power,
         power_best = 0,
         constrained_idx = constrained_idx,
@@ -383,6 +391,7 @@ test_that(".try_prune() returns correct list structure", {
         pvals = pvals[, 1:4],
         hyp_weight = w,
         trans_matrix = G,
+        alpha = alpha,
         trial_success = conjunctive_4m_power,
         power_best = 0,
         constrained_idx = integer(0),
@@ -418,6 +427,7 @@ test_that(".try_prune() rejects despite high power when constraint violated", {
         pvals = pvals[, 1:4],
         hyp_weight = w_good,
         trans_matrix = G,
+        alpha = alpha,
         trial_success = conjunctive_4m_power,
         power_best = 0,
         constrained_idx = constrained_idx,
@@ -443,6 +453,7 @@ test_that("`prune_hyp_weights()` prunes redundant hypothesis weights", {
 
     result <- prune_hyp_weights(
         pvals[, 1:4],
+        alpha = 0.025,
         gamma = 1,
         fixed_w = which(!is.na(graph_constraint_free(4)$hyp_constraint)),
         trial_success = conjunctive_4m_power,
@@ -467,6 +478,7 @@ test_that("`prune_hyp_weights()` doesn't change hyp weights below gamma", {
 
     result <- prune_hyp_weights(
         pvals[, 1:4],
+        alpha = 0.025,
         gamma = 0.49,
         fixed_w = which(!is.na(graph_constraint_free(4)$hyp_constraint)),
         trial_success = conjunctive_4m_power,
@@ -496,12 +508,13 @@ test_that("`prune_hyp_weights()` respects graph_constraint fixed weights", {
         c(0.5, 0.5, 0.0)
     )
 
-    avg_power <- trial_success(1 / 3 * (r1 + r2 + r3), verbose = "silent")
+    avg_power <- trial_success(1 / 3 * (r1 + r2 + r3), verbose = FALSE)
 
     result <- prune_hyp_weights(
         pvals_3m,
         hyp_weight = w,
         trans_matrix = G,
+        alpha = 0.025,
         trial_success = avg_power,
         gamma = 1,
         fixed_w = which(!is.na(gc$hyp_constraint))
@@ -515,6 +528,7 @@ test_that("`prune_hyp_weights()` respects graph_constraint fixed weights", {
     # Power must not decrease
     original_power <- calc_power_pvals(
         pvals_3m,
+        alpha = 0.025,
         hyp_weight = w,
         trans_matrix = G,
         custom_power = avg_power,
@@ -538,12 +552,14 @@ test_that("`prune_edges()` prunes redundant edges", {
     baseline <- calc_power_pvals(
         pvals[, 1:4],
         hyp_weight = w,
+        alpha = 0.025,
         trans_matrix = G,
         custom_power = conjunctive_4m_power
     )
 
     result <- prune_edges(
         pvals[, 1:4],
+        alpha = 0.025,
         gamma = 1,
         fixed_edge = !is.na(graph_constraint_free(4)$trans_constraint),
         trial_success = conjunctive_4m_power,
@@ -578,6 +594,7 @@ test_that("`prune_edges()` doesn't change trans weights below gamma", {
     baseline <- calc_power_pvals(
         pvals[, 1:4],
         hyp_weight = w,
+        alpha = 0.025,
         trans_matrix = G,
         custom_power = conjunctive_4m_power
     )
@@ -585,6 +602,7 @@ test_that("`prune_edges()` doesn't change trans weights below gamma", {
     # Gamma below edge weight --> no pruning
     result <- prune_edges(
         pvals[, 1:4],
+        alpha = 0.025,
         gamma = 0.009,
         fixed_edge = !is.na(graph_constraint_free(4)$trans_constraint),
         trial_success = conjunctive_4m_power,
@@ -615,10 +633,11 @@ test_that("`prune_edges()` respects graph_constraint fixed edges", {
         c(0.5, 0.5, 0.0)
     )
 
-    avg_power <- trial_success(1 / 3 * (r1 + r2 + r3), verbose = "silent")
+    avg_power <- trial_success(1 / 3 * (r1 + r2 + r3), verbose = FALSE)
 
     baseline <- calc_power_pvals(
         pvals_3m,
+        alpha = 0.025,
         hyp_weight = w,
         trans_matrix = G,
         custom_power = avg_power,
@@ -629,6 +648,7 @@ test_that("`prune_edges()` respects graph_constraint fixed edges", {
         pvals_3m,
         hyp_weight = w,
         trans_matrix = G,
+        alpha = 0.025,
         trial_success = avg_power,
         gamma = 1,
         fixed_edge = !is.na(gc$trans_constraint),
@@ -654,12 +674,12 @@ test_that("`prune_graph()` cleans redundant hyp or matrix weights", {
 
     clean <- prune_graph(
         pvals[, 1:4],
+        alpha = 0.025,
         gamma = 1,
         graph_constraint = graph_constraint_free(4),
         trial_success = conjunctive_4m_power,
         hyp_weight = w,
-        trans_matrix = G,
-        verbose = "silent"
+        trans_matrix = G
     )
 
     expect_identical(clean$hyp_weight, c(1, 0, 0, 0))
@@ -686,12 +706,12 @@ test_that("`prune_graph()` doesn't change trans weights below gamma", {
 
     clean_1 <- prune_graph(
         pvals[, 1:4],
+        alpha = 0.025,
         gamma = 1,
         graph_constraint = graph_constraint_free(4),
         trial_success = conjunctive_4m_power,
         hyp_weight = w,
-        trans_matrix = G,
-        verbose = "silent"
+        trans_matrix = G
     )
 
     expect_identical(
@@ -707,12 +727,12 @@ test_that("`prune_graph()` doesn't change trans weights below gamma", {
     # Gamma below edge weight --> no pruning
     clean_2 <- prune_graph(
         pvals[, 1:4],
+        alpha = 0.025,
         gamma = 0.009,
         graph_constraint = graph_constraint_free(4),
         trial_success = conjunctive_4m_power,
         hyp_weight = w,
-        trans_matrix = G,
-        verbose = "silent"
+        trans_matrix = G
     )
 
     expect_identical(clean_2$trans_matrix, G)
@@ -730,12 +750,12 @@ test_that("`prune_graph()` doesn't change hyp weights below gamma", {
 
     clean <- prune_graph(
         pvals[, 1:4],
+        alpha = 0.025,
         gamma = 0.49,
         graph_constraint = graph_constraint_free(4),
         trial_success = conjunctive_4m_power,
         hyp_weight = w,
-        trans_matrix = G,
-        verbose = "silent"
+        trans_matrix = G
     )
 
     expect_equal(clean$hyp_weight, c(0.5, 0.5, 0, 0))
@@ -761,16 +781,16 @@ test_that("`prune_graph()` respects graph_constraint fixed entries", {
         c(0.5, 0.5, 0.0)
     )
 
-    avg_power <- trial_success(1 / 3 * (r1 + r2 + r3), verbose = "silent")
+    avg_power <- trial_success(1 / 3 * (r1 + r2 + r3), verbose = FALSE)
 
     clean_gc <- prune_graph(
         pvals_3m,
         hyp_weight = w,
         trans_matrix = G,
+        alpha = 0.025,
         trial_success = avg_power,
         gamma = 1,
-        graph_constraint = gc,
-        verbose = "silent"
+        graph_constraint = gc
     )
 
     # H3 weight must remain 0
@@ -784,6 +804,7 @@ test_that("`prune_graph()` respects graph_constraint fixed entries", {
     # Power must not decrease
     original_power <- calc_power_pvals(
         pvals_3m,
+        alpha = 0.025,
         hyp_weight = w,
         trans_matrix = G,
         custom_power = avg_power,
@@ -791,6 +812,7 @@ test_that("`prune_graph()` respects graph_constraint fixed entries", {
     )
     pruned_power <- calc_power_pvals(
         pvals_3m,
+        alpha = 0.025,
         hyp_weight = clean_gc$hyp_weight,
         trans_matrix = clean_gc$trans_matrix,
         custom_power = avg_power,
@@ -967,107 +989,4 @@ test_that("repair_graph handles all-zero free transition row", {
     result <- repair_graph(w, G, gc)
     expect_identical(sum(result$trans_matrix[1, ]), 1) # row sums to 1
     expect_true(all(result$trans_matrix[1, 2:3] > 0)) # free cols received mass
-})
-
-
-# --- graph_constraint tolerance flows to normalise_sum ---
-
-# 3-hypothesis constraint with fixed weights summing to 1.005.
-over_sum_gc <- function(tolerance) {
-    tc <- matrix(NA_real_, 3, 3)
-    diag(tc) <- 0
-    new_graph_constraint(
-        hyp_constraint = c(0.6, 0.405, NA_real_),
-        trans_constraint = tc,
-        names = c("H1", "H2", "H3"),
-        tolerance = tolerance
-    )
-}
-
-test_that("param_to_solution() uses the graph_constraint tolerance", {
-    # 0 free weight params (both fixed) + 3 transition params.
-    params <- c(0.5, 0.5, 0.5)
-
-    expect_error(
-        param_to_solution(params, over_sum_gc(sqrt(.Machine$double.eps)), TRUE),
-        "exceeds target"
-    )
-    expect_no_error(
-        param_to_solution(params, over_sum_gc(0.01), process = TRUE)
-    )
-})
-
-test_that("repair_graph() uses the graph_constraint tolerance", {
-    # Free weight (H3) is 0, so its mass must come from the fixed weights,
-    w <- c(0.6, 0.405, 0)
-    G <- rbind(c(0, 0.5, 0.5), c(0.5, 0, 0.5), c(0.5, 0.5, 0))
-
-    expect_error(
-        repair_graph(w, G, over_sum_gc(sqrt(.Machine$double.eps))),
-        "exceeds target"
-    )
-    expect_no_error(repair_graph(w, G, over_sum_gc(0.01)))
-})
-
-test_that(".redistribute_mass() honours (and defaults) its tolerance", {
-    # Fixed elements 1 and 4 sum to 1.005; dropping index 2 redistributes to 3.
-    vec <- c(0.6, 0.10, 0.30, 0.405)
-
-    # Default tolerance (sqrt(.Machine$double.eps)) rejects the over-sum.
-    expect_error(
-        .redistribute_mass(vec, drop_idx = 2L, fixed_idx = c(1L, 4L)),
-        "exceeds target"
-    )
-
-    # A loose tolerance tolerates it.
-    result <- .redistribute_mass(
-        vec,
-        drop_idx = 2L,
-        fixed_idx = c(1L, 4L),
-        tolerance = 0.01
-    )
-    expect_identical(result[2], 0)
-})
-
-test_that("prune_graph() forwards the graph_constraint tolerance", {
-    gc <- graph_constraint(
-        hyp_constraint = rep(NA_real_, 4),
-        trans_constraint = trans_constraint_free(4),
-        tolerance = 0.01
-    )
-    w <- c(0.5, 0.5, 0, 0)
-    G <- rbind(
-        c(0, 0, 0.5, 0.5),
-        c(0, 0, 0.5, 0.5),
-        c(0.001, 0, 0, 0.999),
-        c(0, 0.001, 0.999, 0)
-    )
-
-    tolerances <- new.env()
-    tolerances$values <- numeric(0)
-    local_mocked_bindings(
-        normalise_sum = function(
-            x,
-            ...,
-            fixed_idx = integer(0),
-            target = 1,
-            tolerance = sqrt(.Machine$double.eps)
-        ) {
-            tolerances$values <- c(tolerances$values, tolerance)
-            x
-        }
-    )
-
-    prune_graph(
-        pvals[, 1:4],
-        hyp_weight = w,
-        trans_matrix = G,
-        trial_success = conjunctive_4m_power,
-        graph_constraint = gc,
-        gamma = 1,
-        verbose = "silent"
-    )
-
-    expect_gt(length(tolerances$values), 0)
-    expect_true(all(tolerances$values == 0.01))
 })

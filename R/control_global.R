@@ -8,7 +8,7 @@
 #' @param ... <[`dynamic-dots`][rlang::dyn-dots]> Name-value pairs of [GA::ga()]
 #'   options and their values.
 #'
-#' @returns A modified [multigrain_control].
+#' @returns a modified [multigrain_control].
 #'
 #' @export
 #' @examples

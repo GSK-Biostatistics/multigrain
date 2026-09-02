@@ -14,8 +14,8 @@
 
 \item{...}{Additional arguments.}
 
-\item{root}{A numeric vector indicating which nodes to be regarded as root in
-the tree layout. Passed down to \code{\link[igraph:layout_as_tree]{igraph::layout_as_tree()}}.}
+\item{root}{(integer-like) An optional argument containing a vector of nodes
+to plot as root.}
 
 \item{digits}{Number of decimal places to round to (between 0 and 3).
 Defaults to \code{NULL} which will choose the number of digits based on how
@@ -26,19 +26,15 @@ crowded the graph plot will be:
 \item 3 digits if 4 or fewer hypotheses
 }}
 
-\item{title}{An optional plot title.}
+\item{title}{(string) Optional plot title.}
 
 \item{x}{A \code{multigrain_graph_constraint} object.}
 }
 \value{
-A \code{\link[ggraph:ggraph]{ggraph::ggraph()}} object.
+a \code{ggraph} / \code{ggplot} object.
 }
 \description{
 Autoplot method for \code{multigrain_graph_constraint} objects
-}
-\details{
-Both \code{plot()} and \code{autoplot()} methods require an optional dependency,
-\link[ggplot2:ggplot2-package]{ggplot2}.
 }
 \examples{
 library(ggplot2)
@@ -62,11 +58,5 @@ autoplot(gc1)
 # If you want to control which nodes are treated as root, you can pass them
 # as a numeric vector via the `root` argument. For example, we want nodes 1
 # and 3 to be plotted as root:
-autoplot(gc1, root = c(1, 3))
-
-# You can control the number of decimal places to round to
-autoplot(gc1, digits = 1)
-
-# You can supply a title
-autoplot(gc1, title = "My graph constraint")
+ggplot2::autoplot(gc1, root = c(1, 3))
 }
