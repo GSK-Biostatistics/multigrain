@@ -17,17 +17,10 @@
 #'   rlang's unquote operator `!!` (see Examples). Arithmetic and logical
 #'   operators are allowed.
 #'
-#' @param verbose An optional string controlling verbosity ("detail" >
-#'   "info" > "silent"). Verbosity can also be set at package level with the
-#'   `multigrain_verbosity` option (see [multigrain_verbosity()]):
-#'     * `"info"` (default): will inform about the successful compilation of the
-#'    trial success function.
-#'     * `"detail"`: no additional information available, will have the same
-#'     effect as `"info"`.
-#'     * `"silent"`: silent, no information about the trial success function
-#'     compilation. Errors and warnings are still thrown.
+#' @param verbose A logical controlling how much information to print. Defaults
+#'   to `TRUE`.
 #'
-#' @returns A `multigrain_trial_success` object made up of:
+#' @return An object of class `multigrain_trial_success` with components:
 #'   * `func`: compiled function that evaluates \eqn{\psi} row-wise on a matrix
 #'     of rejection indicators and returns the mean utility (i.e., expected
 #'     trial success under the simulated scenario).
@@ -68,18 +61,8 @@
 #' trial_success(!!expr_str)
 #'
 #' }
-trial_success <- function(
-    objective,
-    verbose = multigrain_verbosity()
-) {
-    if (isTRUE(verbose)) {
-        verbose <- "info"
-    } else if (isFALSE(verbose)) {
-        verbose <- "silent"
-    } else {
-        rlang::check_string(verbose)
-        verbose <- rlang::arg_match(verbose, values = verbosity_levels)
-    }
+trial_success <- function(objective, verbose = TRUE) {
+    check_logical(verbose, allow_na = FALSE)
     expr_string <- resolve_expr(rlang::enexpr(objective))
     new_trial_success(expr_string, verbose = verbose)
 }
@@ -116,7 +99,7 @@ summary.multigrain_trial_success <- function(object, ...) {
 #' literals, and operators, then deparses it. If a string, passes it through.
 #'
 #' @param expr_lang A language object or a character string.
-#' @returns A length-1 character string of the resolved expression.
+#' @return A length-1 character string of the resolved expression.
 #'
 #' @noRd
 resolve_expr <- function(expr_lang, call = rlang::caller_env()) {
@@ -144,8 +127,7 @@ resolve_expr <- function(expr_lang, call = rlang::caller_env()) {
 #' Any other symbol means the user forgot to unquote.
 #'
 #' @param expr A language object (post-unquoting).
-#' @returns Invisible `NULL` on success; errors with a helpful message
-#' otherwise.
+#' @return Invisible `NULL` on success; errors with a helpful message otherwise.
 #' @noRd
 validate_expr_symbols <- function(expr) {
     if (is.call(expr)) {
@@ -192,11 +174,7 @@ validate_expr_symbols <- function(expr) {
 }
 
 # Function to create new trial success objective function
-new_trial_success <- function(
-    expr_string,
-    verbose = c("info", "detail", "silent")
-) {
-    verbose <- rlang::arg_match(verbose)
+new_trial_success <- function(expr_string, verbose = TRUE) {
     local_env <- new.env()
 
     # Check `objective` and find maximum index (check number of hypotheses)
@@ -230,9 +208,9 @@ double %s(LogicalMatrix x) {
     )
     # nolint end
 
-    sourceCpp(code = cpp_code, env = local_env)
+    Rcpp::sourceCpp(code = cpp_code, env = local_env)
 
-    if (verbose != "silent") {
+    if (verbose) {
         cli::cli_alert_success(
             "Trial success function compiled and sourced successfully."
         )
@@ -261,7 +239,7 @@ double %s(LogicalMatrix x) {
 #'   indexing and logical operators. The function will convert the indexing to
 #'   C++-style and handle logical operators: "AND", "and", "OR", and "or".
 #'
-#' @returns A modified character string with C++-style indexing and C++ logical
+#' @return A modified character string with C++-style indexing and C++ logical
 #'   operators. R-style indices like `r1, r2, ..., rm` will be converted to
 #'   `x(i, 0), x(i, 1), ..., x(i, n-1)`.
 #'

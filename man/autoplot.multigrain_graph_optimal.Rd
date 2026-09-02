@@ -14,8 +14,8 @@
 
 \item{...}{Additional arguments.}
 
-\item{root}{A numeric vector indicating which nodes to be regarded as root in
-the tree layout. Passed down to \code{\link[igraph:layout_as_tree]{igraph::layout_as_tree()}}.}
+\item{root}{(integer-like) An optional argument containing a vector of nodes
+to plot as root.}
 
 \item{digits}{Number of decimal places to round to (between 0 and 3).
 Defaults to \code{NULL} which will choose the number of digits based on how
@@ -26,34 +26,28 @@ crowded the graph plot will be:
 \item 3 digits if 4 or fewer hypotheses
 }}
 
-\item{title}{An optional plot title.}
+\item{title}{(string) Optional plot title.}
 
 \item{x}{A \code{multigrain_graph_optimal} object.}
 }
 \value{
-A \code{\link[ggraph:ggraph]{ggraph::ggraph()}} object.
+a \code{ggraph} / \code{ggplot} object.
 }
 \description{
 Autoplot method for \code{multigrain_graph_optimal} objects
 }
-\details{
-Both \code{plot()} and \code{autoplot()} methods require an optional dependency,
-\link[ggplot2:ggplot2-package]{ggplot2}.
-}
 \examples{
 library(ggplot2)
 
-# plotting the example graph optimal
-autoplot(graph_optimal_example)
+random_graph <- graph_optimal_random(5)
+autoplot(random_graph)
 
 # If you want to control which nodes are treated as root, you can pass them
-# as a numeric vector via the `root` argument. For example, we do not like
-# the default layout and we would like nodes 1 and 2 to be plotted as root:
-autoplot(graph_optimal_example, root = c(1, 2))
+# as a numeric vector via the `root` argument. For example, we want nodes 1
+# and 3 to be plotted as root:
+autoplot(random_graph, root = c(1, 3))
 
 # control the rounding with the `digits` argument.
-autoplot(graph_optimal_example, root = c(1, 2), digits = 2)
+autoplot(random_graph, digits = 2)
 
-# title
-autoplot(graph_optimal_example, root = c(1, 2), title = "My graph optimal")
 }

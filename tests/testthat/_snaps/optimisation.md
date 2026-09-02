@@ -2,8 +2,8 @@
 
     Code
       ga_res <- .graph_optimise_ga(pvals = pvals_rand, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, nsim = ctrl$nsim_global, global_opts = ctrl$
-          global_opt)
+        trial_success = conjunctive_4m_power, alpha = alpha, nsim = ctrl$nsim_global,
+        global_opts = ctrl$global_opt)
     Message
       i Running global optimization
       v Running global optimization [10ms]
@@ -16,8 +16,8 @@
 
     Code
       ga_res <- .graph_optimise_ga(pvals = pvals_4m, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, global_opts = ctrl$global_opt,
-        num_threads = cores, nsim = ctrl$nsim_global)
+        trial_success = conjunctive_4m_power, alpha = alpha, global_opts = ctrl$
+          global_opt, num_threads = cran_cores(), nsim = ctrl$nsim_global)
     Message
       i Running global optimization
       v Running global optimization [10ms]
@@ -30,7 +30,8 @@
 
     Code
       loc_res <- .graph_optimise_local(pvals = pvals_rand, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, local_opts = ctrl$local_opt)
+        trial_success = conjunctive_4m_power, alpha = alpha, local_opts = ctrl$
+          local_opt)
     Message
       i Running local optimization
       v Running local optimization [10ms]
@@ -43,8 +44,8 @@
 
     Code
       loc_res <- .graph_optimise_local(pvals = pvals_4m, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, local_opts = ctrl$local_opt,
-        num_threads = cores)
+        trial_success = conjunctive_4m_power, alpha = alpha, local_opts = ctrl$
+          local_opt, num_threads = cran_cores())
     Message
       i Running local optimization
       v Running local optimization [10ms]
@@ -57,8 +58,8 @@
 
     Code
       ga_x0 <- as.vector(.graph_optimise_ga(pvals = pvals_rand, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, global_opts = ctrl$global_opt, nsim = ctrl$
-          nsim_global)$ga_output@solution[1, ])
+        trial_success = conjunctive_4m_power, alpha = alpha, global_opts = ctrl$
+          global_opt, nsim = ctrl$nsim_global)$ga_output@solution[1, ])
     Message
       i Running global optimization
       v Running global optimization [10ms]
@@ -71,7 +72,8 @@
 
     Code
       loc_res <- .graph_optimise_local(pvals = pvals_rand, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, local_opts = ctrl$local_opt, x0 = ga_x0)
+        trial_success = conjunctive_4m_power, alpha = alpha, local_opts = ctrl$
+          local_opt, x0 = ga_x0)
     Message
       i Running local optimization
       v Running local optimization [10ms]
@@ -84,8 +86,9 @@
 
     Code
       ga_x0 <- as.vector(.graph_optimise_ga(pvals = pvals_4m, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, global_opts = ctrl$global_opt,
-        num_threads = 1L, nsim = ctrl$nsim_global)$ga_output@solution[1, ])
+        trial_success = conjunctive_4m_power, alpha = alpha, global_opts = ctrl$
+          global_opt, num_threads = 1L, nsim = ctrl$nsim_global)$ga_output@solution[1,
+        ])
     Message
       i Running global optimization
       v Running global optimization [10ms]
@@ -98,8 +101,8 @@
 
     Code
       loc_res <- .graph_optimise_local(pvals = pvals_4m, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, local_opts = ctrl$local_opt,
-        num_threads = 1L, x0 = ga_x0)
+        trial_success = conjunctive_4m_power, alpha = alpha, local_opts = ctrl$
+          local_opt, num_threads = 1L, x0 = ga_x0)
     Message
       i Running local optimization
       v Running local optimization [10ms]
@@ -111,8 +114,9 @@
 # Optimise 4m conjunctive power: local search only
 
     Code
-      graph_optimise_4m_result <- graph_optimise(pvals = pvals_4m, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, control = ctrl, global_search = FALSE)
+      graph_optimise_4m_result <- graph_optimise(pvals = pvals_4m, alpha = alpha,
+        graph_constraint = no_constr, trial_success = conjunctive_4m_power, control = ctrl,
+        global_search = FALSE)
     Message
       i Running local optimization
       v Running local optimization [10ms]
@@ -130,8 +134,8 @@
 # Optimise 4m conjunctive power: include global search
 
     Code
-      graph_optimise_4m_result <- graph_optimise(pvals = pvals_4m, graph_constraint = no_constr,
-        trial_success = conjunctive_4m_power, control = ctrl)
+      graph_optimise_4m_result <- graph_optimise(pvals = pvals_4m, alpha = alpha,
+        graph_constraint = no_constr, trial_success = conjunctive_4m_power, control = ctrl)
     Message
       i Running global optimization
       v Running global optimization [10ms]
@@ -155,17 +159,17 @@
 # Optimise 4m conjunctive power: include global search & verbose
 
     Code
-      graph_optimise(pvals = pvals_4m, graph_constraint = no_constr, trial_success = conjunctive_4m_power,
-        control = ctrl, verbose = "foo")
+      graph_optimise(pvals = pvals_4m, alpha = alpha, graph_constraint = no_constr,
+        trial_success = conjunctive_4m_power, control = ctrl, verbose = "foo")
     Condition
       Error in `graph_optimise()`:
-      ! `verbose` must be one of "info", "detail", or "silent", not "foo".
+      ! `verbose` must be a logical vector, not the string "foo".
 
 # Optimise 2m: E2E check
 
     Code
       graph_2m <- graph_optimize(pvals_2, graph_constraint = gc, trial_success = ts,
-        control = ctrl)
+        alpha = 0.025, control = ctrl)
     Message
       i Running global optimization
       v Running global optimization [10ms]
@@ -189,9 +193,9 @@
 # graph_optimise with num_threads: local search only
 
     Code
-      graph_optimise_4m_result <- graph_optimise(pvals = pvals[, 1:4],
+      graph_optimise_4m_result <- graph_optimise(pvals = pvals[, 1:4], alpha = alpha,
       graph_constraint = no_constr, trial_success = conjunctive_4m_power,
-      num_threads = cores, control = ctrl, global_search = FALSE)
+      num_threads = cran_cores(), control = ctrl, global_search = FALSE)
     Message
       i Running local optimization
       v Running local optimization [10ms]
@@ -209,9 +213,9 @@
 # graph_optimise with num_threads: include global search
 
     Code
-      graph_optimise_4m_result <- graph_optimise(pvals = pvals[, 1:4],
+      graph_optimise_4m_result <- graph_optimise(pvals = pvals[, 1:4], alpha = alpha,
       graph_constraint = no_constr, trial_success = conjunctive_4m_power,
-      num_threads = cores, control = ctrl)
+      num_threads = cran_cores(), control = ctrl)
     Message
       i Running global optimization
       v Running global optimization [10ms]
@@ -235,8 +239,9 @@
 # graph_optimise parallel vs serial identical results (1 thread)
 
     Code
-      result_serial <- graph_optimise(pvals = pvals_3m, graph_constraint = no_constr,
-        trial_success = disjunctive_3m_power, control = ctrl, global_search = FALSE)
+      result_serial <- graph_optimise(pvals = pvals_3m, alpha = alpha,
+        graph_constraint = no_constr, trial_success = disjunctive_3m_power, control = ctrl,
+        global_search = FALSE)
     Message
       i Running local optimization
       v Running local optimization [10ms]
@@ -254,9 +259,9 @@
 ---
 
     Code
-      result_parallel_1t <- graph_optimise(pvals = pvals_3m, graph_constraint = no_constr,
-        trial_success = disjunctive_3m_power, num_threads = 1L, control = ctrl,
-        global_search = FALSE)
+      result_parallel_1t <- graph_optimise(pvals = pvals_3m, alpha = alpha,
+        graph_constraint = no_constr, trial_success = disjunctive_3m_power,
+        num_threads = 1L, control = ctrl, global_search = FALSE)
     Message
       i Running local optimization
       v Running local optimization [10ms]
@@ -275,7 +280,7 @@
 
     Code
       graph_2m <- graph_optimise(pvals_2m, graph_constraint = gc, trial_success = ts,
-        num_threads = 2L, control = ctrl)
+        alpha = 0.025, num_threads = 2L, control = ctrl)
     Message
       i Running global optimization
       v Running global optimization [10ms]
@@ -299,8 +304,8 @@
 # graph_optimise stores settings correctly
 
     Code
-      result <- graph_optimise(pvals = pvals_3m, graph_constraint = no_constr,
-        trial_success = disjunctive_3m_power, num_threads = cores, control = ctrl,
+      result <- graph_optimise(pvals = pvals_3m, alpha = alpha, graph_constraint = no_constr,
+        trial_success = disjunctive_3m_power, num_threads = cran_cores(), control = ctrl,
         global_search = FALSE)
     Message
       i Running local optimization
@@ -319,7 +324,7 @@
 # graph_optimise $power reflects pruned graph, not pre-pruned
 
     Code
-      result <- graph_optimise(pvals = pvals[, 1:6], graph_constraint = graph_constraint_free(
+      result <- graph_optimise(pvals = pvals[, 1:6], alpha = 0.025, graph_constraint = graph_constraint_free(
         6), trial_success = avg_6m_power, control = ctrl)
     Message
       i Running global optimization
@@ -341,115 +346,25 @@
       v Evaluating trial success of pruned graph [10ms]
       
 
-# graph_optimise complains when users pass ...
+# deprecation message for power_nsim_local
 
     Code
-      graph_optim <- graph_optimise(pvals_4m, no_constr, conjunctive_4m_power, alpha = 0.025,
-        control = ctrl)
-    Message
-      i Running global optimization
-      v Running global optimization [10ms]
-      
-      i Evaluating trial success of globally optimised graph
-      v Evaluating trial success of globally optimised graph [10ms]
-      
-      i Running local optimization
-      v Running local optimization [10ms]
-      
-      i Evaluating trial success of locally optimised graph
-      v Evaluating trial success of locally optimised graph [10ms]
-      
-      i Pruning redundant weights and edges
-      v Pruning redundant weights and edges [10ms]
-      
-      i Evaluating trial success of pruned graph
-      v Evaluating trial success of pruned graph [10ms]
-      
-
----
-
-    Code
-      graph_optim <- graph_optimise(pvals_4m, no_constr, conjunctive_4m_power, alpha)
+      graph_optimise_4m_result <- graph_optimise(pvals = pvals, alpha = alpha,
+        graph_constraint = no_constr, trial_success = conjunctive_4m_power,
+        power_nsim_local = 200)
     Condition
-      Error in `graph_optimise()`:
-      ! `...` must be empty.
-      x Problematic argument:
-      * ..1 = alpha
-      i Did you forget to name an argument?
+      Error:
+      ! `power_nsim_local` was deprecated in multigrain 0.2.0 and is now defunct.
+      i Please use `control_nsim_local()` instead.
 
----
+# deprecation message for power_nsim_global
 
     Code
-      graph_optim <- graph_optimise(pvals_4m, no_constr, conjunctive_4m_power, ctrl)
+      graph_optimise_4m_result <- graph_optimise(pvals = pvals, alpha = alpha,
+        graph_constraint = no_constr, trial_success = conjunctive_4m_power,
+        power_nsim_global = 200)
     Condition
-      Error in `graph_optimise()`:
-      ! `...` must be empty.
-      x Problematic argument:
-      * ..1 = ctrl
-      i Did you forget to name an argument?
-
-# graph_optimise with old, logical verbose
-
-    Code
-      graph_optimise(pvals = pvals, graph_constraint = graph_constraint_free(4),
-      trial_success = ts, num_threads = cores, global_search = FALSE, verbose = TRUE)
-    Message
-      i Running local optimization
-      v Running local optimization [10ms]
-      
-      i Evaluating trial success of locally optimised graph
-      v Evaluating trial success of locally optimised graph [10ms]
-      
-      i Pruning redundant weights and edges
-      v Pruning redundant weights and edges [10ms]
-      
-      i Evaluating trial success of pruned graph
-      v Evaluating trial success of pruned graph [10ms]
-      
-    Output
-      <multigrain_graph_optimal>
-      Optimal graph found (given user-defined constraints on graph and computational resources):
-      
-      Hypothesis weights:
-          H1     H2     H3     H4 
-      0.2847 0.2204 0.2428 0.2521 
-      
-      Transition matrix:
-             H1     H2     H3     H4
-      H1 0.0000 0.5773 0.3182 0.1045
-      H2 0.3585 0.0000 0.3021 0.3393
-      H3 0.2456 0.3489 0.0000 0.4055
-      H4 0.5453 0.1802 0.2745 0.0000
-      
-      Trial success function:
-      r1 + r2 + r3 + r4
-      
-      Value of trial success measure:
-      3.0458
-
----
-
-    Code
-      graph_optimise(pvals = pvals, graph_constraint = graph_constraint_free(4),
-      trial_success = ts, num_threads = cores, global_search = FALSE, verbose = FALSE)
-    Output
-      <multigrain_graph_optimal>
-      Optimal graph found (given user-defined constraints on graph and computational resources):
-      
-      Hypothesis weights:
-          H1     H2     H3     H4 
-      0.2847 0.2204 0.2428 0.2521 
-      
-      Transition matrix:
-             H1     H2     H3     H4
-      H1 0.0000 0.5773 0.3182 0.1045
-      H2 0.3585 0.0000 0.3021 0.3393
-      H3 0.2456 0.3489 0.0000 0.4055
-      H4 0.5453 0.1802 0.2745 0.0000
-      
-      Trial success function:
-      r1 + r2 + r3 + r4
-      
-      Value of trial success measure:
-      3.0458
+      Error:
+      ! `power_nsim_global` was deprecated in multigrain 0.2.0 and is now defunct.
+      i Please use `control_nsim_global()` instead.
 

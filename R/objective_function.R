@@ -10,13 +10,12 @@
 #'   calculate trial success measure.
 #' @param hyp_constraint (numeric) Vector of hypothesis weight constraints.
 #' @param trans_constraint (numeric matrix) Transition matrix constraints.
-#' @param alpha (numeric scalar) Overall one-sided significance level. Default
-#'   is 0.025.
+#' @param alpha (numeric scalar) Overall one-sided significance level.
 #' @param pvals (numeric matrix) Matrix of p-values (`nsim × m`). Each row
 #'   is a simulated trial; each column corresponds to a hypothesis.
 #' @inheritParams graph_optimise
 #'
-#' @returns A function with signature `function(x)` that evaluates the trial
+#' @return A function with signature `function(x)` that evaluates the trial
 #'   success measure for a given encoded parameter vector `x`. All other
 #'   inputs (`alpha`, `pvals`, constraints, thread count) are captured in the
 #'   closure at creation time.
@@ -26,8 +25,8 @@ create_obj_func <- function(
     power_criterion,
     hyp_constraint,
     trans_constraint,
+    alpha,
     pvals,
-    alpha = 0.025,
     num_threads = 1L
 ) {
     force(power_criterion)
@@ -95,7 +94,7 @@ create_obj_func <- function(
 #' @param hyp_constraint (numeric) Vector; NA marks free weights, otherwise
 #'     fixed.
 #'
-#' @returns list(w_pars = numeric(), g_pars = numeric()).
+#' @return list(w_pars = numeric(), g_pars = numeric()).
 #' @noRd
 split_theta <- function(theta, hyp_constraint) {
     stopifnot(is.numeric(theta), length(theta) >= 1L)
@@ -121,7 +120,7 @@ split_theta <- function(theta, hyp_constraint) {
 #'   optimised by [GA::ga()] or [nloptr::nloptr()].
 #' @param hyp_constraint A vector containing constraints on hypothesis weights.
 #'
-#' @returns A numeric vector with the same length as `hyp_constraint`.
+#' @return A numeric vector with the same length as `hyp_constraint`.
 #' @noRd
 recover_full_weights <- function(x, hyp_constraint) {
     hyp_constraint_full <- numeric(length = length(hyp_constraint))
@@ -144,7 +143,7 @@ recover_full_weights <- function(x, hyp_constraint) {
 #'   being optimised by [GA::ga()] or [nloptr::nloptr()].
 #' @param trans_constraint A vector containing constraints on transition matrix.
 #'
-#' @returns A matrix with the same dimensions as `trans_constraint`.
+#' @return A matrix with the same dimensions as `trans_constraint`.
 #' @noRd
 recover_full_trans_matrix <- function(x, trans_constraint) {
     stopifnot(is.matrix(trans_constraint))

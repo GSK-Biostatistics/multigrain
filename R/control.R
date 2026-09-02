@@ -15,7 +15,7 @@
 #' optimisation. There are predefined defaults, but they are calibrated based on
 #' the `pvals` dimensions.
 #'
-#' @returns A multigrain _control_ object.
+#' @returns an S3 object (a list) with class `multigrain_control`.
 #'
 #' @export
 #' @examples

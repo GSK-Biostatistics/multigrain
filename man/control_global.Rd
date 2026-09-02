@@ -7,13 +7,13 @@
 control_global(.ctrl, ...)
 }
 \arguments{
-\item{.ctrl}{A \link{multigrain_control} object.}
+\item{.ctrl}{a \link{multigrain_control} object}
 
 \item{...}{<\code{\link[rlang:dyn-dots]{dynamic-dots}}> Name-value pairs of \code{\link[GA:ga]{GA::ga()}}
 options and their values.}
 }
 \value{
-A modified \link{multigrain_control}.
+a modified \link{multigrain_control}.
 }
 \description{
 \code{control_global()} is for expert use only; it allows you to directly set

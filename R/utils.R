@@ -40,9 +40,10 @@ get_diag_idx <- function(n) {
 #'
 #' @param power A numeric vector indicating each hypothesis' statistical power
 #'   (probability of rejecting the null hypothesis if it false).
-#' @inheritParams graph_optimise alpha
+#' @param alpha A numeric value representing the significance level (default is
+#'   0.025).
 #'
-#' @returns A numeric vector of non-centrality parameters corresponding to each
+#' @return A numeric vector of non-centrality parameters corresponding to each
 #' element in `power`.
 #'
 #' @export
@@ -86,11 +87,9 @@ t_stat_power <- function(npc, alpha = 0.025) {
 #'   for example in a fixed sequence. Defaults to `TRUE`.
 #' @param tolerance numeric >= 0. The tolerance when evaluating the sum-to-one
 #'   constraints of the hypothesis weights and transition matrix rows. The
-#'   default value is close to `1.5e-8` - i.e. `sqrt(.Machine$double.eps)` (the
-#'   standard R definition of  "practically equal", as used by
-#'   [base::all.equal()]).
+#'   default value is close to `1.5e-8` - i.e. `sqrt(.Machine$double.eps)`.
 #'
-#' @returns A logical value: `TRUE` if the graph is valid, otherwise `FALSE`.
+#' @return A logical value: `TRUE` if the graph is valid, otherwise `FALSE`.
 #' The function issues warnings if any of the validity checks fail.
 #'
 #' @details
@@ -230,7 +229,6 @@ is_graph_valid <- function(
 #'   `sum(x) == target` when no elements may be modified.
 #'
 #' @param x A numeric vector of weights to be normalised.
-#' @inheritParams rlang::args_dots_empty
 #' @param fixed_idx An integer vector representing the indices of elements that
 #'   must not be modified (e.g. diagonal entries in a transition matrix, or
 #'   positions locked by [graph_constraint()]). Defaults to `integer(0)` (no
@@ -238,11 +236,11 @@ is_graph_valid <- function(
 #' @param target A number representing the desired sum for the output vector.
 #'   Default is `1`.
 #' @param tolerance numeric >= 0. The tolerance to be used when checking whether
-#'   the sum has converged to `target`. The default value is close to `1.5e-8` -
-#'   i.e. `sqrt(.Machine$double.eps)` (the standard R definition of
-#'   "practically equal", as used by [base::all.equal()]).
+#'   the sum has converged to `target`. Defaults to `sqrt(.Machine$double.eps)`
+#'   (the standard R definition of "practically equal", as used by
+#'   [base::all.equal()]).
 #'
-#' @returns A numeric vector of the same length as `x`, adjusted so that
+#' @return A numeric vector of the same length as `x`, adjusted so that
 #'   `sum(x)` is within `tolerance` of `target`.
 #'
 #' @export
@@ -259,13 +257,11 @@ is_graph_valid <- function(
 #' normalise_sum(x2, fixed_idx = c(1L, 3L))
 normalise_sum <- function(
     x,
-    ...,
     fixed_idx = integer(0),
     target = 1,
     tolerance = sqrt(.Machine$double.eps)
 ) {
     check_double(x)
-    rlang::check_dots_empty()
     check_integerish(fixed_idx)
     rlang::check_number_decimal(target)
     rlang::check_number_decimal(tolerance)

@@ -16,7 +16,7 @@
 #'
 #' @inheritParams validate_graph_constraint
 #'
-#' @returns The input `x` invisibly.
+#' @returns the input `x` invisibly
 #' @noRd
 assert_hyp_constraint <- function(
     x,
@@ -160,7 +160,7 @@ assert_hyp_constraint_na <- function(x, call = rlang::caller_env()) {
 #'
 #' @inheritParams validate_graph_constraint
 #'
-#' @returns The input `x` invisibly.
+#' @returns the input `x` invisibly
 #' @noRd
 diagnose_hyp_constraint <- function(x) {
     cli::cli_h3("Hypothesis weight constraint diagnosis:")

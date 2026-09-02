@@ -1,6 +1,6 @@
 #' Optimised graph example
 #'
-#' An example of an optimised graph with 4 hypotheses and a custom power
+#' An example of an optimised graph with 4 hypotheses and a conjunctive power
 #' trial success utility.
 #'
 #' @format ## `graph_optimal_example`

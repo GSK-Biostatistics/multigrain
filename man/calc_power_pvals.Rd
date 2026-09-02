@@ -6,31 +6,25 @@
 \usage{
 calc_power_pvals(
   pvals,
+  alpha,
   hyp_weight,
   trans_matrix,
-  ...,
-  alpha = 0.025,
   custom_power = NULL,
   sum_to_one_constraint = TRUE,
   call = rlang::caller_env()
 )
 }
 \arguments{
-\item{pvals}{A numeric matrix of p-values. Each row represents a simulated
-trial, and each column corresponds to a hypothesis.}
+\item{pvals}{A numeric matrix of p-values, where each row corresponds to a
+set of hypothesis tests.}
 
-\item{hyp_weight}{A numeric vector representing the weights of the nodes
-(hypotheses) in the graph. All elements must be in the interval [0, 1]
-and the vector must sum to 1.}
+\item{alpha}{A single numeric value for the overall significance level of
+the procedure.}
 
-\item{trans_matrix}{A numeric matrix representing the transition matrix
-between nodes. All elements must be in the interval [0, 1], with diagonal
-elements equal to 0, and each row must sum to 1.}
+\item{hyp_weight}{A numeric vector of weights for the hypotheses. It
+specifies the initial allocation of the significance level.}
 
-\item{...}{These dots are for future extensions and must be empty.}
-
-\item{alpha}{A single numeric value representing the overall one-sided
-significance level. Default is 0.025.}
+\item{trans_matrix}{A transition matrix.}
 
 \item{custom_power}{A list of user-defined power functions. Alternatively, a
 single function or \code{multigrain_trial_success} object can be provided.
@@ -54,7 +48,7 @@ object (or within a list as with the anonymous functions). See
 
 \item{sum_to_one_constraint}{A logical value controlling whether to allow
 graphs where transition matrix rows are not constrained to sum to one,
-for example in a fixed sequence. Defaults to \code{TRUE}.}
+for example in a fixed sequence. Defaults to \code{FALSE}.}
 
 \item{call}{The execution environment of a currently
 running function, e.g. \code{caller_env()}. The function will be
@@ -98,6 +92,7 @@ Optionally, you can specify user-defined trial success criteria via
 # First we simulate our p-value distribution
 
 power_nominal <- c(0.90, 0.87, 0.73)
+alpha <- 0.025
 corr_matrix <- matrix(
   c(
     1, 0.2, 0.2,
@@ -110,6 +105,7 @@ corr_matrix <- matrix(
 
 pvals <- simulate_pvalues(
   power_nominal = power_nominal,
+  alpha = alpha,
   corr_matrix = corr_matrix
 )
 
@@ -140,6 +136,7 @@ power_metrics <- list(
 
 result <- calc_power_pvals(
   pvals = pvals,
+  alpha = alpha,
   hyp_weight = hyp_weights,
   trans_matrix = trans_matrix,
   custom_power = power_metrics,

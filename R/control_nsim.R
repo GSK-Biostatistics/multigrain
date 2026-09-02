@@ -1,11 +1,6 @@
-#' Modify the number of simulations
+#' Set number of local simulations
 #'
-#' @description
-#' `control_nsim_local()` allows you to set the number of local simulations.
-#'
-#' `control_nsim_global()` allows you to set the number of global simulations.
-#'
-#' @param ctrl A [multigrain_control] object.
+#' @param ctrl a [multigrain_control] object.
 #' @param nsim_local The number of simulations to use when evaluating the trial
 #'   success function in local optimisation.
 #'   - If set and lower than the number of rows in the `pvals` matrix,
@@ -13,22 +8,19 @@
 #'   `pvals` for local optimisation.
 #'   - If unset or greater than or equal to the number of rows in the `pvals`
 #'   matrix, _all_ rows from `pvals` will be used.
-#' @param nsim_global The number of simulations to use when evaluating the trial
-#'   success function in global optimisation. If unset, the minimum between
-#'   50000 and the number of sets of p-values will be used.
 #'
-#' @returns A modified [multigrain_control].
+#' @returns a modified [multigrain_control].
 #'
 #' @export
 #' @examples
 #' multigrain_control() |>
 #'     control_nsim_local(10000)
-#'
-#' multigrain_control() |>
-#'     control_nsim_global(10000)
 control_nsim_local <- function(ctrl, nsim_local) {
     check_control(ctrl)
-    rlang::check_number_whole(nsim_local, min = 1)
+    rlang::check_number_whole(
+        nsim_local,
+        min = 1
+    )
 
     ctrl$nsim_local <- nsim_local
 
@@ -57,11 +49,25 @@ adjust_nsim_local <- function(ctrl, nrow_pvals, call = rlang::caller_env()) {
     ctrl
 }
 
+#' Set number of global simulations
+#'
+#' @inheritParams control_nsim_local
+#' @param nsim_global The number of simulations to use when evaluating the trial
+#'   success function in global optimisation. If unset, the minimum between
+#'   50000 and the number of sets of p-values will be used.
+#'
+#' @returns A modified [multigrain_control].
+#'
 #' @export
-#' @rdname control_nsim_local
+#' @examples
+#' multigrain_control() |>
+#'     control_nsim_global(10000)
 control_nsim_global <- function(ctrl, nsim_global) {
     check_control(ctrl)
-    rlang::check_number_whole(nsim_global, min = 1)
+    rlang::check_number_whole(
+        nsim_global,
+        min = 1
+    )
 
     ctrl$nsim_global <- nsim_global
 

@@ -60,48 +60,14 @@
 # trial_success chatty
 
     Code
-      trial_success(r1 + r2 + r3, verbose = "info")
+      ts <- trial_success(r1 + r2 + r3 + r4, verbose = TRUE)
     Message
       v Trial success function compiled and sourced successfully.
-    Output
-      <multigrain_trial_success>
-      r1 + r2 + r3
 
 ---
 
     Code
-      trial_success(r1 + r2 + r3, verbose = "detail")
-    Message
-      v Trial success function compiled and sourced successfully.
-    Output
-      <multigrain_trial_success>
-      r1 + r2 + r3
-
----
-
-    Code
-      trial_success(r1 + r2 + r3, verbose = "silent")
-    Output
-      <multigrain_trial_success>
-      r1 + r2 + r3
-
----
-
-    Code
-      trial_success(r1 + r2 + r3, verbose = TRUE)
-    Message
-      v Trial success function compiled and sourced successfully.
-    Output
-      <multigrain_trial_success>
-      r1 + r2 + r3
-
----
-
-    Code
-      trial_success(r1 + r2 + r3, verbose = FALSE)
-    Output
-      <multigrain_trial_success>
-      r1 + r2 + r3
+      ts <- trial_success(r1 + r2 + r3 + r4, verbose = FALSE)
 
 ---
 
@@ -109,5 +75,5 @@
       trial_success(r1 + r2 + r3 + r4, verbose = 2)
     Condition
       Error in `trial_success()`:
-      ! `verbose` must be a single string, not the number 2.
+      ! `verbose` must be a logical vector, not the number 2.
 

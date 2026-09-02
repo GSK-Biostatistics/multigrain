@@ -30,7 +30,7 @@
       trans_matrix = trans_m)), m = 5)
     Condition
       Error:
-      ! `start_graph[[1]]$hyp_weight` has length 4; expected 5.
+      ! graph_optimise: start_graph[[1]] has weight length 4; expected 5.
 
 ---
 
@@ -38,7 +38,7 @@
       .validate_start_graphs(list(list(hyp_weight = hyp_w, trans_matrix = hyp_w)), m = 5)
     Condition
       Error:
-      ! `start_graph[[1]]$trans_matrix` must be a double matrix or `NULL`, not a double vector.
+      ! graph_optimise: start_graph[[1]]$trans_matrix must be a matrix.
 
 ---
 
@@ -47,5 +47,5 @@
       m = 5)
     Condition
       Error:
-      ! `start_graph[[1]]$trans_matrix` has dim (4 x 4); expected (5 x 5).
+      ! graph_optimise: start_graph[[1]]$trans_matrix has dim (4 x 4); expected (5 x 5).
 

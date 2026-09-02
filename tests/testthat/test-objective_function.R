@@ -1,7 +1,7 @@
 # Trial success functions to be used for tests
-disjunctive_3m_power <- trial_success(r1 || r2 || r3, verbose = "silent")
-conjunctive_4m_power <- trial_success(r1 && r2 && r3 && r4, verbose = "silent")
-avg_6m_power <- trial_success(r1 + r2 + r3 + r4 + r5 + r6, verbose = "silent")
+disjunctive_3m_power <- trial_success(r1 || r2 || r3, verbose = FALSE)
+conjunctive_4m_power <- trial_success(r1 && r2 && r3 && r4, verbose = FALSE)
+avg_6m_power <- trial_success(r1 + r2 + r3 + r4 + r5 + r6, verbose = FALSE)
 
 # simulate p-values for power calculations for rest of tests
 power_vec <- c(0.9, 0.8, 0.6, 0.85, 0.85, 0.5)
@@ -24,6 +24,7 @@ pvals <- withr::with_seed(5, {
 
 test_that("create_obj_func: 3-m disjunctive power: improvedFallbackI", {
     pvals_3m <- pvals[, 1:3]
+    alpha <- 0.025
 
     gMCP_3m <- gMCPLite::improvedFallbackI()
     G_3m <- gMCPLite::getMatrix(gMCP_3m)
@@ -33,7 +34,7 @@ test_that("create_obj_func: 3-m disjunctive power: improvedFallbackI", {
     out <- gMCPLite::graphTest(
         pvalues = pvals_3m,
         weights = w_3m,
-        alpha = 0.025,
+        alpha = alpha,
         G = G_3m
     )
     power_disj <- extract_power(out)
@@ -44,6 +45,7 @@ test_that("create_obj_func: 3-m disjunctive power: improvedFallbackI", {
         power_criterion = disjunctive_3m_power$func,
         hyp_constraint = no_constraint_3m$hyp_constraint,
         trans_constraint = no_constraint_3m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_3m
     )
     test_power <- obj_func_disj(
@@ -66,6 +68,7 @@ test_that("create_obj_func: 3-m disjunctive power: improvedFallbackI", {
 
 test_that("create_obj_func: 4-m conjunctive pow: improvedParallelGatekeeping", {
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
 
     gMCP_4m <- gMCPLite::improvedParallelGatekeeping() |>
         gMCPLite::substituteEps()
@@ -77,7 +80,7 @@ test_that("create_obj_func: 4-m conjunctive pow: improvedParallelGatekeeping", {
     out <- gMCPLite::graphTest(
         pvalues = pvals[, 1:4],
         weights = w_4m,
-        alpha = 0.025,
+        alpha = alpha,
         G = G_4m
     )
     power_conj <- extract_power(out)
@@ -87,6 +90,7 @@ test_that("create_obj_func: 4-m conjunctive pow: improvedParallelGatekeeping", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals[, 1:4]
     )
     test_power <- obj_func_conj(
@@ -108,6 +112,7 @@ test_that("create_obj_func: 4-m conjunctive pow: improvedParallelGatekeeping", {
 
 test_that("create_obj_func: 6-m average power: BretzEtAl2011", {
     pvals_6m <- pvals[, 1:6]
+    alpha <- 0.025
     gMCP_6m <- gMCPLite::BretzEtAl2011()
     G_6m <- gMCPLite::getMatrix(gMCP_6m)
     w_6m <- gMCPLite::getWeights(gMCP_6m)
@@ -117,7 +122,7 @@ test_that("create_obj_func: 6-m average power: BretzEtAl2011", {
     out <- gMCPLite::graphTest(
         pvalues = pvals_6m,
         weights = w_6m,
-        alpha = 0.025,
+        alpha = alpha,
         G = G_6m
     )
     power_avg <- extract_power(out)
@@ -127,6 +132,7 @@ test_that("create_obj_func: 6-m average power: BretzEtAl2011", {
         power_criterion = avg_6m_power$func,
         hyp_constraint = no_constraint_6m$hyp_constraint,
         trans_constraint = no_constraint_6m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_6m
     )
     test_power <- obj_func_avg(
@@ -187,6 +193,7 @@ test_that("create_obj_func handles near-zero transition weights", {
     # * pvals
     # * conjunctive_4m_power()
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
 
     no_constraint_4m <- graph_constraint_free(4)
 
@@ -199,6 +206,7 @@ test_that("create_obj_func handles near-zero transition weights", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals[, 1:4]
     )
 
@@ -249,6 +257,7 @@ test_that("create_obj_func returns penalty (not error) when x contains NaN", {
     # COBYLA proposes a parameter vector with NaN → recover_full_weights
     # propagates it → any(hyp_weight < 0) returns NA → if(NA) crashes.
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
 
     no_constraint_4m <- graph_constraint_free(4)
 
@@ -257,6 +266,7 @@ test_that("create_obj_func returns penalty (not error) when x contains NaN", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m
     )
 
@@ -277,6 +287,7 @@ test_that("create_obj_func returns penalty (not error) when x contains NaN", {
 
 test_that("create_obj_func returns penalty when trans_matrix params are NaN", {
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
 
     no_constraint_4m <- graph_constraint_free(4)
 
@@ -285,6 +296,7 @@ test_that("create_obj_func returns penalty when trans_matrix params are NaN", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m
     )
 
@@ -305,6 +317,7 @@ test_that("create_obj_func returns penalty when trans_matrix params are NaN", {
 
 test_that("create_obj_func returns penalty when all params are NaN", {
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
 
     no_constraint_4m <- graph_constraint_free(4)
 
@@ -313,6 +326,7 @@ test_that("create_obj_func returns penalty when all params are NaN", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m
     )
 
@@ -329,6 +343,7 @@ test_that("create_obj_func returns penalty when all params are NaN", {
 test_that("create_obj_func returns penalty when params contain NA", {
     # NA (not NaN) should also be caught by the same guard
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
 
     no_constraint_4m <- graph_constraint_free(4)
 
@@ -337,6 +352,7 @@ test_that("create_obj_func returns penalty when params contain NA", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m
     )
 
@@ -355,6 +371,7 @@ test_that("create_obj_func returns penalty when params contain NA", {
 
 test_that("create_obj_func: 3-m disjunctive power matches serial", {
     pvals_3m <- pvals[, 1:3]
+    alpha <- 0.025
     no_constraint_3m <- graph_constraint_free(3)
 
     gMCP_3m <- gMCPLite::improvedFallbackI()
@@ -368,6 +385,7 @@ test_that("create_obj_func: 3-m disjunctive power matches serial", {
         power_criterion = disjunctive_3m_power$func,
         hyp_constraint = no_constraint_3m$hyp_constraint,
         trans_constraint = no_constraint_3m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_3m
     )
     power_serial <- obj_func_serial(
@@ -380,6 +398,7 @@ test_that("create_obj_func: 3-m disjunctive power matches serial", {
         disjunctive_3m_power$func,
         hyp_constraint = no_constraint_3m$hyp_constraint,
         trans_constraint = no_constraint_3m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_3m,
         num_threads = 1L
     )
@@ -393,6 +412,7 @@ test_that("create_obj_func: 3-m disjunctive power matches serial", {
         disjunctive_3m_power$func,
         hyp_constraint = no_constraint_3m$hyp_constraint,
         trans_constraint = no_constraint_3m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_3m,
         num_threads = 2L
     )
@@ -409,6 +429,7 @@ test_that("create_obj_func: 3-m disjunctive power matches serial", {
 
 test_that("create_obj_func: 4-m conjunctive power matches serial", {
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
     no_constraint_4m <- graph_constraint_free(4)
 
     gMCP_4m <- gMCPLite::improvedParallelGatekeeping() |>
@@ -423,6 +444,7 @@ test_that("create_obj_func: 4-m conjunctive power matches serial", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m
     )
     power_serial <- obj_func_serial(
@@ -435,6 +457,7 @@ test_that("create_obj_func: 4-m conjunctive power matches serial", {
         conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m,
         num_threads = 1L
     )
@@ -447,6 +470,7 @@ test_that("create_obj_func: 4-m conjunctive power matches serial", {
         conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m,
         num_threads = 2L
     )
@@ -462,6 +486,7 @@ test_that("create_obj_func: 4-m conjunctive power matches serial", {
 
 test_that("create_obj_func: 6-m average power matches serial", {
     pvals_6m <- pvals[, 1:6]
+    alpha <- 0.025
     no_constraint_6m <- graph_constraint_free(6)
 
     gMCP_6m <- gMCPLite::BretzEtAl2011()
@@ -475,6 +500,7 @@ test_that("create_obj_func: 6-m average power matches serial", {
         power_criterion = avg_6m_power$func,
         hyp_constraint = no_constraint_6m$hyp_constraint,
         trans_constraint = no_constraint_6m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_6m
     )
     power_serial <- obj_func_serial(
@@ -487,6 +513,7 @@ test_that("create_obj_func: 6-m average power matches serial", {
         avg_6m_power$func,
         hyp_constraint = no_constraint_6m$hyp_constraint,
         trans_constraint = no_constraint_6m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_6m,
         num_threads = 2L
     )
@@ -502,6 +529,7 @@ test_that("create_obj_func: 6-m average power matches serial", {
 
 test_that("create_obj_func handles near-zero weights & transitions", {
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
     no_constraint_4m <- graph_constraint_free(4)
 
     # Test with near-zero edges
@@ -512,6 +540,7 @@ test_that("create_obj_func handles near-zero weights & transitions", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m
     )
     power_serial <- obj_func_serial(
@@ -523,6 +552,7 @@ test_that("create_obj_func handles near-zero weights & transitions", {
         conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m,
         num_threads = 2L
     )

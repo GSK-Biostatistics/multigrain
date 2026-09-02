@@ -59,7 +59,7 @@
 #'   `graph_constraint()`. The corresponding function call is retrieved and
 #'   mentioned in the error messages as the source of the error.
 #'
-#' @returns The input `x` unchanged.
+#' @returns the input `x`
 #' @noRd
 #'
 #' @examples

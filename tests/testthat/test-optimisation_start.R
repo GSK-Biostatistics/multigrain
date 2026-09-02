@@ -113,11 +113,11 @@ test_that(".is_default_start_graph", {
 })
 
 test_that(".validate_start_graphs with default start graphs", {
-    expect_no_error(
+    expect_true(
         .validate_start_graphs(NULL)
     )
 
-    expect_no_error(
+    expect_true(
         .validate_start_graphs(
             list(
                 list(
@@ -131,17 +131,10 @@ test_that(".validate_start_graphs with default start graphs", {
 
 test_that(".validate_start_graphs with other start graphs", {
     hyp_w <- c(0.1, 0.2, NA, NA, NA)
-    trans_m <- matrix(
-        rep_len(
-            c(0.1, NA),
-            length.out = 25
-        ),
-        nrow = 5,
-        ncol = 5
-    )
+    trans_m <- matrix(rep_len(c(0.1, NA), length.out = 25), nrow = 5, ncol = 5)
     diag(trans_m) <- 0
 
-    expect_no_error(
+    expect_true(
         .validate_start_graphs(
             list(
                 list(

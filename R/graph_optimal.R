@@ -84,13 +84,11 @@ graph_optimal <- function(
 }
 
 
-#' Get the optimisation control
+#' Get the settings used for the graph optimisation
 #'
-#' Retrieve the settings used for the graph optimisation.
+#' @param graph_optimal a `multigrain_graph_optimal` object
 #'
-#' @param graph_optimal A `multigrain_graph_optimal` object.
-#'
-#' @returns The `multigrain_control` object holding the optimisation settings.
+#' @returns the `multigrain_control` object holding the optimisation settings
 #'
 #' @export
 #' @examples
@@ -175,6 +173,11 @@ summarise_solution_source <- function(solution_object) {
             "Global optimisation (genetic algorithm)"
         }
         cli::cat_line(lab)
+    } else if (identical(src, "sample_size")) {
+        cli::cat_line(
+            "Two-phase sample-size optimisation ",
+            "(bisection + Cauchy-mutation evolutionary search)"
+        )
     } else if (!is.null(src)) {
         cli::cat_line(src)
     }
@@ -195,18 +198,56 @@ print.multigrain_graph_optimal <- function(x, ...) {
         "on graph and computational resources):"
     )
 
+    # Sample size (shown for graph_optimise_n() results)
+    if (!is.null(x$N)) {
+        cli::cat_line("\nSelected sample size N*: ", format(round(x$N, 1)))
+        if (!is.null(x$n_init)) {
+            cli::cat_line("Phase 1 starting point n: ", format(x$n_init))
+        }
+        if (!is.null(x$opt_settings$N_max)) {
+            cli::cat_line("N_max: ", format(x$opt_settings$N_max))
+        }
+    }
+
     cli::cat_line("\nHypothesis weights:")
     print(round(x$hyp_weight, 4))
 
     cli::cat_line("\nTransition matrix:")
     print(round(x$trans_matrix, 4))
 
-    cli::cat_line("\nTrial success function:")
-    cli::cat_line(x$trial_success$objective)
+    if (!is.null(x$trial_success)) {
+        cli::cat_line("\nTrial success function:")
+        cli::cat_line(x$trial_success$objective)
+    }
 
     if (!is.null(x$power) && !is.null(x$power$trial_success)) {
         cli::cat_line("\nValue of trial success measure:")
         cli::cat_line(format(round(x$power$trial_success, 4)))
+        if (!is.null(x$target)) {
+            cli::cat_line("Trial success target: ", format(x$target))
+        }
+    }
+
+    if (
+        !is.null(x$local_power_target) &&
+            !all(is.na(x$local_power_target)) &&
+            !is.null(x$power$local_power)
+    ) {
+        cli::cat_line("\nMarginal power floors (achieved / target):")
+        idx <- which(!is.na(x$local_power_target))
+        for (i in idx) {
+            cli::cat_line(
+                names(x$hyp_weight)[i] %||% paste0("H", i),
+                ": ",
+                format(round(x$power$local_power[i], 4)),
+                " / ",
+                format(x$local_power_target[i])
+            )
+        }
+    }
+
+    if (!is.null(x$solution$opt_source)) {
+        summarise_solution_source(x$solution)
     }
 
     invisible(x)
@@ -233,11 +274,46 @@ summary.multigrain_graph_optimal <- function(object, ...) {
     cli::cat_line("\nTransition matrix:")
     print(round(object$trans_matrix, 4))
 
-    summary(object$trial_success)
+    if (!is.null(object$n_final)) {
+        cli::cat_line(
+            cli::style_underline("\nSample-size optimisation"),
+            ":"
+        )
+        cli::cat_line("Selected sample size n*: ", object$n_final)
+        if (!is.null(object$n_init)) {
+            cli::cat_line("Phase 1 starting point n: ", object$n_init)
+        }
+        if (!is.null(object$phase2)) {
+            cli::cat_line(
+                "Total generations run: ",
+                object$phase2$total_gens
+            )
+            cli::cat_line(
+                "Accepted step-downs: ",
+                length(object$phase2$step_downs)
+            )
+        }
+        if (!is.null(object$target)) {
+            cli::cat_line("Trial success target: ", format(object$target))
+        }
+        if (
+            !is.null(object$local_power_target) &&
+                !all(is.na(object$local_power_target))
+        ) {
+            cli::cat_line("Marginal power floors:")
+            print(object$local_power_target)
+        }
+    }
+
+    if (!is.null(object$trial_success)) {
+        summary(object$trial_success)
+    }
 
     summarise_power_object(object$power)
 
-    summary(object$constraints)
+    if (!is.null(object$constraints)) {
+        summary(object$constraints)
+    }
 
     summarise_solution_source(object$solution)
 

@@ -42,7 +42,7 @@ reference:
     - graph_constraint
     - graph_constraint_free
 
-  - title: Advanced control
+  - title: Advanced options
     desc: >
       Control more advanced aspects of the global and local optimisation
     contents:
@@ -59,6 +59,13 @@ reference:
     - graph_optimise
     - graph_optimize
 
+  - title: Sample size optimisation
+    desc: >
+      Find the smallest sample size meeting a trial success target
+    contents:
+    - graph_optimise_n
+    - graph_optimize_n
+
   - title: Post-processing
     desc: >
       Work with an optimised graph
@@ -74,22 +81,17 @@ reference:
     - autoplot.multigrain_graph_constraint
     - autoplot.multigrain_graph_optimal
 
-  - title: Helper functions
+  - title: Helper Functions
     desc: >
       Other useful functions
     contents:
     - calc_ncp
     - normalise_sum
     - graph_random
-
-  - title: Options
-    desc: >
-      Options consulted by multigrain
-    contents:
-    - multigrain_verbosity
+    - graph_optimal_random
 
   - title: Data
     desc: >
-      multigrain objects used for examples and tests
+      multigrain objects used for examples and testing purposes
     contents:
     - graph_optimal_example

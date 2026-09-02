@@ -1,7 +1,7 @@
 # Trial success functions to be used for tests
-disjunctive_3m_power <- trial_success(r1 || r2 || r3, verbose = "silent")
-conjunctive_4m_power <- trial_success(r1 && r2 && r3 && r4, verbose = "silent")
-avg_6m_power <- trial_success(r1 + r2 + r3 + r4 + r5 + r6, verbose = "silent")
+disjunctive_3m_power <- trial_success(r1 || r2 || r3, verbose = FALSE)
+conjunctive_4m_power <- trial_success(r1 && r2 && r3 && r4, verbose = FALSE)
+avg_6m_power <- trial_success(r1 + r2 + r3 + r4 + r5 + r6, verbose = FALSE)
 
 # simulate p-values for power calculations for rest of tests
 power_vec <- c(0.9, 0.8, 0.6, 0.85, 0.85, 0.5)
@@ -65,8 +65,6 @@ pvals_rand <- pvals_4m[sample.int(1e4), ]
 no_constr <- graph_constraint_free(m)
 constraint_4m <- graph_constraint(hyp_constraint = c(1, 0, 0, 0))
 
-# number of cores to use for testing (CRAN-aware)
-cores <- cran_cores()
 
 ## GA::ga optimisation
 test_that(".graph_optimise_ga returns valid object", {
@@ -88,6 +86,7 @@ test_that(".graph_optimise_ga returns valid object", {
                 pvals = pvals_rand,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
+                alpha = alpha,
                 nsim = ctrl$nsim_global,
                 global_opts = ctrl$global_opt
             )
@@ -120,6 +119,7 @@ test_that(".graph_optimise_local returns valid object", {
                 pvals = pvals_rand,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
+                alpha = alpha,
                 local_opts = ctrl$local_opt
             )
         },
@@ -154,6 +154,7 @@ test_that("x0 passed successfully from .graph_optimise_ga to local", {
                 pvals = pvals_rand,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
+                alpha = alpha,
                 global_opts = ctrl$global_opt,
                 nsim = ctrl$nsim_global
             )$ga_output@solution[1, ] |>
@@ -174,6 +175,7 @@ test_that("x0 passed successfully from .graph_optimise_ga to local", {
                 pvals = pvals_rand,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
+                alpha = alpha,
                 local_opts = ctrl$local_opt,
                 x0 = ga_x0
             )
@@ -234,6 +236,7 @@ test_that("Optimise 4m conjunctive power: local search only", {
         {
             graph_optimise_4m_result <- graph_optimise(
                 pvals = pvals_4m,
+                alpha = alpha,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
                 control = ctrl,
@@ -263,6 +266,7 @@ test_that("Optimise 4m conjunctive power: include global search", {
         {
             graph_optimise_4m_result <- graph_optimise(
                 pvals = pvals_4m,
+                alpha = alpha,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
                 control = ctrl
@@ -288,10 +292,11 @@ test_that("Optimise 4m conjunctive power: include global search & verbose", {
     set.seed(20)
     graph_optimise_4m_result <- graph_optimise(
         pvals = pvals_4m,
+        alpha = alpha,
         graph_constraint = no_constr,
         trial_success = conjunctive_4m_power,
         control = ctrl,
-        verbose = "silent"
+        verbose = FALSE
     )
 
     expect_s3_class(graph_optimise_4m_result, "multigrain_graph_optimal")
@@ -301,10 +306,11 @@ test_that("Optimise 4m conjunctive power: include global search & verbose", {
         m
     )
 
-    # verbose must be one of "info", "detail" or "silent"
+    # verbose must be logical
     expect_snapshot(error = TRUE, {
         graph_optimise(
             pvals = pvals_4m,
+            alpha = alpha,
             graph_constraint = no_constr,
             trial_success = conjunctive_4m_power,
             control = ctrl,
@@ -315,13 +321,14 @@ test_that("Optimise 4m conjunctive power: include global search & verbose", {
 
 test_that("Optimise 2m: E2E check", {
     set.seed(1)
-    ts <- trial_success(r1 || r2, verbose = "silent")
+    ts <- trial_success(r1 || r2, verbose = FALSE)
 
     pwr_vector <- c(0.975, 0.50)
     corr_matrix <- matrix(c(1, 0.2, 0.2, 1), nrow = 2)
 
     pvals_2 <- simulate_pvalues(
         power_nominal = pwr_vector,
+        alpha = 0.025,
         corr_matrix = corr_matrix,
         nsim = 1e+04
     )
@@ -340,6 +347,7 @@ test_that("Optimise 2m: E2E check", {
                 pvals_2,
                 graph_constraint = gc,
                 trial_success = ts,
+                alpha = 0.025,
                 control = ctrl
             )
         },
@@ -387,10 +395,13 @@ test_that("Test graph_optimise argument checks", {
 ## Add tests to check warnings for matching dimensions of pvals/graph_constraint
 test_that("Prevent pvals & trial_success dimension mismatch", {
     set.seed(19)
+
+    alpha <- 0.025
     no_constraint_3m <- graph_constraint_free(3)
 
     args <- list(
         pvals = pvals[, 1:3],
+        alpha = alpha,
         graph_constraint = no_constraint_3m,
         trial_success = avg_6m_power
     ) # custom power function with 6 hypotheses
@@ -407,6 +418,7 @@ test_that(".graph_optimise_ga returns valid object", {
 
     m <- 4
     pvals_4m <- pvals[1:1e4, 1:4]
+    alpha <- 0.025
     no_constr <- graph_constraint_free(m)
 
     ctrl <- multigrain_control() |>
@@ -425,8 +437,9 @@ test_that(".graph_optimise_ga returns valid object", {
                 pvals = pvals_4m,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
+                alpha = alpha,
                 global_opts = ctrl$global_opt,
-                num_threads = cores,
+                num_threads = cran_cores(),
                 nsim = ctrl$nsim_global
             )
         },
@@ -446,6 +459,7 @@ test_that(".graph_optimise_local returns valid object", {
 
     m <- 4
     pvals_4m <- pvals[1:1e4, 1:4]
+    alpha <- 0.025
     no_constr <- graph_constraint_free(m)
 
     ctrl <- multigrain_control() |>
@@ -463,8 +477,9 @@ test_that(".graph_optimise_local returns valid object", {
                 pvals = pvals_4m,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
+                alpha = alpha,
                 local_opts = ctrl$local_opt,
-                num_threads = cores
+                num_threads = cran_cores()
             )
         },
         transform = fix_duration
@@ -483,6 +498,7 @@ test_that("x0 passed successfully from .graph_optimise_ga to local", {
 
     m <- 4
     pvals_4m <- pvals[1:1e4, 1:4]
+    alpha <- 0.025
     no_constr <- graph_constraint_free(m)
 
     ctrl <- multigrain_control() |>
@@ -505,6 +521,7 @@ test_that("x0 passed successfully from .graph_optimise_ga to local", {
                 pvals = pvals_4m,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
+                alpha = alpha,
                 global_opts = ctrl$global_opt,
                 num_threads = 1L,
                 nsim = ctrl$nsim_global
@@ -520,6 +537,7 @@ test_that("x0 passed successfully from .graph_optimise_ga to local", {
                 pvals = pvals_4m,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
+                alpha = alpha,
                 local_opts = ctrl$local_opt,
                 num_threads = 1L,
                 x0 = ga_x0
@@ -535,6 +553,7 @@ test_that("graph_optimise with num_threads: local search only", {
     set.seed(10)
 
     m <- 4
+    alpha <- 0.025
     no_constr <- graph_constraint_free(m)
 
     ctrl <- multigrain_control() |>
@@ -545,9 +564,10 @@ test_that("graph_optimise with num_threads: local search only", {
         {
             graph_optimise_4m_result <- graph_optimise(
                 pvals = pvals[, 1:4],
+                alpha = alpha,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
-                num_threads = cores,
+                num_threads = cran_cores(),
                 control = ctrl,
                 global_search = FALSE
             )
@@ -563,6 +583,7 @@ test_that("graph_optimise with num_threads: include global search", {
     set.seed(20)
 
     m <- 4
+    alpha <- 0.025
     no_constr <- graph_constraint_free(m)
 
     ctrl <- multigrain_control() |>
@@ -575,9 +596,10 @@ test_that("graph_optimise with num_threads: include global search", {
         {
             graph_optimise_4m_result <- graph_optimise(
                 pvals = pvals[, 1:4],
+                alpha = alpha,
                 graph_constraint = no_constr,
                 trial_success = conjunctive_4m_power,
-                num_threads = cores,
+                num_threads = cran_cores(),
                 control = ctrl
             )
         },
@@ -591,6 +613,7 @@ test_that("graph_optimise with num_threads: include global search", {
 
 test_that("graph_optimise parallel vs serial identical results (1 thread)", {
     m <- 3
+    alpha <- 0.025
     pvals_3m <- pvals[1:5e3, 1:3]
     no_constr <- graph_constraint_free(m)
 
@@ -604,6 +627,7 @@ test_that("graph_optimise parallel vs serial identical results (1 thread)", {
         {
             result_serial <- graph_optimise(
                 pvals = pvals_3m,
+                alpha = alpha,
                 graph_constraint = no_constr,
                 trial_success = disjunctive_3m_power,
                 control = ctrl,
@@ -620,6 +644,7 @@ test_that("graph_optimise parallel vs serial identical results (1 thread)", {
         {
             result_parallel_1t <- graph_optimise(
                 pvals = pvals_3m,
+                alpha = alpha,
                 graph_constraint = no_constr,
                 trial_success = disjunctive_3m_power,
                 num_threads = 1L,
@@ -648,12 +673,13 @@ test_that("graph_optimise parallel vs serial identical results (1 thread)", {
 test_that("graph_optimise: 2m E2E check with parallelization", {
     set.seed(1)
 
-    ts <- trial_success(r1 || r2, verbose = "silent")
+    ts <- trial_success(r1 || r2, verbose = FALSE)
     pwr_vector <- c(0.975, 0.50)
     corr_matrix <- matrix(c(1, 0.2, 0.2, 1), nrow = 2)
 
     pvals_2m <- simulate_pvalues(
         power_nominal = pwr_vector,
+        alpha = 0.025,
         corr_matrix = corr_matrix,
         nsim = 1e+04
     )
@@ -678,6 +704,7 @@ test_that("graph_optimise: 2m E2E check with parallelization", {
                 pvals_2m,
                 graph_constraint = gc,
                 trial_success = ts,
+                alpha = 0.025,
                 num_threads = 2L,
                 control = ctrl
             )
@@ -694,6 +721,7 @@ test_that("graph_optimise: 2m E2E check with parallelization", {
 ## ------ NAN guards in create_obj_func ------ ##
 test_that("create_obj_func returns penalty when x contains NaN", {
     pvals_4m <- pvals[, 1:4]
+    alpha <- 0.025
 
     no_constraint_4m <- graph_constraint_free(4)
 
@@ -702,6 +730,7 @@ test_that("create_obj_func returns penalty when x contains NaN", {
         power_criterion = conjunctive_4m_power$func,
         hyp_constraint = no_constraint_4m$hyp_constraint,
         trans_constraint = no_constraint_4m$trans_constraint,
+        alpha = alpha,
         pvals = pvals_4m,
         num_threads = 1L
     )
@@ -722,6 +751,7 @@ test_that("graph_optimise stores settings correctly", {
     set.seed(50)
 
     m <- 3
+    alpha <- 0.025
     pvals_3m <- pvals[1:5e3, 1:3]
     no_constr <- graph_constraint_free(m)
     ctrl <- multigrain_control() |>
@@ -735,9 +765,10 @@ test_that("graph_optimise stores settings correctly", {
         {
             result <- graph_optimise(
                 pvals = pvals_3m,
+                alpha = alpha,
                 graph_constraint = no_constr,
                 trial_success = disjunctive_3m_power,
-                num_threads = cores,
+                num_threads = cran_cores(),
                 control = ctrl,
                 global_search = FALSE
             )
@@ -765,6 +796,7 @@ test_that("graph_optimise $power reflects pruned graph, not pre-pruned", {
         {
             result <- graph_optimise(
                 pvals = pvals[, 1:6],
+                alpha = 0.025,
                 graph_constraint = graph_constraint_free(6),
                 trial_success = avg_6m_power,
                 control = ctrl
@@ -776,6 +808,7 @@ test_that("graph_optimise $power reflects pruned graph, not pre-pruned", {
     # Re-evaluate on the returned (pruned) weights
     check_power <- calc_power_pvals(
         pvals = pvals[, 1:6],
+        alpha = 0.025,
         hyp_weight = result$hyp_weight,
         trans_matrix = result$trans_matrix,
         custom_power = list(
@@ -807,79 +840,26 @@ pvals_6m <- withr::with_seed(5, {
     pvals_6m <- stats::pnorm(sims, lower.tail = FALSE)
 })
 
-test_that("graph_optimise complains when users pass ...", {
-    ctrl <- multigrain_control() |>
-        control_global(run = 7) |>
-        control_nsim_local(2e4)
-
-    set.seed(10)
-
-    # graph_optimise accepts the required args being passed by position
-    expect_snapshot(
-        {
-            graph_optim <- graph_optimise(
-                pvals_4m,
-                no_constr,
-                conjunctive_4m_power,
-                alpha = 0.025,
-                control = ctrl
-            )
-        },
-        transform = fix_duration
-    )
-
-    # but the ones with defaults (such as `alpha` or `control`) must be named
+test_that("deprecation message for power_nsim_local", {
     expect_snapshot(error = TRUE, {
-        graph_optim <- graph_optimise(
-            pvals_4m,
-            no_constr,
-            conjunctive_4m_power,
-            alpha
-        )
-    })
-
-    expect_snapshot(error = TRUE, {
-        graph_optim <- graph_optimise(
-            pvals_4m,
-            no_constr,
-            conjunctive_4m_power,
-            ctrl
+        graph_optimise_4m_result <- graph_optimise(
+            pvals = pvals,
+            alpha = alpha,
+            graph_constraint = no_constr,
+            trial_success = conjunctive_4m_power,
+            power_nsim_local = 200
         )
     })
 })
 
-test_that("graph_optimise with old, logical verbose", {
-    set.seed(10)
-
-    pvals <- simulate_pvalues(
-        power_nominal = c(0.9, 0.85, 0.8, 0.75),
-        corr_matrix = diag(4),
-        nsim = 5000
-    )
-
-    ts <- trial_success(r1 + r2 + r3 + r4, verbose = "silent")
-
-    expect_snapshot(
-        graph_optimise(
+test_that("deprecation message for power_nsim_global", {
+    expect_snapshot(error = TRUE, {
+        graph_optimise_4m_result <- graph_optimise(
             pvals = pvals,
-            graph_constraint = graph_constraint_free(4),
-            trial_success = ts,
-            num_threads = cores,
-            global_search = FALSE,
-            verbose = TRUE
-        ),
-        transform = fix_duration
-    )
-
-    expect_snapshot(
-        graph_optimise(
-            pvals = pvals,
-            graph_constraint = graph_constraint_free(4),
-            trial_success = ts,
-            num_threads = cores,
-            global_search = FALSE,
-            verbose = FALSE
-        ),
-        transform = fix_duration
-    )
+            alpha = alpha,
+            graph_constraint = no_constr,
+            trial_success = conjunctive_4m_power,
+            power_nsim_global = 200
+        )
+    })
 })

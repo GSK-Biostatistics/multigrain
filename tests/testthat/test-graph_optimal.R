@@ -176,7 +176,7 @@ test_that("summarise helpers", {
 })
 
 test_that("graph_optimal print & summary methods", {
-    disjunctive_3m_power <- trial_success(r1 || r2 || r3, verbose = "silent")
+    disjunctive_3m_power <- trial_success(r1 || r2 || r3, verbose = FALSE)
 
     obj <- graph_optimal(
         hyp_weight = c(H1 = 0.5, H2 = 0.3, H3 = 0.2),

@@ -18,7 +18,10 @@ new_graph_constraint <- function(
 
     if (!rlang::is_empty(names)) {
         names(hyp_constraint) <- names
-        dimnames(trans_constraint) <- list(names, names)
+        dimnames(trans_constraint) <- list(
+            names,
+            names
+        )
     }
 
     structure(
@@ -65,7 +68,6 @@ new_graph_constraint <- function(
 #'   transition matrix between hypotheses. If `NULL`, all transition matrix
 #'   weights are free parameters to be optimised, except for diagonal elements
 #'   which remain set to 0.
-#' @inheritParams rlang::args_dots_empty
 #' @param names An optional character vector containing hypotheses' names. If
 #'   not provided it defaults to `"auto"` meaning the hypotheses will be
 #'   automatically named `"H1"`, `"H2"`, etc.
@@ -73,10 +75,9 @@ new_graph_constraint <- function(
 #'   `FALSE`.
 #' @param tolerance numeric >= 0. Differences smaller than `tolerance` will not
 #'   be reported. The default value is close to `1.5e-8` -
-#'   i.e. `sqrt(.Machine$double.eps)` (the standard R definition of
-#'   "practically equal", as used by [base::all.equal()]).
+#'   i.e. `sqrt(.Machine$double.eps)`.
 #'
-#' @returns A multigrain _graph constraint_ object (an S3 list with class
+#' @return A multigrain _graph constraint_ object (an S3 list with class
 #'   `multigrain_graph_constraint`) containing:
 #'   * `hyp_constraint`: a numeric vector representing the constraints on the
 #'   hypothesis weight vector.
@@ -85,20 +86,13 @@ new_graph_constraint <- function(
 #' If an element is `NA`, it is a free parameter to be optimised by
 #' `graph_optimise()`.
 #'
-#' @references
-#' Xi, D. and Chen, Y. (2024). Optimal weighted Bonferroni tests and
-#' their graphical extensions. *Statistics in Medicine*, 43(3),
-#' 475--500. <https://doi.org/10.1002/sim.9958>
-#'
 #' @export
 #' @examples
 #' # Create a graph_constraint object with predefined weight constraints
 #' graph_constraint(hyp_constraint = c(NA, 0.4, NA))
-#'
 graph_constraint <- function(
     hyp_constraint = NULL,
     trans_constraint = NULL,
-    ...,
     names = "auto",
     diagnose = FALSE,
     tolerance = sqrt(.Machine$double.eps)
@@ -120,10 +114,9 @@ graph_constraint <- function(
         trans_constraint <- trans_constraint_free(num_hyp)
     }
 
-    rlang::check_dots_empty()
     check_character(names)
-    check_double(hyp_constraint, allow_na = TRUE)
 
+    check_double(hyp_constraint, allow_na = TRUE)
     hyp_constraint <- vctrs::vec_cast(hyp_constraint, double())
 
     check_double_matrix(trans_constraint)
@@ -158,14 +151,11 @@ graph_constraint <- function(
 
 #' Create an unconstrained _graph constraint_
 #'
-#' Create a graph constraint that allows for all hypotheses transitions to be
-#' optimised.
-#'
 #' @param num_hyp An integer denoting the number of hypotheses. Must be greater
 #'   than or equal to 2.
 #' @inheritParams graph_constraint names
 #'
-#' @returns An unconstrained `multigrain_graph_constraint` object. In
+#' @return An unconstrained `multigrain_graph_constraint` object. In
 #'   `hyp_constraint` all values are `NA` and similarly in the
 #'   `trans_constraint`, except for the diagonal which is set to `0`. If we have
 #'   only 2 hypotheses, then the matrix will have 0 on the diagonal and the
@@ -180,7 +170,10 @@ graph_constraint <- function(
 #' # the transition matrix
 #' graph_constraint_free(2)
 graph_constraint_free <- function(num_hyp, names = "auto") {
-    rlang::check_number_whole(num_hyp, min = 2)
+    rlang::check_number_whole(
+        num_hyp,
+        min = 2
+    )
     check_character(names)
 
     hyp_constraint <- hyp_constraint_free(num_hyp)
@@ -239,7 +232,7 @@ check_graph_constraint <- function(
 #'
 #' @param num_hyp (integerish) number of hypotheses
 #'
-#' @returns A character vector of names the same length as `hyp_constraint`.
+#' @returns a character vector of names the same length as `hyp_constraint`.
 #'   Names are `"H1"`, ... .
 #' @noRd
 build_hyp_names <- function(num_hyp) {
@@ -251,8 +244,8 @@ build_hyp_names <- function(num_hyp) {
 #'
 #' @inheritParams graph_optimise graph_constraint
 #'
-#' @returns A character vector of names extracted from the `hyp_constraint`
-#'   element.
+#' @returns a character vector of names extracted from the `hyp_constraint`
+#'   element
 #' @noRd
 graph_constraint_get_names <- function(graph_constraint) {
     check_graph_constraint(graph_constraint)
@@ -264,7 +257,7 @@ graph_constraint_get_names <- function(graph_constraint) {
 #'
 #' @inheritParams graph_optimise graph_constraint
 #'
-#' @returns An integer representing the number of hypotheses.
+#' @returns an integer representing the number of hypotheses
 #' @noRd
 graph_constraint_get_m <- function(graph_constraint) {
     check_graph_constraint(graph_constraint)
@@ -272,23 +265,11 @@ graph_constraint_get_m <- function(graph_constraint) {
     attr(graph_constraint, "m")
 }
 
-#' Get the `multigrain_graph_constraint` tolerance
-#'
-#' @inheritParams graph_optimise graph_constraint
-#'
-#' @returns A numeric scalar; the sum-to-one tolerance stored on the constraint.
-#' @noRd
-graph_constraint_get_tolerance <- function(graph_constraint) {
-    check_graph_constraint(graph_constraint)
-
-    attr(graph_constraint, "tolerance")
-}
-
 #' Helper function to build `hyp_constraint` from `m`
 #'
 #' @param num_hyp (integerish) number of hypotheses
 #'
-#' @returns A numeric vector (all `NA`) the same length as the number of
+#' @returns a numeric vector (all `NA`) the same length as the number of
 #' hypotheses.
 #' @noRd
 hyp_constraint_free <- function(num_hyp) {
@@ -299,7 +280,7 @@ hyp_constraint_free <- function(num_hyp) {
 #'
 #' @param num_hyp (integerish) number of hypotheses
 #'
-#' @returns A `m * m` numeric matrix vector (all `NA`) with 0 on the diagonal.
+#' @returns a `m * m` numeric matrix vector (all `NA`) with 0 on the diagonal.
 #' If `m` is 2, then all remaining `NA`s are set to 1.
 #' @noRd
 trans_constraint_free <- function(num_hyp) {

@@ -4,9 +4,9 @@
 #' multiple testing procedure using [nloptr::nloptr()] local optimisation and,
 #' optionally, a genetic algorithm using [GA::ga()] for global optimisation.
 #'
-#' The output is a graph where a specified objective function - the
-#' *trial success measure* - is maximised under given constraints on the graph
-#' structure, conditional on a p-value distribution supplied.
+#' The output is a graph where a specified objective function
+#' - a *trial success measure* - is maximised under given constraints on the
+#' graph structure, conditional on a p-value distribution supplied.
 #'
 #' @param pvals A numeric matrix of p-values. Each row represents a simulated
 #'   trial, and each column corresponds to a hypothesis.
@@ -16,14 +16,19 @@
 #' @param trial_success A `multigrain_trial_success` object defining the trial
 #'   success measure (power objective) function to maximize. Created with
 #'   [trial_success()].
-#' @inheritParams rlang::args_dots_empty
-#' @param alpha A single numeric value representing the overall one-sided
-#'   significance level. Default is 0.025.
+#' @param alpha Numeric, the overall one-sided significance level. Default is
+#'   0.025.
 #' @param start_graph Optional. Initial list of graphs suggested. Each graph is
 #'   defined as a list containing starting weight vector `hyp_weight` and
 #'   transition matrix `trans_matrix`. If `NULL`, default starting values are
 #'   generated (currently with a Bonferroni-Holm graph).
-#' @param global_search A logical indicating whether to perform a global
+#' @param power_nsim_local `r lifecycle::badge("deprecated")` `power_nsim_local`
+#'   is no longer supported. You can set the number of simulations for the local
+#'   optimisation with [control_nsim_local()].
+#' @param power_nsim_global `r lifecycle::badge("deprecated")`
+#'   `power_nsim_global` is no longer supported. You can set the number of
+#'   simulations for the global optimisation with [control_nsim_global()].
+#' @param global_search A logical indicate whether to perform a global
 #'   optimisation before the local optimisation. Defaults to `TRUE`.
 #' @param num_threads Number of threads to use for parallel execution of the
 #'   shortcut algorithm. On shared systems (HPC clusters, login nodes), always
@@ -31,37 +36,39 @@
 #'   `1L` (serial execution).
 #' @param control An optional `multigrain_control` object can be used to set
 #'   various graph optimisation parameters. Created with [multigrain_control()].
-#' @param verbose An optional string controlling verbosity (`"detail"` >
-#'   `"info"` > `"silent"`). Verbosity can also be set at package level with the
-#'   `multigrain_verbosity` option (see [multigrain_verbosity()]):
-#'     * `"info"` (default): will only show milestones / informational messages
-#'     highlighting the progress of the optimisation at coarse-grained level.
-#'     * `"detail"`: will show milestones and information about fine-grained
-#'     optimisation events.
-#'     * `"silent"`: no information about the progress of the optimisation is
-#'     printed to the console. Errors and warnings are still thrown normally.
+#' @param verbose A logical controlling how much information to print (defaults
+#'   to `TRUE`):
+#'     * `FALSE`: no output
+#'     * `TRUE`: show milestones
+#' @param trace A logical controlling how much detailed optimisation information
+#'   to print (defaults to `FALSE`):
+#'     * `FALSE`: no detailed optimisation messages.
+#'     * `TRUE`: all global and local optimisation messages.
+#'   In addition to `trace`, [control_local()] and [control_global()] can be
+#'   used to control the detail of information coming from the global and local
+#'   optimisations separately.
 #'
-#' @returns A `multigrain_graph_optimal` object containing:
-#'
-#' * `hyp_weight`: Optimised hypothesis weights (numeric vector).
-#' * `trans_matrix`: Optimised transition matrix (numeric matrix).
-#' * `constraints`: List of constraints used in the optimisation for weights
-#'   and transition matrix.
-#' * `trial_success`: The trial success function used in the optimisation.
-#' * `power`: Power metrics for the optimised graph.
-#' * `solution`: A list containing:
-#'   * `opt_source`: Source of the optimal solution (`local` or `global`).
-#'   * `graph_valid`: Named logical vector indicating validity of the local
-#'     and global solutions (`c("local" = TRUE/FALSE,
-#'     "global" = TRUE/FALSE)`).
-#' * `global_search`: `TRUE` or `FALSE` indicating whether a global
-#'   optimisation was performed.
-#' * `control`: A modified [multigrain_control()] object used. The values
-#'   passed on by the user are complemented with contextual defaults.
-#' * `global_output`: Output from the genetic algorithm if global
-#'   optimisation was performed.
-#' * `local_output`: Output from the NLOPT optimisation.
-#' * `start_graph`: Initial starting values used in the optimisation.
+#' @return An object of class `multigrain_graph_optimal` containing the
+#'   following elements:
+#'     * `hyp_weight`: Optimised hypothesis weights (numeric vector).
+#'     * `trans_matrix`: Optimised transition matrix (numeric matrix).
+#'     * `constraints`: List of constraints used in the optimisation for weights
+#'     and transition matrix.
+#'     * `trial_success`: The trial success function used in the optimisation.
+#'     * `power`: Power metrics for the optimised graph.
+#'     * `solution`: A list containing:
+#'       * `opt_source`: Source of the optimal solution (`local` or `global`).
+#'       * `graph_valid`: Named logical vector indicating validity of the local
+#'       and global solutions (`c("local" = TRUE/FALSE,
+#'       "global" = TRUE/FALSE)`).
+#'     * `global_search`: `TRUE` or `FALSE` indicating whether a global
+#'     optimisation was performed.
+#'     * `control`: A modified [multigrain_control()] object used. The values
+#'     passed on by the user are complemented with contextual defaults.
+#'     * `global_output`: Output from the genetic algorithm if global
+#'     optimisation was performed.
+#'     * `local_output`: Output from the NLOPT optimisation.
+#'     * `start_graph`: Initial starting values used in the optimisation.
 #'
 #' @export
 #' @examples
@@ -69,6 +76,7 @@
 #' # Generate test data
 #' pvals <- simulate_pvalues(
 #'   power_nominal = c(0.9, 0.85, 0.8, 0.75),
+#'   alpha = 0.025,
 #'   corr_matrix = diag(4),
 #'   nsim = 5000
 #' )
@@ -82,6 +90,7 @@
 #'   pvals = pvals,
 #'   graph_constraint = graph_constraint_free(4),
 #'   trial_success = ts,
+#'   alpha = 0.025,
 #'   num_threads = 2
 #' )
 #' }
@@ -89,7 +98,6 @@ graph_optimise <- function(
     pvals,
     graph_constraint,
     trial_success,
-    ...,
     alpha = 0.025,
     start_graph = list(
         list(
@@ -97,27 +105,38 @@ graph_optimise <- function(
             trans_matrix = NULL
         )
     ),
+    power_nsim_local = lifecycle::deprecated(),
+    power_nsim_global = lifecycle::deprecated(),
     global_search = TRUE,
     num_threads = 1L,
     control = multigrain_control(),
-    verbose = multigrain_verbosity()
+    verbose = TRUE,
+    trace = FALSE
 ) {
     check_double_matrix(pvals)
     check_graph_constraint(graph_constraint)
     check_trial_success(trial_success)
-    rlang::check_dots_empty()
     rlang::check_number_decimal(alpha, min = 0, max = 1)
     rlang::check_number_whole(num_threads, min = 1)
     check_control(control)
     check_logical(global_search, allow_na = FALSE)
+    check_logical(verbose, allow_na = FALSE)
+    check_logical(trace, allow_na = FALSE)
 
-    if (isTRUE(verbose)) {
-        verbose <- "info"
-    } else if (isFALSE(verbose)) {
-        verbose <- "silent"
-    } else {
-        rlang::check_string(verbose)
-        verbose <- rlang::arg_match(verbose, values = verbosity_levels)
+    if (!missing(power_nsim_local)) {
+        lifecycle::deprecate_stop(
+            when = "0.2.0",
+            what = I("`power_nsim_local`"),
+            with = I("`control_nsim_local()`")
+        )
+    }
+
+    if (!missing(power_nsim_global)) {
+        lifecycle::deprecate_stop(
+            when = "0.2.0",
+            what = I("`power_nsim_global`"),
+            with = I("`control_nsim_global()`")
+        )
     }
 
     # Create objective functions
@@ -128,15 +147,12 @@ graph_optimise <- function(
         )
     }
 
-    .validate_start_graphs(
-        start_graph,
-        m = ncol(pvals)
-    )
+    .validate_start_graphs(start_graph, ncol(pvals), where = "graph_optimise")
 
     control <- control_prepare(
         control,
         pvals = pvals,
-        verbose = verbose
+        trace = trace
     )
 
     ga_result <- NULL
@@ -194,7 +210,7 @@ graph_optimise <- function(
         verbose = verbose
     )
 
-    if (verbose != "silent") {
+    if (verbose) {
         cli::cli_progress_step(
             "Evaluating trial success of pruned graph"
         )
@@ -202,16 +218,16 @@ graph_optimise <- function(
 
     final_power <- calc_power_pvals(
         pvals = pvals,
+        alpha = alpha,
         hyp_weight = clean_graph$hyp_weight,
         trans_matrix = clean_graph$trans_matrix,
-        alpha = alpha,
         custom_power = list(trial_success = trial_success)
     )
 
     # Apply hypothesis names
-    gc_names <- graph_constraint_get_names(graph_constraint)
-    names(clean_graph$hyp_weight) <- gc_names
-    dimnames(clean_graph$trans_matrix) <- list(gc_names, gc_names)
+    hyp_names <- names(graph_constraint$hyp_constraint)
+    names(clean_graph$hyp_weight) <- hyp_names
+    dimnames(clean_graph$trans_matrix) <- list(hyp_names, hyp_names)
 
     graph_optimal(
         hyp_weight = clean_graph$hyp_weight,
@@ -260,9 +276,9 @@ graph_optimize <- graph_optimise
     pvals,
     graph_constraint,
     trial_success,
+    alpha,
     nsim, # defaults to control$nsim_global
     global_opts, # defaults to control$global_opt
-    alpha = 0.025,
     num_threads = 1L,
     start_graph = list(
         list(
@@ -270,11 +286,9 @@ graph_optimize <- graph_optimise
             trans_matrix = NULL
         )
     ),
-    verbose = c("info", "detail", "silent")
+    verbose = TRUE
 ) {
-    verbose <- rlang::arg_match(verbose)
-
-    if (verbose != "silent") {
+    if (verbose) {
         cli::cli_progress_step("Running global optimization")
     }
 
@@ -316,7 +330,7 @@ graph_optimize <- graph_optimise
     ga_trial_success <- NULL
 
     if (is_valid) {
-        if (verbose != "silent") {
+        if (verbose) {
             cli::cli_progress_step(
                 "Evaluating trial success of globally optimised graph"
             )
@@ -324,8 +338,8 @@ graph_optimize <- graph_optimise
         ga_subset_power <- calc_power_pvals(
             pvals_sampled, # calculated using nsim_global samples
             hyp_weight = sol$hyp_weight,
-            trans_matrix = sol$trans_matrix,
             alpha = alpha,
+            trans_matrix = sol$trans_matrix,
             custom_power = list(trial_success = trial_success)
         )
 
@@ -383,16 +397,14 @@ graph_optimize <- graph_optimise
     pvals,
     graph_constraint,
     trial_success,
+    alpha,
     local_opts,
-    alpha = 0.025,
     num_threads = 1L,
     nsim = nrow(pvals),
     x0 = NULL,
-    verbose = c("info", "detail", "silent")
+    verbose = TRUE
 ) {
-    verbose <- rlang::arg_match(verbose)
-
-    if (verbose != "silent") {
+    if (verbose) {
         cli::cli_progress_step("Running local optimization")
     }
 
@@ -403,13 +415,13 @@ graph_optimize <- graph_optimise
     pvals_sampled <- pvals[sample(nsim), ]
 
     obj_fun <- create_obj_func(
-        m = trial_success$m,
-        power_criterion = trial_success$func,
-        hyp_constraint = graph_constraint$hyp_constraint,
-        trans_constraint = graph_constraint$trans_constraint,
-        alpha = alpha,
-        pvals = pvals_sampled,
-        num_threads = num_threads
+        trial_success$m,
+        trial_success$func,
+        graph_constraint$hyp_constraint,
+        graph_constraint$trans_constraint,
+        alpha,
+        pvals_sampled,
+        num_threads
     )
     nlopt_obj_func <- function(x) {
         -obj_fun(x)
@@ -436,7 +448,7 @@ graph_optimize <- graph_optimise
     local_trial_success <- NULL
 
     if (is_valid) {
-        if (verbose != "silent") {
+        if (verbose) {
             cli::cli_progress_step(
                 "Evaluating trial success of locally optimised graph"
             )
@@ -444,8 +456,8 @@ graph_optimize <- graph_optimise
         local_subset_power <- calc_power_pvals(
             pvals_sampled, # calculated using nsim_local samples
             hyp_weight = sol$hyp_weight,
-            trans_matrix = sol$trans_matrix,
             alpha = alpha,
+            trans_matrix = sol$trans_matrix,
             custom_power = list(trial_success = trial_success)
         )
 

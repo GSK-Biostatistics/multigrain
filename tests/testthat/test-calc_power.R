@@ -1,10 +1,11 @@
 # Trial success function
-custom_objective <- trial_success((r1 && r2) || r3, verbose = "silent")
+custom_objective <- trial_success((r1 && r2) || r3, verbose = FALSE)
 
 # Test calc_power_pvals()
 test_that("calc_power_pvals throws errors for incorrect graph structure", {
     pvals <- matrix(runif(100), nrow = 10)
     hyp_weight <- c(0.5, 0.3, 0.2)
+    alpha <- 0.05
     trans_matrix <- matrix(
         c(
             0, 0.5, 0.5,
@@ -17,6 +18,7 @@ test_that("calc_power_pvals throws errors for incorrect graph structure", {
     expect_error(
         calc_power_pvals(
             pvals,
+            alpha,
             hyp_weight,
             trans_matrix,
             custom_power = list(
@@ -28,7 +30,7 @@ test_that("calc_power_pvals throws errors for incorrect graph structure", {
     )
 
     expect_error(
-        calc_power_pvals(pvals),
+        calc_power_pvals(pvals, alpha),
         "`hyp_weight` must be a double, not absent."
     )
 })
@@ -36,6 +38,7 @@ test_that("calc_power_pvals throws errors for incorrect graph structure", {
 test_that("calc_power_pvals calculates power metrics", {
     pvals <- matrix(runif(30), nrow = 10)
     hyp_weight <- c(0.5, 0.3, 0.2)
+    alpha <- 0.05
     trans_matrix <- matrix(
         c(
             0, 0.5, 0.5,
@@ -47,9 +50,9 @@ test_that("calc_power_pvals calculates power metrics", {
 
     result <- calc_power_pvals(
         pvals,
+        alpha,
         hyp_weight,
         trans_matrix,
-        alpha = 0.05,
         custom_power = list(
             custom_obj = custom_objective
         )
@@ -73,10 +76,12 @@ test_that("calc_power_pvals calculates power metrics", {
 
 test_that("calc_power_pvals stops suboptimal graphs as default", {
     pvals <- matrix(runif(9000), nrow = 1000, ncol = 9)
+    alpha <- 0.025
     fs <- gMCPLite::fixedSequence(9)
 
     expect_snapshot(error = TRUE, {
         calc_power_pvals(
+            alpha = alpha,
             pvals = pvals,
             hyp_weight = fs@weights,
             trans_matrix = fs@m,
@@ -94,11 +99,13 @@ test_that("calc_power_pvals allows fixed sequence sum_to_one_constraint=TRUE", {
         nrow = 10000,
         ncol = 9
     )
+    alpha <- 0.025
     fs <- gMCPLite::fixedSequence(9)
 
     expect_no_error(
         result <- calc_power_pvals(
             pvals = pvals,
+            alpha = alpha,
             hyp_weight = fs@weights,
             trans_matrix = fs@m,
             custom_power = list(
@@ -128,11 +135,13 @@ test_that("calc_power_pvals allows list of anonymous functions", {
         nrow = 10000,
         ncol = 5
     )
+    alpha <- 0.025
     bh <- gMCPLite::BonferroniHolm(5)
 
     expect_no_error(
         result <- calc_power_pvals(
             pvals = pvals,
+            alpha = alpha,
             hyp_weight = bh@weights,
             trans_matrix = bh@m,
             custom_power = list(
@@ -173,11 +182,13 @@ test_that("calc_power_pvals with list of anonymous funcs and trial_success", {
         nrow = 10000,
         ncol = 3
     )
+    alpha <- 0.025
     bh <- gMCPLite::BonferroniHolm(3)
 
     expect_no_error(
         result <- calc_power_pvals(
             pvals = pvals,
+            alpha = alpha,
             hyp_weight = bh@weights,
             trans_matrix = bh@m,
             custom_power = list(
@@ -218,11 +229,13 @@ test_that("calc_power_pvals allows single anonymous function", {
         nrow = 10000,
         ncol = 4
     )
+    alpha <- 0.025
     bh <- gMCPLite::BonferroniHolm(4)
 
     expect_no_error(
         result <- calc_power_pvals(
             pvals = pvals,
+            alpha = alpha,
             hyp_weight = bh@weights,
             trans_matrix = bh@m,
             custom_power = function(x) {
@@ -252,11 +265,13 @@ test_that("calc_power_pvals allows single trial_success function", {
         nrow = 10000,
         ncol = 4
     )
+    alpha <- 0.025
     bh <- gMCPLite::BonferroniHolm(4)
 
     expect_no_error(
         result <- calc_power_pvals(
             pvals = pvals,
+            alpha = alpha,
             hyp_weight = bh@weights,
             trans_matrix = bh@m,
             custom_power = custom_objective,
@@ -280,31 +295,33 @@ test_that("calc_power_pvals allows single trial_success function", {
 test_that("calc_power_pvals validates input types", {
     pvals <- matrix(runif(30), nrow = 10)
     hyp_weight <- c(1 / 3, 1 / 3, 1 / 3)
+    alpha <- 0.05
     trans_matrix <- matrix(0, nrow = 3, ncol = 3)
 
     expect_error(
-        calc_power_pvals("not_a_matrix", hyp_weight, trans_matrix),
+        calc_power_pvals("not_a_matrix", alpha, hyp_weight, trans_matrix),
         '`pvals` must be a double matrix, not the string "not_a_matrix"'
     )
 
     expect_error(
-        calc_power_pvals(pvals, hyp_weight = "foo"),
+        calc_power_pvals(pvals, "bad", hyp_weight, trans_matrix),
+        '`alpha` must be a number, not the string "bad"'
+    )
+
+    expect_error(
+        calc_power_pvals(pvals, alpha, hyp_weight = "foo"),
         '`hyp_weight` must be a double, not the string "foo"'
     )
 
     expect_error(
-        calc_power_pvals(pvals, hyp_weight, trans_matrix = "bar"),
+        calc_power_pvals(pvals, alpha, hyp_weight, trans_matrix = "bar"),
         '`trans_matrix` must be a double matrix, not the string "bar"'
-    )
-
-    expect_error(
-        calc_power_pvals(pvals, hyp_weight, trans_matrix, alpha = "bad"),
-        '`alpha` must be a number, not the string "bad"'
     )
 
     expect_error(
         calc_power_pvals(
             pvals,
+            alpha,
             hyp_weight,
             trans_matrix,
             sum_to_one_constraint = "yes"
@@ -321,11 +338,13 @@ test_that("calc_power_pvals complains", {
         nrow = 10000,
         ncol = 4
     )
+    alpha <- 0.025
     bh <- gMCPLite::BonferroniHolm(4)
 
     expect_error(
         calc_power_pvals(
             pvals = pvals,
+            alpha = alpha,
             hyp_weight = bh@weights,
             trans_matrix = bh@m,
             custom_power = "foo",
@@ -335,24 +354,6 @@ test_that("calc_power_pvals complains", {
     )
 })
 
-test_that("calc_power_pvals complains when users passes anything via dots", {
-    pvals <- matrix(
-        rbeta(40000, shape1 = 0.24, shape2 = 0.65),
-        nrow = 10000,
-        ncol = 4
-    )
-    alpha <- 0.024
-    bh <- gMCPLite::BonferroniHolm(4)
-
-    expect_snapshot(error = TRUE, {
-        calc_power_pvals(
-            pvals = pvals,
-            hyp_weight = bh@weights,
-            trans_matrix = bh@m,
-            alpha
-        )
-    })
-})
 
 # --- .auto_name_custom_power() unit tests ---
 

@@ -20,9 +20,9 @@
 # generation), with exploitation handled by Nelder-Mead local search
 # (optim = TRUE, poptim = 0.2) and elitism preserving the best solution(s).
 #
-# @param p_param_mutate Per-parameter mutation probability. Default 0.1.
+# @param p_param_mutate Per-parameter mutation probability. Default 0.3.
 # @param scale Cauchy scale parameter. Default 1.0 (matching ESCH).
-# @returns A function(object, parent) for the [GA::ga()] mutation slot.
+# @return A function(object, parent) for GA::ga mutation slot.
 .make_cauchy_mutation_multi <- function(p_param_mutate = 0.1, scale = 1.0) {
     force(p_param_mutate)
     force(scale)

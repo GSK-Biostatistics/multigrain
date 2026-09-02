@@ -7,7 +7,7 @@
 multigrain_control()
 }
 \value{
-A multigrain \emph{control} object.
+an S3 object (a list) with class \code{multigrain_control}.
 }
 \description{
 There are two steps needed to fine tune the graph optimisation with

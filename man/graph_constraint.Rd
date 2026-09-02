@@ -7,7 +7,6 @@
 graph_constraint(
   hyp_constraint = NULL,
   trans_constraint = NULL,
-  ...,
   names = "auto",
   diagnose = FALSE,
   tolerance = sqrt(.Machine$double.eps)
@@ -23,8 +22,6 @@ transition matrix between hypotheses. If \code{NULL}, all transition matrix
 weights are free parameters to be optimised, except for diagonal elements
 which remain set to 0.}
 
-\item{...}{These dots are for future extensions and must be empty.}
-
 \item{names}{An optional character vector containing hypotheses' names. If
 not provided it defaults to \code{"auto"} meaning the hypotheses will be
 automatically named \code{"H1"}, \code{"H2"}, etc.}
@@ -34,8 +31,7 @@ automatically named \code{"H1"}, \code{"H2"}, etc.}
 
 \item{tolerance}{numeric >= 0. Differences smaller than \code{tolerance} will not
 be reported. The default value is close to \code{1.5e-8} -
-i.e. \code{sqrt(.Machine$double.eps)} (the standard R definition of
-"practically equal", as used by \code{\link[base:all.equal]{base::all.equal()}}).}
+i.e. \code{sqrt(.Machine$double.eps)}.}
 }
 \value{
 A multigrain \emph{graph constraint} object (an S3 list with class
@@ -75,10 +71,4 @@ hypotheses.
 \examples{
 # Create a graph_constraint object with predefined weight constraints
 graph_constraint(hyp_constraint = c(NA, 0.4, NA))
-
-}
-\references{
-Xi, D. and Chen, Y. (2024). Optimal weighted Bonferroni tests and
-their graphical extensions. \emph{Statistics in Medicine}, 43(3),
-475--500. \url{https://doi.org/10.1002/sim.9958}
 }
