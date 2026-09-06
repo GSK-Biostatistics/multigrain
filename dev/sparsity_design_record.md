@@ -1,26 +1,28 @@
-# Design record: budgeted edge-count minimisation in `graph_optimise()`
+# Design record: `graph_simplify()`, budgeted edge-count reduction of an optimised graph
 
-Status: design specification, not yet implemented. Every design element is stated, followed by the reasoning behind it and the alternatives it was chosen over. Elements are marked **LOCKED** when the reasoning is considered settled and **OPEN** when evidence is still needed; open items are collected in section 11. Claims about existing package behaviour were checked by running the code; the script and its output are in the appendix.
+Status: design specification, not yet implemented. Every design element is stated, followed by the reasoning behind it and the alternatives it was chosen over. Elements are marked **LOCKED** when the reasoning is considered settled and **OPEN** when evidence is still needed; open items are collected in section 11. Claims about existing package behaviour were checked by running the code; the scripts and their output are in the appendix.
 
-Notation: $U(\mathbf w,\mathbf G)$ is the trial-success measure (expected gain) of a graph, estimated on the fixed matrix of simulated p-values; $\psi$ is the gain function compiled by `trial_success()`; $\mathbf G$ is the transition matrix; $E(\mathbf G)$ is the number of non-zero free entries of $\mathbf G$; $m$ is the number of hypotheses.
+Notation: $U(\mathbf w,\mathbf G)$ is the trial-success measure (expected gain) of a graph, estimated on a fixed matrix of simulated p-values; $\psi$ is the gain function compiled by `trial_success()`; $\mathbf G$ is the transition matrix; $E(\mathbf G)$ is the number of non-zero free entries of $\mathbf G$; $m$ is the number of hypotheses; $\lambda$ is the user's cap.
 
 ## 1. Problem
 
 Optimised graphs frequently come back with several small non-zero transition weights. Each contributes almost nothing to expected gain, but together they make the graph hard to present: a clinical reviewer has to reason about every arrow. The package already has a post-hoc step, `prune_graph()`, that removes a weight or edge when doing so does not lower the estimated gain. That step never trades gain for simplicity.
 
-The feature specified here lets the user state, once, how much expected gain they are prepared to give up in total for a simpler graph, and returns a graph with fewer edges whose total loss is guaranteed to stay within that amount. Simplicity is measured by the number of edges. The guarantee must hold under the design assumptions encoded in the p-value matrix, family-wise error control must be untouched, and with the feature switched off the package must behave exactly as it does today, including its consumption of random numbers.
+The feature specified here is a second optimisation applied to an already-optimised graph. The user states how much expected gain they are prepared to give up in total, as a fraction $\lambda$ of the gain of the graph they already have, and receives a graph with fewer edges whose loss is guaranteed to stay within that amount on the same simulated trials. Simplicity is measured by the number of edges. Family-wise error control must be untouched, and `graph_optimise()` must behave exactly as it does today.
 
 ## 2. How the package optimises today
 
 The facts below constrain the design and were verified by reading and running the code.
 
-`create_obj_func()` in `R/objective_function.R` is the single objective factory. Its closure decodes the parameter vector through `split_theta()`, `recover_full_weights()` and `recover_full_trans_matrix()`, returns a negative penalty for `NA` or out-of-range entries, zeroes hypothesis weights below $10^{-4}$ and transition entries below $10^{-5}$ without renormalising, runs `graph_shortcut()` (or its parallel twin) and returns the gain function's mean. The same factory serves `GA::ga()` for the global search, including the intermittent Nelder-Mead step (`optim = TRUE`), and the final `nloptr` COBYLA run.
+`create_obj_func()` in `R/objective_function.R` is the single objective factory. Its closure decodes the parameter vector through `split_theta()`, `recover_full_weights()` and `recover_full_trans_matrix()`, returns a negative penalty for `NA` or out-of-range entries, zeroes hypothesis weights below $10^{-4}$ and transition entries below $10^{-5}$ without renormalising, runs `graph_shortcut()` (or its parallel twin) and returns the gain function's mean. The same factory serves `GA::ga()` for the global search, including its intermittent Nelder-Mead step (`optim = TRUE`), and the final `nloptr` COBYLA run.
 
-The parameter encoding gives each row of $\mathbf G$ with $k_i$ free entries $k_i-1$ parameters; the last free entry is derived as one minus the rest. Rows therefore always sum to one, and the derived entry cannot be set to zero by moving a single parameter. `graph_constraint()` rejects a row with exactly one free entry and rejects an incomplete row whose fixed entries already sum to one (appendix check 1), so every incomplete row has $k_i\ge2$ and a positive amount of mass to distribute.
+The parameter encoding gives each row of $\mathbf G$ with $k_i$ free entries $k_i-1$ parameters; the last free entry is derived as one minus the rest. Rows therefore always sum to one and each row keeps at least one edge. `graph_constraint()` rejects a row with exactly one free entry and rejects an incomplete row whose fixed entries already sum to one (appendix check 1), so every incomplete row has $k_i\ge2$. Re-encoding a graph that has an exact zero in a derived position produced exactly zero in every case tried (appendix check 9): `sum()` accumulates in extended precision, so one minus a sum that is one in exact arithmetic rounds to zero rather than to $-10^{-17}$. Deliberate overshoots do give negative entries and a penalty (check 2).
 
 `param_to_solution(process = TRUE)` snaps entries below $10^{-5}$ to exact zero and entries in $(10^{-5},10^{-3})$ to the $\epsilon$-edge value $0.001$, then renormalises each row with `normalise_sum()`. `prune_graph()` runs `prune_hyp_weights()` and then `prune_edges()`, each in a fixed index order, and `.try_prune()` accepts a removal if the gain does not fall. `.redistribute_mass()` moves a dropped entry's mass proportionally onto the row's other free entries and, when those are all zero, spreads it uniformly, which creates $m-2$ new edges.
 
 `graph_optimise()` runs the GA on a random subsample of `nsim_global` trials, COBYLA on a separate random subsample of `nsim_local` trials, chooses between the two results on the full sample with `choose_graph()`, prunes on the full sample, and only then computes the reported `$power` from the returned graph. That last ordering is deliberate: version 0.2.0 fixed a bug in which `$power$trial_success` described the graph before pruning rather than the one the user saw.
+
+The returned `multigrain_graph_optimal` stores the constraint, the trial-success object, the prepared control object and the raw GA and nloptr results. `graph_optimal()` strips only the `@call` slot of the GA object, so the GA's final population (`global_output@population`, `popSize` rows by the encoding's parameter count) is available afterwards (check 8). The object does not store `pvals` (large, by design) and does not store `alpha`. `GA::ga()` requires `ncol(suggestions)` to equal the number of variables and fails with "number of items to replace is not a multiple of replacement length" when `suggestions` has more rows than `popSize` (check 8).
 
 The mutation used inside the GA is a package closure (`.make_cauchy_mutation_multi()` in `R/mutation_helpers.R`), and the crossover is `GA`'s default local arithmetic crossover.
 
@@ -28,148 +30,172 @@ The mutation used inside the GA is a package closure (`.make_cauchy_mutation_mul
 
 ### 3.1 User-facing behaviour
 
-`graph_optimise()` gains one argument, `gain_tolerance`, placed after `...` so it must be named. Its default is `NULL`, which switches the feature off. A number $\lambda\in[0,1]$ switches it on. The value is a cap on the total expected gain that may be lost, expressed as a fraction of the largest value the gain function can take. For a gain function valued in $[0,1]$, such as any probability of trial success, $\lambda$ is a cap in units of power: $\lambda=0.001$ means at most one tenth of a percentage point.
+A new exported function:
 
-The returned `multigrain_graph_optimal` gains a `sparsity` element that is `NULL` when the feature is off and otherwise reports the edge counts, the internal price, the bound on the loss and the loss actually incurred during pruning. `print()` and `summary()` show these when present.
+```r
+graph_simplify(
+    graph_optimal,
+    pvals,
+    ...,
+    gain_tolerance = 1e-3,
+    alpha = NULL,
+    global_search = TRUE,
+    num_threads = 1L,
+    control = NULL,
+    verbose = multigrain_verbosity()
+)
+```
 
-### 3.2 The cap becomes a fixed per-edge price
+`graph_optimal` is the result of `graph_optimise()`; it is the reference graph. `pvals` is the matrix of simulated p-values, supplied again because the object does not store it; the cap is measured on the supplied matrix. `gain_tolerance` is $\lambda$: the returned graph's gain on the full sample is at least $(1-\lambda)$ times the reference graph's gain on the same sample. `alpha` defaults to the value stored on the object (see 3.10); an explicit value overrides it. `control` defaults to the object's stored control with the GA's `run` halved (see 3.5). The function returns a `multigrain_graph_optimal` so that `print()`, `summary()`, `plot()` and `calc_power_pvals()` work unchanged, with a populated `sparsity` element (3.9) and `solution$opt_source` set to `"simplify:global"`, `"simplify:local"` or `"reference"`.
 
-Let $U_{\max}=\max_{\mathbf r\in\{0,1\}^m}\psi(\mathbf r)$ be the largest value the gain function takes over all $2^m$ rejection patterns, and let
+`graph_optimise()` changes in two ways only: its result stores `alpha`, and its result carries a `NULL` `sparsity` element. Its search, its random-number consumption and every other element of its result are unchanged.
+
+**Rationale.** LOCKED. Reducing an optimised graph is a second optimisation with its own inputs (a reference graph and a cap), so it is its own verb. Making it a separate function keeps `graph_optimise()` untouched, which satisfies "unchanged when not used" by construction rather than by a fixture; makes the reference explicit as an object the user can plot next to the simplified one; lets the user try several values of $\lambda$ without repeating the first optimisation; and lets the stored control object and stored GA population serve as defaults. The name follows the package's `graph_*` verbs (`graph_optimise`, `graph_random`, `graph_constraint`) and states the user's intent. Alternatives: an argument `gain_tolerance` on `graph_optimise()` (hides the two-stage nature, forces a `NULL`-means-off default and a fixture-based identity gate; rejected); `graph_sparsify()` (precise but jargon); `graph_prune()` (collides with the internal pruning step).
+
+### 3.2 The cap: a threshold against the reference, recomputed on every sample
+
+Let $x_{\text{ref}}$ be the reference graph and $U_{\text{ref}}$ its gain. The cap is the constraint $U(x)\ge T$ with $T=(1-\lambda)\,U_{\text{ref}}$. Every objective closure computes $T$ itself, at construction, by running the shortcut on the reference graph over the p-value sample that closure has captured. The GA closure, the COBYLA closure and the full-sample evaluations therefore each have their own $T$, all defined relative to the same reference on the same trials as the candidates they judge.
+
+**Rationale.** LOCKED. A subsample of 50 000 trials estimates $U$ with a standard error near $4\times10^{-3}$, larger than a budget of $10^{-3}$; a single absolute threshold carried across samples would be meaningless. Judged against the reference on the same trials, the comparison is paired: only trials whose outcome differs between the two graphs contribute. Appendix check 4 measured this at $m=4$, $n_{\text{sim}}=10^4$: removing an $\epsilon$-edge changed 59 of 10 000 trials, and the paired standard error of the difference was $1.9\times10^{-4}$ against a marginal standard error of $3.4\times10^{-3}$, a factor of 18. The reference is feasible on every sample by construction ($U_{\text{ref}}\ge(1-\lambda)U_{\text{ref}}$ whenever $U_{\text{ref}}\ge0$), so every search starts with a feasible seed and the final fallback (3.8) always has a feasible graph to return. Alternatives: a per-edge price derived from the cap (section 6, alternative 1); a threshold on the full sample only (would make the GA's and COBYLA's subsample rankings inconsistent with the cap).
+
+### 3.3 Objective
+
+With $U_{\max}$ and $U_{\min}$ the exact extremes of $\psi$ over all $2^m$ rejection patterns (computed once from the compiled function; check 6), $E_{\max}$ the number of free off-diagonal entries, and $D=(U_{\max}-T)+1$:
 $$
-P_G=\sum_{i=1}^{m}\max(k_i-1,\,0)
+f(x)=\begin{cases}
+U(x)-D\,E(x) & \text{if } U(x)\ge T,\\[2pt]
+U(x)-D\,(E_{\max}+1) & \text{if } U(x)<T.
+\end{cases}
 $$
-be the number of edges that can be removed at all, where $k_i$ is the number of free entries in row $i$ of `trans_constraint`. Each row keeps at least one edge because the encoding forces rows to sum to one, so $P_G$ counts one fewer than the free entries in each row. For an unconstrained graph $P_G=m(m-2)$; in general it equals the number of free transition parameters in the encoding, which `recover_full_trans_matrix()` already computes (appendix check 6 confirms equality for a free and a constrained example).
+Invalid encodings return `penalty + U_min - D * (E_max + 2)`, with `penalty` the existing negative violation measure.
 
-The internal price per edge is
-$$
-c=\frac{\lambda\,U_{\max}}{P_G},
-$$
-and the objective maximised everywhere is
-$$
-f_\lambda(x)=U(x)-c\,E(x).
-$$
-Any optimiser that prefers a graph with $E_1$ edges over one with $E_0>E_1$ edges under $f_\lambda$ has accepted a loss in $U$ of at most $c\,(E_0-E_1)$. At most $P_G$ edges can be removed, so the total loss against any graph the search compared with is at most $cP_G=\lambda U_{\max}$. The cap therefore holds by construction, in a single pass, without knowing the unpenalised optimum.
+Reading the score: among feasible graphs, one fewer edge always wins (because $D$ exceeds the largest possible difference in $U$ between two feasible graphs), and among graphs with the same edge count the higher gain wins. Every infeasible graph sits below every feasible one, but infeasible graphs still rise with $U$, so an optimiser that finds itself infeasible is pulled back toward the boundary. Invalid encodings sit below everything. The scalar rule is one internal helper, `.lexico()`, shared by the objective closure, `choose_graph()` and pruning, so no stage can prefer a graph that another would reject.
 
-**Rationale.** LOCKED. Three properties were required: a total cap rather than a per-edge price, a single optimisation pass, and an objective that is fixed before the search starts, because the package ranks candidates on common random numbers and a moving target would invalidate those comparisons. A cap defined relative to the unpenalised optimum $U^*$ would need $U^*$ first, and hence a second pass (section 6, alternative 1). Deriving the price from a quantity known in advance, $U_{\max}$, and from the number of edges that could possibly go, $P_G$, gives all three properties at once. The cost is conservatism: the bound assumes every removable edge goes, so at small $\lambda$ the price only removes edges that are individually very cheap. Section 4.1 quantifies this.
+**Rationale.** LOCKED. The problem is "fewest edges subject to a floor on gain", and a lexicographic score is its direct scalarisation. Check 11 shows the two branches doing their jobs: from the encoded reference, COBYLA kept all seven edges and raised $U$ slightly; from a start that was infeasible at the chosen $\lambda$, COBYLA re-added one edge and restored feasibility. Alternatives: a per-edge price (section 6); a penalty large enough to dominate without a threshold (then nothing stops it removing everything; a threshold in disguise).
 
-### 3.3 What counts as an edge
+### 3.4 What counts as an edge
 
-A free entry counts as an edge if it is at least $10^{-5}$ after decoding, evaluated on the same thresholded matrix the shortcut receives. Every non-zero free entry counts one, whatever its size; $\epsilon$-edges of $0.001$ count. Entries pinned by `graph_constraint()` are not counted in $E$ and not counted in $P_G$.
+A free entry counts as an edge if it is at least $10^{-5}$ after decoding, evaluated on the same thresholded matrix the shortcut receives. Every non-zero free entry counts one, whatever its size; $\epsilon$-edges of $0.001$ count. Entries pinned by `graph_constraint()` are not counted in $E$; the reported edge count of the returned graph includes them, with the free count reported alongside.
 
-**Rationale.** LOCKED. The threshold $10^{-5}$ is the one the objective already applies, so an entry that counted during the search is still an edge after `param_to_solution()` snaps it (to exact zero below $10^{-5}$, to $0.001$ between $10^{-5}$ and $10^{-3}$), and an entry that did not count is exactly zero in the returned graph. Counting by size (entropy, an $\ell_q$ norm) would reward shrinking edges rather than removing them, which does not help a reader. Pinned entries are constants across every candidate, so counting them adds a constant to $E$ and changes nothing; excluding them keeps $P_G$ honest. The reported edge count of the returned graph does include pinned non-zero entries, because that is what a reader sees, and the free count is reported next to it.
+**Rationale.** LOCKED. The threshold is the one the objective already applies, so an entry that counted during the search is still an edge after `param_to_solution()` snaps it, and an entry that did not count is exactly zero in the returned graph. Zeros in the returned graph are exact: check 5 shows a parameter set to exactly zero staying exactly zero through `param_to_solution(process = TRUE)`, `repair_graph()` and `normalise_sum()`. Counting by size would reward shrinking edges rather than removing them, which does not help a reader. Pinned entries are constants across every candidate, so counting them adds a constant to $E$.
 
-Zeros in the returned graph are exact. Verified (appendix check 5): a parameter set to exactly zero stays exactly zero through `param_to_solution(process = TRUE)`, `repair_graph()` and `normalise_sum()`; the last scales free entries proportionally and adjusts the largest one, never a zero. No new snapping step is needed. `repair_graph()` fills a row whose free entries are all zero uniformly, but that state cannot arise from the encoding, because the derived entry is one minus the rest and `graph_constraint()` forbids incomplete rows whose fixed entries sum to one.
+### 3.5 Warm start: seeds, encoding guard, and the GA budget
 
-### 3.4 One objective everywhere
+The stage-2 GA population is seeded, in this order, with: the encoded reference graph; the encoded single-edge-removal neighbours of the reference (each free non-zero edge dropped with `.redistribute_mass()`, skipping candidates that do not reduce the edge count or leave an invalid row); the usual seeds from `.build_start_matrix()` (uniform, fixed sequence, any user-supplied start graphs); and the rows of the reference object's `global_output@population` when present and of matching width. Duplicate rows are removed and the matrix is truncated to `popSize` rows.
 
-$f_\lambda$ is the fitness of the GA, the objective of its intermittent Nelder-Mead step, the objective of the final COBYLA run, the quantity `choose_graph()` compares on the full sample, and the acceptance criterion in `prune_graph()`. With `gain_tolerance = NULL` the price is zero and every one of these reduces to today's $U$.
+Encoding uses `create_start_params(gc, w0, G0, sum_to_one_constraint = FALSE)` with a guard: if a row's derived entry decodes below $10^{-5}$, that row's parameters are rescaled to sum to $1-5\times10^{-6}$ minus the row's fixed entries; if the derived hypothesis weight decodes below $10^{-4}$, the weight parameters are rescaled to sum to $1-5\times10^{-5}$ minus the fixed weights. The derived entry then decodes to exactly $5\times10^{-6}$ (or $5\times10^{-5}$), positive and below its threshold, so it is not penalised and not counted (check 9: seven edges before and after, identical objective value).
 
-**Rationale.** LOCKED. If the price applied only in a post-processing step, the search would first find a dense optimum and then remove edges without re-tuning the weights around the removal, and would spend the cap on whichever edges the removal order happened to visit first. Putting the price into the shared objective lets the global search find sparse regions, lets the local searches re-tune inside a support and refuse to re-create an edge, and makes the final acceptance test the same criterion the rest of the search used. It also removes a class of inconsistency: no stage can prefer a graph that another stage would reject.
+The GA runs with the reference object's stored control, `run` halved (floor 1), re-prepared against the supplied `pvals` so that `nsim_global` and `nsim_local` are clamped to its row count. A control passed explicitly is used as is.
 
-### 3.5 A support-changing mutation move
+**Rationale.** LOCKED. The reference is already near the optimum, so the population should start there: the reference guarantees a feasible individual, its neighbours give the GA one-edge-removal candidates in generation zero, the stage-1 population gives diversity in the right basin, and the fixed-sequence seed is the sparsest graph there is. Truncation to `popSize` is required because `GA::ga()` errors on oversized `suggestions` (check 8); the ordering puts the most valuable seeds first. The encoding guard costs nothing and removes a failure mode that would otherwise depend on floating-point accident; check 9 found no negative derived entries from plain re-encoding, so the guard is defensive rather than a fix for a common failure. Halving `run` reflects that stage 2 starts in the right basin and that its improvements are mostly discrete (an edge removed); the stage-1 `run` of 200 no-improvement generations is a floor on cost that a warm start does not need. Alternatives: identical stage-1 settings (simplest to explain, roughly doubles total time); GA off by default (leaves topology changes to pruning alone, which cannot find removals that only become affordable after weights are re-tuned).
 
-When the price is positive, the GA's mutation closure gains a zeroing move. With probability $p_0$ per mutation call (proposed $p_0=0.2$, OPEN O3), instead of the usual Cauchy perturbation, it either sets one free transition parameter currently at or above $10^{-5}$ to exactly zero, or picks a row and rescales that row's parameters so they sum to $1-5\times10^{-6}$. The second variant puts the derived entry at $5\times10^{-6}$, below the counting threshold and strictly positive.
+### 3.6 A support-changing mutation move
 
-**What the mutation does today.** `.make_cauchy_mutation_multi()` returns a closure the GA calls on one parent per mutation. It selects each parameter with probability $0.1$ (at least one), and replaces each selected value with a draw from a Cauchy distribution centred on the current value and truncated to $[0,1]$. That is a good operator for moving weight around continuously. It is a poor operator for removing an edge, because "removed" means the decoded entry falls below $10^{-5}$, and a Cauchy draw lands in $[0,10^{-5})$ about once in $100\,000$ tries (appendix check 3). Crossover does not help: `GA`'s default real-valued crossover takes convex combinations of two parents, so a child entry is zero only where both parents are already zero. Nelder-Mead and COBYLA are continuous methods and never aim for the threshold. With the price in the objective the GA would therefore *prefer* sparser graphs but almost never *produce* one to compare, and the objective would be inert during the global search.
+**What the mutation does today.** `.make_cauchy_mutation_multi()` returns a closure the GA calls on one parent per mutation. It selects each parameter with probability $0.1$ (at least one), and replaces each selected value with a draw from a Cauchy distribution centred on the current value and truncated to $[0,1]$. That is a good operator for moving weight around continuously. It is a poor operator for removing an edge, because "removed" means the decoded entry falls below $10^{-5}$, and a Cauchy draw lands in $[0,10^{-5})$ about once in $100\,000$ tries (check 3). Crossover does not help: `GA`'s default real-valued crossover takes convex combinations of two parents, so a child entry is zero only where both parents are already zero. Nelder-Mead and COBYLA are continuous methods and never aim for the threshold. With the lexicographic score the GA would therefore *prefer* sparser graphs but almost never *produce* one to compare, and the score would be inert during the global search apart from the seeds.
 
-**What is added.** When the price is positive, each mutation call first draws a coin with probability $p_0$. If it comes up, the call performs a zeroing move instead of a Cauchy perturbation, of one of two kinds:
+**What is added.** In `graph_simplify()`, each mutation call first draws a coin with probability $p_0$. If it comes up, the call performs a zeroing move instead of a Cauchy perturbation, of one of two kinds:
 
 1. *Zero a parameter.* Pick, uniformly, one free transition parameter currently at or above $10^{-5}$ and set it to exactly zero. That removes the corresponding edge outright.
-2. *Zero a derived entry.* Each row of the transition matrix has one entry that is not a parameter: it is computed as one minus the sum of the row's parameters. Setting a parameter to zero cannot remove that edge. The move instead picks a row and rescales its parameters so they sum to $1-5\times10^{-6}$. The derived entry then equals $5\times10^{-6}$: positive, so it is not penalised as a negative entry, and below $10^{-5}$, so it does not count as an edge and is snapped to exact zero on output. Appendix check 2 shows this yields exactly $5\times10^{-6}$ rather than a rounding artefact, whereas an overshoot such as $(0.6,0.6)$ yields $-0.2$ and a penalty.
+2. *Zero a derived entry.* Each row of the transition matrix has one entry that is not a parameter: it is computed as one minus the sum of the row's parameters. Setting a parameter to zero cannot remove that edge. The move instead picks a row and rescales its parameters so they sum to $1-5\times10^{-6}$. The derived entry then equals $5\times10^{-6}$: positive, so it is not penalised as a negative entry, and below $10^{-5}$, so it does not count as an edge and is snapped to exact zero on output (check 2).
 
 If the coin does not come up, or there is nothing to zero (no parameter above the threshold, or a row whose parameters are all zero), the call falls through to the ordinary Cauchy perturbation.
 
-**Rationale.** LOCKED. Without the move the price would have no effect on the global search. Without the derived-entry variant one edge per row, $m$ of the $m(m-1)$ edges in an unconstrained graph, would be unreachable by the global search and removable only by pruning at the end. The move is added only when the price is positive: the factory keeps the current closure verbatim as an inner function and returns it unchanged when $p_0=0$, so with the feature off the GA runs the same code and consumes the same random numbers as today. The value of $p_0$ (proposed $0.2$) and the equal split between the two variants are open item O3.
+**Rationale.** LOCKED. Without the move the score would have no effect on the global search beyond ranking the seeds. Without the derived-entry variant one edge per row, $m$ of the $m(m-1)$ edges in an unconstrained graph, would be unreachable by the global search and removable only by pruning at the end. The factory keeps the current closure verbatim as an inner function and returns it unchanged when $p_0=0$, which is what `graph_optimise()` requests, so `graph_optimise()` runs the same code and consumes the same random numbers as today. The value of $p_0$ (proposed $0.2$) and the equal split between the two variants are open item O1.
 
-**Documentation requirement.** The two paragraphs above ("What the mutation does today", "What is added") are to be carried into the package when this is implemented, in three places: the comment block of `.make_cauchy_mutation_multi()` in `R/mutation_helpers.R`; a `@details` section headed "Edge removal during the global search" in the roxygen for `graph_optimise()`, written for a user who has set `gain_tolerance` and wants to know how the optimiser can reach a sparser graph; and the corresponding paragraph of the get-started article under `vignettes/articles/`. Implementation step 2 and step 6 in section 7 carry this as part of their gates.
+**Documentation requirement.** The two paragraphs above ("What the mutation does today", "What is added") are to be carried into the package when this is implemented, in three places: the comment block of `.make_cauchy_mutation_multi()` in `R/mutation_helpers.R`; a `@details` section headed "Edge removal during the global search" in the roxygen for `graph_simplify()`, written for a user who wants to know how the optimiser can reach a sparser graph; and the corresponding paragraph of the get-started article under `vignettes/articles/`. Implementation steps 2 and 7 in section 7 carry this as part of their gates.
 
-### 3.6 Best-first pruning
+### 3.7 Local search and choice
 
-When the price is positive, `prune_edges()` evaluates every remaining removable edge, removes the one whose loss in $U$ on the full sample is smallest, and repeats until the cheapest removal would cost more than $c$. Candidates that do not reduce the edge count are skipped: this covers the uniform fallback in `.redistribute_mass()`, which would replace one edge by $m-2$. Hypothesis-weight pruning is unchanged, since weights are not edges, and a weight still goes only if $U$ does not fall. The exact loss across accepted removals is recorded as `prune_loss`.
+After the GA (or directly from the encoded reference when `global_search = FALSE`), COBYLA runs with the lexicographic objective on its own subsample. Inside a fixed support it re-tunes the weights exactly as today; it does not create an edge, because an entry crossing $10^{-5}$ costs $D$; and if its starting point is infeasible on that subsample it climbs in $U$ and may re-add an edge to become feasible (check 11). `choose_graph()` then compares the GA and COBYLA results on the full sample by the lexicographic score; the two internal optimisers return that score as `ga_objective` and `local_objective`, which equal the raw trial success when no threshold is set, so `choose_graph()`'s decisions in `graph_optimise()` are unchanged.
 
-**Rationale.** LOCKED. The acceptance test `loss <= c` is the statement $f_\lambda(\text{candidate})\ge f_\lambda(\text{current})$ for a candidate with one fewer edge, so pruning uses the same objective as everything before it and nothing is paid twice: the price is a fixed number, not a running total. Best-first order spends the price on the edges that cost least; the present fixed index order could spend it on the first edge it happens to visit. Verified (appendix check 7): best-first at zero price from a 12-edge local optimum reaches the same 7-edge graph and the same $U$ as the current fixed-order prune, so the change of order is safe on that example. With the feature off the fixed-order loop runs unchanged.
+**Rationale.** LOCKED. The local search's job is unchanged (polish within a support); the score only prevents it from undoing the GA's removals. Comparing on the full sample with the same score keeps the choice consistent with the cap.
 
-### 3.7 Ties and Monte Carlo noise
+### 3.8 Best-first pruning and the reference fallback
 
-Two graphs with the same edge count compare on $U$, as today. Whether an edge goes is decided by comparing $U$ before and after its removal on the same simulated trials, so only trials whose outcome changes contribute to the noise of that decision. Verified (appendix check 4): removing an $\epsilon$-edge of $0.001$ at $m=4$, $n_{\text{sim}}=10^4$ changed 59 of 10 000 trials; the paired standard error of the difference was $1.9\times10^{-4}$ against a marginal standard error of $3.4\times10^{-3}$ for $U$ itself, a factor of 18. At $10^6$ trials the paired error is about $2\times10^{-5}$. Because $c$ is a fixed number rather than a threshold on a sample estimate, nothing about the cap depends on which subsample a stage uses.
+`prune_hyp_weights()` runs unchanged: a weight is removed only if $U$ does not fall. `prune_edges()`, when a threshold is supplied, becomes best-first on the full sample: evaluate every remaining removable edge, keep the candidates that are feasible ($U\ge T$) and reduce the edge count, remove the one with the highest $U$, repeat until no candidate is feasible. Candidates that would leave an invalid row (no free recipient) are skipped. The exact loss across accepted removals is recorded as `prune_loss`. Finally the pruned graph is compared with the reference under the lexicographic score on the full sample; whichever scores higher is returned, and if it is the reference, `solution$opt_source` says so.
 
-### 3.8 Reporting
+**Rationale.** LOCKED. Pruning is the one deterministic support move on the full sample; using the same score makes it the final acceptance test of the whole pipeline. Best-first spends the budget on the cheapest edges; check 10 shows it removing two edges at $\lambda=0.02$ for 61% of the budget and stopping when the next cheapest edge would exceed it. Check 7 shows best-first at zero price reaching the same graph as the current fixed-order prune, so the change of order is safe. The fallback guarantees the cap on the full sample whatever happened on the subsamples: the reference is feasible there by construction, and the returned graph is never worse than it under the score. Alternatives: fixed-order pruning with the threshold (can spend the budget on the first edge it visits); no fallback (a graph feasible on the GA subsample but marginally infeasible on the full sample could be returned).
 
-The `sparsity` element:
+### 3.9 Reporting
+
+The `sparsity` element of the returned object:
 
 | element | meaning |
 |---|---|
 | `gain_tolerance` | $\lambda$ as supplied |
-| `edge_price` | $c$ |
-| `u_max` | $U_{\max}$ |
-| `n_removable` | $P_G$ |
-| `n_edges` | `sum(trans_matrix != 0)` on the returned graph, pinned entries included |
-| `n_edges_free` | non-zero free entries on the returned graph |
-| `loss_bound` | $\lambda U_{\max}$ |
-| `prune_loss` | exact loss of $U$ across the removals pruning accepted, on the full sample |
+| `reference` | list with the reference `hyp_weight` and `trans_matrix` |
+| `gain_reference` | $U_{\text{ref}}$ on the supplied `pvals` |
+| `gain` | $U$ of the returned graph, equal to `$power$trial_success` |
+| `gain_loss` | `gain_reference - gain` |
+| `gain_loss_fraction` | `gain_loss / gain_reference` |
+| `budget` | $\lambda\,U_{\text{ref}}$ |
+| `n_edges_reference`, `n_edges` | total non-zero entries, pinned included, before and after |
+| `n_edges_free_reference`, `n_edges_free` | non-zero free entries before and after |
+| `prune_loss` | exact loss of $U$ across the removals pruning accepted |
+| `source` | `"global"`, `"local"` or `"reference"` |
 
-`$power` stays the last quantity computed, from the returned `hyp_weight` and `trans_matrix` on the full sample. The distance to the dense optimum is not reported because it is never computed; a user who wants it runs once more with `gain_tolerance = NULL` and compares.
+`$power` remains the last quantity computed, from the returned `hyp_weight` and `trans_matrix` on the full sample. `print()` and `summary()` add two lines when `sparsity` is non-`NULL`, of the form:
 
-**Rationale.** LOCKED. The reader must be able to see the unadjusted expected gain, the edge count, and what the simplification cost. The first two are direct. The third is available in two forms: the bound, which is guaranteed, and the prune-stage loss, which is exact. Reporting a comparison with the dense optimum would require the second pass this design avoids.
+```
+Simplified from 12 edges to 7 (free: 12 -> 7)
+Trial success 0.8048 -> 0.8041: loss 0.09% of reference (cap 0.1%)
+```
 
-### 3.9 API placement
+**Rationale.** LOCKED. The reader must be able to see the unadjusted gain, the edge count, and what the simplification cost; here all three are exact on the same trials, and the reference graph travels with the result so the two can be plotted side by side. Computing `$power` last is the 0.2.0 fix and keeps the reported gain equal to the graph the user sees.
 
-`gain_tolerance` is a direct argument of `graph_optimise()`, not a member of `multigrain_control`. `NULL` is off; a number is on; `0` is a meaningful setting (best-first removal at zero price, which removes only edges whose removal does not lower $U$ on the full sample). The documented recommendation is $10^{-3}$, with a note that on graphs of six or more hypotheses the cap begins to bind around $5\times10^{-3}$.
+### 3.10 Changes to `graph_optimise()` and its result
 
-**Rationale.** LOCKED. The value changes what "optimal" means, as `trial_success` and `alpha` do; the control object holds tuning of the optimisers. The package moved `global_search` out of the control object and back to a direct argument in 0.3.0 for the same reason. A separate logical switch plus a numeric default would be two arguments for one idea.
+The constructor `graph_optimal()` gains `alpha = NULL` and `sparsity = NULL`; `graph_optimise()` passes its `alpha` and leaves `sparsity` as `NULL`. `names()` of an optimised graph therefore gains two entries; nothing else changes. `graph_simplify()` reads `alpha` from the object and refuses to run without it unless an explicit `alpha` is passed, so an object saved by an earlier version still works.
 
-### 3.10 Error control
+**Rationale.** LOCKED. The significance level is part of what was optimised, and a user who forgets to pass it again would silently simplify against the wrong reference gain. Storing it is one element on the object. `pvals` is not stored because it is large and the user has it.
 
-Unchanged. A Bonferroni-based graphical procedure controls the family-wise error rate strongly for any weights summing to at most one and any transition matrix with non-negative entries, zero diagonal and row sums at most one. Zeroing an entry and renormalising its row preserves all three, and `is_graph_valid()` still gates `calc_power_pvals()`. Only the objective changes, not the class of procedures searched.
+### 3.11 Error control and degenerate cases
 
-Degenerate cases the implementation must handle:
+Family-wise error control is unaffected. A Bonferroni-based graphical procedure controls the family-wise error rate strongly for any weights summing to at most one and any transition matrix with non-negative entries, zero diagonal and row sums at most one. Zeroing an entry and renormalising its row preserves all three, and `is_graph_valid()` still gates `calc_power_pvals()`. Only the objective changes, not the class of procedures searched.
 
-1. **Nothing removable** ($P_G=0$, for example $m=2$ or a fully pinned `trans_constraint`). `graph_optimise()` warns that `gain_tolerance` has no effect, sets the price to zero and still returns a `sparsity` element.
-2. **$U_{\max}\le0$.** The gain function never rewards anything; abort with an informative error before optimising.
-3. **Gain functions with negative values.** The existing invalid-encoding penalties (`-1e6` for `NA`, otherwise the sum of the violating entries) assume $U\ge0$; a valid graph with $U<0$ already ranks below an encoding with a $-10^{-17}$ violation. With a price, valid values extend down to $-\lambda U_{\max}$, so when the price is positive the penalties are shifted by $-(1+\lambda U_{\max})$ to stay below every valid value. Off-behaviour is untouched.
-4. **A row reduced to one non-zero free entry during pruning.** Trying to remove it triggers the uniform fallback, which raises $E$; the candidate is skipped. The path in `.redistribute_mass()` with no recipients at all, which returns a row summing to less than one and makes `calc_power_pvals()` abort, is reachable only by bypassing `graph_constraint()` (appendix check 1 does so deliberately).
-5. **Sparse two-cycles** $g_{ij}=g_{ji}=1$ hit the shortcut's `denom == 0` branch in `src/graph_shortcut.cpp`, which zeroes the row; that is the correct limit of the Bretz update and already exercised by every $m=2$ graph.
-6. **Unreachable nodes** (zero weight, no incoming edge). Their outgoing edges do not affect $U$; at any positive price they are pruned to one edge, which is the interpretable result.
+Cases the implementation must handle:
 
-## 4. What to expect from the price
+1. **$U_{\text{ref}}\le0$ on the full sample.** The cap has no meaning; abort with an informative error.
+2. **Nothing removable** ($m=2$, or every off-diagonal entry pinned). Warn, skip the search, return the reference with `source = "reference"` and a populated `sparsity`.
+3. **$\lambda=0$.** Well defined: fewest edges among graphs whose gain does not fall below the reference on each sample. Cheap and useful; documented as supported.
+4. **$\lambda=1$.** Every non-negative graph is feasible, so the result has one free edge per row. Useful as a test invariant.
+5. **A different `pvals` than stage 1.** The cap is measured on the supplied matrix; `gain_reference` is recomputed there and may differ from the stored `$power$trial_success`. Documented; no warning.
+6. **Stored GA population absent or of the wrong width** (stage 1 ran with `global_search = FALSE`, or the constraint changed). Seeds proceed without it.
+7. **Gain functions with negative values.** Invalid-encoding penalties are shifted below $U_{\min}-D(E_{\max}+1)$ so they stay below every valid score.
+8. **A row reduced to one non-zero free entry during pruning.** The uniform fallback raises $E$; the candidate is skipped. The path in `.redistribute_mass()` with no recipients, which returns a row summing to less than one and makes `calc_power_pvals()` abort, is reachable only by bypassing `graph_constraint()` (check 1).
+9. **Sparse two-cycles** $g_{ij}=g_{ji}=1$ hit the shortcut's `denom == 0` branch in `src/graph_shortcut.cpp`, which zeroes the row; that is the correct limit of the Bretz update and already exercised by every $m=2$ graph.
+10. **Unreachable nodes** (zero weight, no incoming edge). Their outgoing edges do not affect $U$; the search reduces them to one edge.
 
-### 4.1 Conservatism
+## 4. What to expect
 
-The bound holds even if every removable edge goes, so at small $\lambda$ the per-edge price is small. With $U_{\max}=1$:
+### 4.1 Budget spent, and lumpy
 
-| $m$ | $P_G$ | $c$ at $\lambda=10^{-3}$ | $c$ at $\lambda=5\times10^{-3}$ |
-|---|---|---|---|
-| 4 | 8 | $1.25\times10^{-4}$ | $6.25\times10^{-4}$ |
-| 6 | 24 | $4.2\times10^{-5}$ | $2.1\times10^{-4}$ |
-| 8 | 48 | $2.1\times10^{-5}$ | $1.0\times10^{-4}$ |
+Check 10 on a four-hypothesis reference with seven edges and $U_{\text{ref}}=0.8048$: at $\lambda=10^{-3}$ one edge went for $7.5\times10^{-5}$ (9% of the budget); at $\lambda=10^{-2}$ the same, because the next cheapest edge cost $9.7\times10^{-3}$, more than the remaining budget; at $\lambda=2\times10^{-2}$ two edges went for 61% of the budget. Edge costs are discrete, so the fraction of the budget used varies; the cap is the guarantee, the spend is whatever the graph allows. A per-edge price of $1.25\times10^{-3}$, the alternative in section 6, could never have removed the second edge at any of these $\lambda$.
 
-In appendix check 4 an $\epsilon$-edge of $0.001$ on a probability-valued gain cost $1.5\times10^{-3}$ at $m=4$, more than $c$ at $\lambda=10^{-3}$, so it would stay. In check 7, after the existing prune had already reduced a 12-edge local optimum to 7 edges, the price removed one more edge costing $7.5\times10^{-5}$, and the next cheapest cost $9.7\times10^{-3}$, so $\lambda\in\{10^{-3},5\times10^{-3},10^{-2}\}$ all returned the same 6-edge graph. The feature therefore removes edges that are individually negligible and leaves the rest; a user who wants more simplification raises $\lambda$ and the bound rises with it. Open item O1 asks for the distribution of per-edge losses on realistic problems, which would settle whether the recommended default should be $10^{-3}$ or $5\times10^{-3}$.
+### 4.2 Runtime
 
-### 4.2 Landscape
+Stage 2 repeats the global search with a warm start and half the no-improvement generations, then one COBYLA run and a best-first prune of order $E^2$ shortcut evaluations. When called immediately after `graph_optimise()` the total is roughly 1.3 to 1.6 times a single optimisation; as its own call the user sees it as its own cost, and repeated calls with different $\lambda$ do not repeat stage 1.
 
-$E$ is piecewise constant in the parameters, so $f_\lambda$ is $U$ with a downward step of $c$ each time an entry crosses $10^{-5}$. Inside a fixed support the landscape is exactly today's, so Cauchy mutation, crossover, Nelder-Mead and COBYLA behave as they do now there. The local searches re-tune weights inside a support and, because $f_\lambda$ drops when an entry re-enters, do not re-create edges. Support changes come from the zeroing move during the global search and from best-first pruning at the end. With `global_search = FALSE` only pruning changes the support: COBYLA from a dense start does not become sparse on its own, and the documentation says so.
+### 4.3 Noise at the boundary
 
-### 4.3 Cost
-
-One pass. The extra work is $2^m$ evaluations of the compiled gain function for $U_{\max}$ (at most 4096 rows for $m\le12$, no random numbers), the mutation move (cheaper than a Cauchy perturbation), and best-first pruning at up to $E^2/2$ shortcut evaluations on the full sample, which is seconds to a couple of minutes at $10^6$ trials.
+A graph judged feasible on the GA subsample may be marginally infeasible on the local subsample or the full sample. The infeasible branch of the score pulls COBYLA back (check 11), best-first pruning only ever accepts full-sample-feasible candidates, and the fallback returns the reference if nothing feasible beats it. The paired comparison keeps the margin small (3.2), but adversarial check A2 asks the reviewer to exercise it deliberately.
 
 ## 5. Specification for implementation
 
-### 5.1 Price and counts
+### 5.1 Shared helpers
 
 ```r
-# R/objective_function.R (new helpers)
+# R/objective_function.R
 
-#' Number of removable free edges under a graph constraint
+#' Lexicographic score: feasibility, then fewer edges, then higher gain
 #' @noRd
-.n_removable_edges <- function(trans_constraint) {
-    k <- rowSums(is.na(trans_constraint))
-    sum(pmax(k - 1L, 0L))
+.lexico <- function(u, n_edges, threshold, D, n_free) {
+    if (u >= threshold) u - D * n_edges else u - D * (n_free + 1)
 }
 
-#' Exact maximum of the gain function over all rejection patterns
+#' Exact range of the gain function over all rejection patterns
 #' @noRd
-.trial_success_max <- function(trial_success) {
+.trial_success_range <- function(trial_success) {
     m <- trial_success$m
     patterns <- as.matrix(expand.grid(rep(list(c(FALSE, TRUE)), m)))
     vals <- vapply(
@@ -177,33 +203,13 @@ One pass. The extra work is $2^m$ evaluations of the compiled gain function for 
         function(i) trial_success$func(patterns[i, , drop = FALSE]),
         numeric(1)
     )
-    max(vals)
-}
-
-#' Per-edge price implied by a total cap
-#' @noRd
-.edge_price <- function(gain_tolerance, trial_success, graph_constraint) {
-    if (is.null(gain_tolerance)) {
-        return(0)
-    }
-    n_removable <- .n_removable_edges(graph_constraint$trans_constraint)
-    if (n_removable == 0L) {
-        return(0)
-    }
-    u_max <- .trial_success_max(trial_success)
-    if (u_max <= 0) {
-        cli::cli_abort(
-            "{.arg trial_success} never takes a positive value; \\
-            {.arg gain_tolerance} cannot be applied."
-        )
-    }
-    gain_tolerance * u_max / n_removable
+    c(min = min(vals), max = max(vals))
 }
 ```
 
 ### 5.2 Objective
 
-Complete replacement for the closure factory. The decoding and penalty code is unchanged in content; the additions are the `edge_price` argument, the free-entry mask, the penalty shift, and the last four lines.
+Complete replacement for the closure factory. The decoding and penalty code is unchanged in content; the additions are the three optional arguments, the constants computed at construction, and the last lines.
 
 ```r
 create_obj_func <- function(
@@ -214,7 +220,9 @@ create_obj_func <- function(
     pvals,
     alpha = 0.025,
     num_threads = 1L,
-    edge_price = 0
+    gain_tolerance = NULL,
+    ref_graph = NULL,
+    u_range = NULL
 ) {
     force(power_criterion)
     force(hyp_constraint)
@@ -222,75 +230,142 @@ create_obj_func <- function(
     force(alpha)
     force(pvals)
     force(num_threads)
-    force(edge_price)
 
     use_parallel <- num_threads >= 2L
-    free_mask <- is.na(trans_constraint)
-    n_free <- sum(free_mask)
-    # Shift for invalid encodings so they stay below every valid U - c * E.
-    # Zero when the feature is off, so existing penalties are returned as is.
-    penalty_shift <- if (edge_price > 0) 1 + edge_price * n_free else 0
+    shortcut <- function(w, G) {
+        if (use_parallel) {
+            graph_shortcut_parallel(pvals = pvals, alpha = alpha, w = w, G = G,
+                num_threads = num_threads, grain_size = -1L)
+        } else {
+            graph_shortcut(pvals = pvals, alpha = alpha, w = w, G = G)
+        }
+    }
+
+    enabled <- !is.null(gain_tolerance)
+    penalty_base <- 0
+    if (enabled) {
+        free_mask <- is.na(trans_constraint)
+        n_free <- sum(free_mask)
+        u_ref <- power_criterion(shortcut(ref_graph$hyp_weight, ref_graph$trans_matrix))
+        threshold <- (1 - gain_tolerance) * u_ref
+        D <- (u_range[["max"]] - threshold) + 1
+        penalty_base <- u_range[["min"]] - D * (n_free + 2)
+    }
 
     function(x) {
         theta <- split_theta(x, hyp_constraint)
         hyp_weight <- recover_full_weights(theta$w_pars, hyp_constraint)
-        trans_matrix <- recover_full_trans_matrix(
-            theta$g_pars,
-            trans_constraint
-        )
+        trans_matrix <- recover_full_trans_matrix(theta$g_pars, trans_constraint)
 
         if (anyNA(hyp_weight) || anyNA(trans_matrix)) {
-            return(-1e6 - penalty_shift)
+            return(penalty_base - 1e6)
         }
         if (any(hyp_weight < 0)) {
-            return(sum(hyp_weight[hyp_weight < 0]) - penalty_shift)
+            return(penalty_base + sum(hyp_weight[hyp_weight < 0]))
         }
         if (any(trans_matrix < 0)) {
-            return(sum(trans_matrix[trans_matrix < 0]) - penalty_shift)
+            return(penalty_base + sum(trans_matrix[trans_matrix < 0]))
         }
         if (any(hyp_weight > 1)) {
-            return(-sum(hyp_weight[hyp_weight > 1]) - penalty_shift)
+            return(penalty_base - sum(hyp_weight[hyp_weight > 1]))
         }
         if (any(trans_matrix > 1)) {
-            return(-sum(trans_matrix[trans_matrix > 1]) - penalty_shift)
+            return(penalty_base - sum(trans_matrix[trans_matrix > 1]))
         }
 
         hyp_weight[hyp_weight < 1e-4] <- 0
         trans_matrix[trans_matrix < 1e-5] <- 0
 
-        rej_matrix <- if (use_parallel) {
-            graph_shortcut_parallel(
-                pvals = pvals,
-                alpha = alpha,
-                w = hyp_weight,
-                G = trans_matrix,
-                num_threads = num_threads,
-                grain_size = -1L
-            )
-        } else {
-            graph_shortcut(
-                pvals = pvals,
-                alpha = alpha,
-                w = hyp_weight,
-                G = trans_matrix
-            )
+        u <- power_criterion(shortcut(hyp_weight, trans_matrix))
+        if (!enabled) {
+            return(u)
         }
-
-        u <- power_criterion(rej_matrix)
-        if (edge_price > 0) {
-            u - edge_price * sum(trans_matrix[free_mask] != 0)
-        } else {
-            u
-        }
+        .lexico(u, sum(trans_matrix[free_mask] != 0), threshold, D, n_free)
     }
 }
 ```
 
-With `edge_price = 0` every returned value is arithmetically the value returned today (`x - 0` is exact for finite `x`), and no extra random numbers are drawn.
+With the defaults every returned value is arithmetically the value returned today (`0 + x` and `0 - 1e6` are exact), and no extra random numbers are drawn. The implementer may keep the existing `if (use_parallel)` block inline instead of the `shortcut()` helper; the point is that the disabled path evaluates the same expressions.
 
-### 5.3 Objective on the full sample, and `choose_graph()`
+### 5.3 Encoding guard and seeds
 
-`.graph_optimise_ga()` and `.graph_optimise_local()` keep `ga_trial_success` and `local_trial_success` (raw $U$ on the full sample) and add `ga_objective` and `local_objective`, computed as $U-cE$ from the processed graph so that $E$ uses the same zeroed entries the user will see. `choose_graph()` compares the objectives. With a zero price they equal the trial-success values, so its decisions are unchanged.
+```r
+# R/optimisation_start.R
+
+#' Encode a full graph for the optimisers, guarding derived entries
+#'
+#' A derived entry (the last free entry of a row, or the last free weight)
+#' is one minus the rest. When it should be zero, the rest is rescaled so the
+#' derived entry decodes to a small positive value below the zeroing
+#' threshold (5e-6 for edges, 5e-5 for weights) instead of an exact zero
+#' that floating point could turn into a negative and a penalty.
+#' @noRd
+.encode_graph <- function(graph_constraint, hyp_weight, trans_matrix) {
+    hc <- graph_constraint$hyp_constraint
+    tc <- graph_constraint$trans_constraint
+    x <- as.numeric(create_start_params(
+        graph_constraint, w0 = hyp_weight, G0 = trans_matrix,
+        sum_to_one_constraint = FALSE
+    ))
+    n_w <- max(sum(is.na(hc)) - 1L, 0L)
+    if (n_w > 0L) {
+        last_w <- max(which(is.na(hc)))
+        if (hyp_weight[last_w] < 1e-4) {
+            target <- 1 - 5e-5 - sum(hc, na.rm = TRUE)
+            s <- sum(x[seq_len(n_w)])
+            if (s > 0) x[seq_len(n_w)] <- x[seq_len(n_w)] * (target / s)
+        }
+    }
+    k <- rowSums(is.na(tc))
+    rows <- rep.int(seq_along(k), pmax(k - 1L, 0L))
+    for (i in unique(rows)) {
+        idx <- n_w + which(rows == i)
+        last_g <- max(which(is.na(tc[i, ])))
+        if (trans_matrix[i, last_g] < 1e-5) {
+            target <- 1 - 5e-6 - sum(tc[i, ], na.rm = TRUE)
+            s <- sum(x[idx])
+            if (s > 0) x[idx] <- x[idx] * (target / s)
+        }
+    }
+    x
+}
+
+#' Seed matrix for the simplification GA, most valuable rows first,
+#' truncated to pop_size (GA::ga() errors on oversized suggestions).
+#' @noRd
+.build_simplify_seeds <- function(
+    graph_constraint,
+    ref_graph,
+    pop_size,
+    start_graph = NULL,
+    population = NULL
+) {
+    tc <- graph_constraint$trans_constraint
+    fixed_edge <- !is.na(tc)
+    G <- ref_graph$trans_matrix
+    w <- ref_graph$hyp_weight
+
+    seeds <- list(.encode_graph(graph_constraint, w, G))
+    cand <- which(G != 0 & !fixed_edge, arr.ind = TRUE)
+    for (k in seq_len(nrow(cand))) {
+        i <- cand[k, 1L]
+        j <- cand[k, 2L]
+        Gc <- G
+        Gc[i, ] <- .redistribute_mass(G[i, ], drop_idx = j, fixed_idx = which(fixed_edge[i, ]))
+        if (sum(Gc != 0) >= sum(G != 0)) next
+        if (abs(sum(Gc[i, ]) - 1) > sqrt(.Machine$double.eps)) next
+        seeds[[length(seeds) + 1L]] <- .encode_graph(graph_constraint, w, Gc)
+    }
+    mat <- do.call(rbind, seeds)
+    mat <- rbind(mat, .build_start_matrix(graph_constraint, start_graph))
+    if (!is.null(population) && ncol(population) == ncol(mat)) {
+        mat <- rbind(mat, population)
+    }
+    mat <- unique(mat, MARGIN = 1)
+    storage.mode(mat) <- "double"
+    mat[seq_len(min(nrow(mat), pop_size)), , drop = FALSE]
+}
+```
 
 ### 5.4 Zeroing move in the mutation closure
 
@@ -355,7 +430,6 @@ With `edge_price = 0` every returned value is arithmetically the value returned 
             return(cauchy_mutation(object, parent))
         }
         parent_vec <- as.numeric(object@population[parent, ])
-        # Half the zeroing moves target a parameter, half a derived entry.
         if (stats::runif(1) < 0.5) {
             candidates <- g_idx[parent_vec[g_idx] >= 1e-5]
             if (length(candidates) == 0L) {
@@ -377,13 +451,13 @@ With `edge_price = 0` every returned value is arithmetically the value returned 
 }
 ```
 
-The inner `cauchy_mutation` is the present closure verbatim and is what the factory returns when `p_zero` is zero. The row rescaling relies on `recover_full_trans_matrix()` computing the derived entry as `1 - sum(G[i, ])`; appendix check 2 shows the result is exactly $5\times10^{-6}$. When the row's parameters sum to more than one before the move the rescaling moves mass off the derived entry and onto the explicit ones; the `pmin` clamp keeps each within its bound and the objective's penalty handles the rare remainder.
+The inner `cauchy_mutation` is the present closure verbatim and is what the factory returns when `p_zero` is zero. The row-rescale branch assumes no fixed entries in the row other than the diagonal; for rows with pinned non-zero entries the target is $1-5\times10^{-6}$ minus the fixed sum, which the implementer obtains from `trans_constraint` as in `.encode_graph()`.
 
-### 5.5 Best-first pruning
+### 5.5 Best-first pruning with a threshold
 
 ```r
-# R/post_optim_processing.R: used by prune_graph() when edge_price > 0.
-# The existing fixed-order prune_edges() is kept unchanged for edge_price == 0.
+# R/post_optim_processing.R: used by prune_graph() when a threshold is given.
+# The existing fixed-order prune_edges() is kept unchanged otherwise.
 
 .prune_edges_best_first <- function(
     pvals,
@@ -391,7 +465,7 @@ The inner `cauchy_mutation` is the present closure verbatim and is what the fact
     trans_matrix,
     trial_success,
     fixed_edge,
-    edge_price,
+    threshold,
     alpha = 0.025,
     tolerance = sqrt(.Machine$double.eps)
 ) {
@@ -423,16 +497,14 @@ The inner `cauchy_mutation` is the present closure verbatim and is what the fact
                 fixed_idx = which(fixed_edge[i, ]),
                 tolerance = tolerance
             )
-            # Skip candidates that do not reduce the edge count (uniform
-            # fallback) or that leave an invalid row (no recipients).
             if (sum(G_try != 0) >= n_edges) next
             if (abs(sum(G_try[i, ]) - 1) > tolerance) next
             u_try <- u_of(G_try)
-            if (is.null(best) || u_try > best$u) {
+            if (u_try >= threshold && (is.null(best) || u_try > best$u)) {
                 best <- list(G = G_try, u = u_try)
             }
         }
-        if (is.null(best) || u_best - best$u > edge_price) break
+        if (is.null(best)) break
         loss <- loss + (u_best - best$u)
         u_best <- best$u
         G_best <- best$G
@@ -449,111 +521,174 @@ The inner `cauchy_mutation` is the present closure verbatim and is what the fact
 }
 ```
 
-`prune_graph()` gains `edge_price = 0`, forwards it, dispatches to this function when it is positive, and its return list gains `prune_loss` (zero when off).
+`prune_graph()` gains `threshold = NULL`, forwards it, dispatches to this function when it is non-`NULL`, and its return list gains `prune_loss` (zero otherwise). At most $E_{\max}$ iterations, each at most $E$ shortcut evaluations on the full sample.
 
-### 5.6 `graph_optimise()` and the returned object
+### 5.6 `graph_simplify()`
 
-In `graph_optimise()`: validate `gain_tolerance` with `rlang::check_number_decimal(gain_tolerance, min = 0, max = 1, allow_null = TRUE)`; compute `edge_price <- .edge_price(gain_tolerance, trial_success, graph_constraint)`; warn once if `gain_tolerance` is non-`NULL` and the price is zero because nothing is removable; pass `edge_price` to `.graph_optimise_ga()`, `.graph_optimise_local()` and `prune_graph()`; in `.graph_optimise_ga()`, build the mutation closure with `p_zero = if (edge_price > 0) 0.2 else 0` and `param_rows = .g_param_rows(...)`; after `final_power`, assemble `sparsity` when `gain_tolerance` is non-`NULL`. `graph_optimal()` and `new_graph_optimal()` gain `sparsity = NULL`, appended after `start_graph`, so `names(result)` gains one entry even when the feature is off. `print.multigrain_graph_optimal()` adds, when `sparsity` is non-`NULL`:
+```r
+# R/graph_simplify.R
 
+graph_simplify <- function(
+    graph_optimal,
+    pvals,
+    ...,
+    gain_tolerance = 1e-3,
+    alpha = NULL,
+    global_search = TRUE,
+    num_threads = 1L,
+    control = NULL,
+    verbose = multigrain_verbosity()
+) {
+    check_graph_optimal(graph_optimal)
+    check_double_matrix(pvals)
+    rlang::check_dots_empty()
+    rlang::check_number_decimal(gain_tolerance, min = 0, max = 1)
+    rlang::check_number_decimal(alpha, min = 0, max = 1, allow_null = TRUE)
+    check_logical(global_search, allow_na = FALSE)
+    rlang::check_number_whole(num_threads, min = 1)
+    check_control(control, allow_null = TRUE)
+    verbose <- .resolve_verbose(verbose)   # same coercion as graph_optimise()
+
+    gc <- graph_optimal$constraints
+    ts <- graph_optimal$trial_success
+    if (is.null(gc) || is.null(ts)) {
+        cli::cli_abort("{.arg graph_optimal} must carry its constraint and trial-success objects.")
+    }
+    if (ts$m != ncol(pvals)) {
+        cli::cli_abort("`pvals` must have one column per hypothesis of {.arg graph_optimal}.")
+    }
+    alpha <- alpha %||% graph_optimal$alpha
+    if (is.null(alpha)) {
+        cli::cli_abort("{.arg graph_optimal} does not store {.arg alpha}; supply it explicitly.")
+    }
+
+    ref <- list(hyp_weight = unname(graph_optimal$hyp_weight),
+                trans_matrix = unname(graph_optimal$trans_matrix))
+    ref_power <- calc_power_pvals(pvals, hyp_weight = ref$hyp_weight,
+        trans_matrix = ref$trans_matrix, alpha = alpha,
+        custom_power = list(trial_success = ts))
+    u_ref <- ref_power$trial_success
+    if (u_ref <= 0) {
+        cli::cli_abort("The reference graph has non-positive trial success on {.arg pvals}; nothing to trade.")
+    }
+    u_range <- .trial_success_range(ts)
+    free_mask <- is.na(gc$trans_constraint)
+    n_removable <- sum(pmax(rowSums(free_mask) - 1L, 0L))
+
+    if (is.null(control)) {
+        control <- graph_optimal_get_control(graph_optimal) %||% multigrain_control()
+        control$global_opt$run <- max(1L, control$global_opt$run %/% 2L)
+    }
+    control <- control_prepare(control, pvals = pvals, verbose = verbose)
+
+    if (n_removable == 0L) {
+        cli::cli_warn("No removable edges under this constraint; returning the reference graph.")
+        return(.simplify_result(graph_optimal, ref, ref, ref_power, ref_power, u_ref,
+            gain_tolerance, prune_loss = 0, source = "reference", control, alpha,
+            global_search, NULL, NULL))
+    }
+
+    obj_args <- list(gain_tolerance = gain_tolerance, ref_graph = ref, u_range = u_range)
+    seeds <- .build_simplify_seeds(gc, ref, pop_size = control$global_opt$popSize,
+        population = if (!is.null(graph_optimal$global_output)) graph_optimal$global_output@population)
+
+    ga_result <- NULL
+    x0 <- .encode_graph(gc, ref$hyp_weight, ref$trans_matrix)
+    if (global_search) {
+        ga_result <- .graph_optimise_ga(pvals, gc, ts, nsim = control$nsim_global,
+            global_opts = control$global_opt, alpha = alpha, num_threads = num_threads,
+            verbose = verbose, suggestions = seeds, p_zero = 0.2, objective_args = obj_args)
+        x0 <- pmin(pmax(ga_result$ga_output@solution[1, ], 0), 1)
+    }
+    local_result <- .graph_optimise_local(pvals, gc, ts, nsim = control$nsim_local,
+        local_opts = control$local_opt, alpha = alpha, num_threads = num_threads,
+        x0 = x0, verbose = verbose, objective_args = obj_args)
+
+    best <- choose_graph(ga_result, local_result)   # compares *_objective
+    threshold_full <- (1 - gain_tolerance) * u_ref
+    pruned <- prune_graph(pvals, best$hyp_weight, best$trans_matrix, ts, gc,
+        alpha = alpha, gamma = 1, threshold = threshold_full, verbose = verbose)
+
+    # Fallback: the reference is feasible on the full sample by construction.
+    score <- function(w, G) {
+        u <- calc_power_pvals(pvals, hyp_weight = w, trans_matrix = G, alpha = alpha,
+            custom_power = ts)$custom_power
+        n_free <- sum(free_mask)
+        D <- (u_range[["max"]] - threshold_full) + 1
+        .lexico(u, sum(G[free_mask] != 0), threshold_full, D, n_free)
+    }
+    use_ref <- score(ref$hyp_weight, ref$trans_matrix) >=
+        score(pruned$hyp_weight, pruned$trans_matrix)
+    final <- if (use_ref) ref else pruned
+    source <- if (use_ref) "reference" else best$source
+
+    final_power <- calc_power_pvals(pvals, hyp_weight = final$hyp_weight,
+        trans_matrix = final$trans_matrix, alpha = alpha,
+        custom_power = list(trial_success = ts))
+    .simplify_result(graph_optimal, ref, final, ref_power, final_power, u_ref,
+        gain_tolerance, prune_loss = pruned$prune_loss, source = source,
+        control, alpha, global_search, ga_result, local_result)
+}
 ```
-Edges: 6 (5 free of 8 removable); edge price 1.25e-04
-Total loss of trial success bounded by 1e-03 (prune stage: 7.5e-05)
-```
 
-`summary()` prints the same two lines under the power block.
+`.simplify_result()` applies the hypothesis names, assembles `sparsity` (3.9) and calls `graph_optimal()` with `solution = list(opt_source = paste0("simplify:", source), graph_valid = ...)`. `.graph_optimise_ga()` and `.graph_optimise_local()` gain the optional arguments `suggestions`, `p_zero` and `objective_args`, with defaults reproducing today's behaviour exactly, and return `ga_objective` / `local_objective` alongside the trial-success values.
 
 ## 6. Alternatives considered
 
-1. **A threshold against the unpenalised optimum in two stages.** Run the present pipeline, take its graph as reference $x_{\text{ref}}$, then re-run the local search and pruning (optionally the GA) with a lexicographic objective ranking feasibility $U\ge(1-\lambda)U_{\text{ref}}$ first, fewer edges second and $U$ third, with the threshold recomputed on each stage's sample. This certifies the cap against the dense optimum and can spend the whole budget. Rejected: it needs a second pass, three thresholds threaded through three samples, and a fallback rule, and it roughly doubles runtime when the GA is repeated. The single-pass price gives the same guarantee against a slightly different reference ($U_{\max}$ rather than $U^*$) at no extra cost.
-2. **An uncalibrated per-edge price.** One pass, but no total cap, and a price whose meaning depends on the scale of $\psi$. Rejected.
-3. **A single-pass price calibrated on a cheap lower bound of $U^*$**, $c=\lambda U_{\text{seed}}/P_G$. Certifies the cap against $U^*$ rather than $U_{\max}$, but is smaller still and needs a seed evaluation before the objective exists. Rejected as strictly more conservative for no practical gain.
+1. **A single-pass per-edge price inside `graph_optimise()`.** Derive $c=\lambda U_{\max}/P_G$ with $P_G$ the number of removable edges and maximise $U-cE$ in one pass. It certifies a total cap of $\lambda U_{\max}$ without a reference and needs no second optimisation. Rejected because the price is calibrated for the worst case (every removable edge goes) and is therefore tiny: at $\lambda=10^{-3}$ and $m=6$ about $4\times10^{-5}$ per edge, which removes only edges that flip a few dozen trials per million (check 4: an $\epsilon$-edge costing $1.5\times10^{-3}$ would stay), leaves most of the budget unspent, and cannot report the cost against the dense optimum because that optimum is never computed. The two-stage design spends the budget the user stated and reports exactly what it cost.
+2. **`gain_tolerance` as an argument of `graph_optimise()`** running the second stage internally. Hides a second optimisation behind an argument, forces a `NULL`-means-off default, and requires a fixture-based identity gate to show that the off path is unchanged. A separate function makes the stage explicit and leaves `graph_optimise()` alone.
+3. **An uncalibrated per-edge price.** No total cap; the price's meaning depends on the scale of $\psi$. Rejected.
 4. **A multi-objective GA** over $(U,-E)$ with a choice from the Pareto front afterwards. Needs a new dependency and rewrites the global search. Rejected.
-5. **Counting pinned entries.** Adds a constant, changes nothing in the search, confuses the report. Rejected.
-6. **Entropy or $\ell_q$ sparsity measures.** Reward shrinking edges rather than removing them. Rejected.
-7. **A lexicographic scalarisation with a large edge weight** so that fewer edges always win. Something must then stop it from removing everything, which is a threshold in disguise. Superseded by the price.
-8. **Placing the setting on `multigrain_control`.** Rejected for the reason in 3.9.
+5. **Stage 2 without a GA** (COBYLA and best-first pruning only). Cannot find removals that only become affordable after the weights are re-tuned, and cannot move to a different topology. Available to the user through `global_search = FALSE`; not the default.
+6. **Entropy or $\ell_q$ sparsity measures; counting pinned entries.** Rejected for the reasons in 3.4.
+7. **A threshold on the full sample only.** Would make the GA's and COBYLA's subsample rankings inconsistent with the cap. Rejected in favour of a threshold per sample.
 
 ## 7. Implementation plan
 
 Each step ends with a gate that must pass before the next starts. Test files are run one at a time with `testthat::test_file()`.
 
-1. **Helpers and objective** (`R/objective_function.R`). Add `.n_removable_edges()`, `.trial_success_max()`, `.edge_price()` and the `edge_price` argument as in 5.1 and 5.2. Gate: `test-objective_function.R` passes unchanged; new tests: for 200 random encodings at $m\in\{3,4\}$ the closure with `edge_price = 0` returns values identical (`expect_identical`) to a copy of the pre-change closure kept in the test file; with a positive price it returns $U-cE$ with $E$ computed independently from `param_to_solution(process = TRUE)`; every invalid encoding scores below $-\lambda U_{\max}$; `.n_removable_edges()` equals the parameter count of `create_start_params()` for three constraints; `.trial_success_max()` returns 1, 4 and 1 for the three functions in appendix check 6.
-2. **Mutation move** (`R/mutation_helpers.R`) as in 5.4, plus `.g_param_rows()`. The comment block of `.make_cauchy_mutation_multi()` must carry the "What the mutation does today" and "What is added" explanation from section 3.5, including why the derived entry needs its own variant and why the disabled path is byte-identical. Gate: `test-mutation_helpers.R` passes; new tests: with `p_zero = 0` the factory returns a closure whose outputs under `set.seed()` are identical to the present closure's; with `p_zero = 1` every call either sets a free transition parameter to exactly 0 or scales a row to $1-5\times10^{-6}$ within `1e-12`; the row map matches `recover_full_trans_matrix()`'s parameter order for a constrained example; the comment block is present and describes both variants.
-3. **Pruning** (`R/post_optim_processing.R`) as in 5.5; `prune_graph()` gains `edge_price` and returns `prune_loss`. Gate: `test-post_optim_processing.R` passes unchanged; new tests: on the 4-hypothesis fixture in that file, a zero price reproduces the current 7-edge result of the `gamma = 1` prune; a positive price never accepts a candidate that raises the edge count; `prune_loss <= edge_price * n_removed`; no row is left with a sum different from one.
-4. **Pipeline** (`R/optimisation.R`, `R/choose_graph.R`). Thread `edge_price` through `.graph_optimise_ga()` and `.graph_optimise_local()`; add `ga_objective` and `local_objective`; `choose_graph()` compares them. Gate: `test-optimisation.R` and `test-choose_graph.R` pass with existing snapshots untouched.
-5. **Object and methods** (`R/graph_optimal.R`). Add `sparsity`; print and summary lines. Gate: `test-graph_optimal.R` passes; new snapshot with a non-`NULL` `sparsity`.
-6. **User-facing argument** (`R/optimisation.R`, roxygen). `gain_tolerance = NULL`; validation; warning for $P_G=0$; error for $U_{\max}\le0$. Documentation, all in the roxygen for `graph_optimise()` and rendered to `man/graph_optimise.Rd`: the `@param` entry for `gain_tolerance` stating the semantics (a total cap as a fraction of the largest value of the trial-success function; in units of power for probability-valued functions), the derived price, the conservatism from section 4.1 with the small table, the recommended $10^{-3}$ and the note that $5\times10^{-3}$ is where the cap begins to bind at $m\ge6$; a `@details` section "Edge removal during the global search" carrying the explanation from section 3.5 in user-facing terms (why continuous perturbations do not remove edges, what the zeroing move does, why one edge per row needs the rescaling variant, and that nothing changes when `gain_tolerance` is `NULL`); a sentence that with `global_search = FALSE` edges are removed only by pruning; and the `@returns` entry for the `sparsity` element with every field from section 3.8. The get-started article under `vignettes/articles/` gains a short section demonstrating `gain_tolerance` on the example graph and repeating the edge-removal explanation in one paragraph. Gate: `devtools::document()` runs clean; `man/graph_optimise.Rd` contains the `@details` heading and every `sparsity` field; the article renders; and the end-to-end test at $m=4$, $n_{\text{sim}}=10^4$, `gain_tolerance = 5e-3`: returned graph valid, `sparsity$n_edges` at most the count from a `NULL` run with the same seed, `$power$trial_success` identical to a fresh `calc_power_pvals()` on the returned graph, and `sparsity$prune_loss <= sparsity$loss_bound`.
-7. **Bit-identity gate** (section 8). Gate: passes on the branch against a fixture generated before any change.
-8. **Regenerate `data/graph_optimal_example.rda`** with `data-raw/graph_optimal_example.R` (the object gained an element), run `devtools::document()`, update `NEWS.md` (section 10). Gate: `R CMD check` clean locally.
+1. **Shared helpers and objective** (`R/objective_function.R`). Add `.lexico()`, `.trial_success_range()` and the three optional arguments of `create_obj_func()` as in 5.1 and 5.2. Gate: `test-objective_function.R` passes unchanged; new tests: for 200 random encodings at $m\in\{3,4\}$ the closure with default arguments returns values identical (`expect_identical`) to a copy of the pre-change closure kept in the test file; with a threshold it returns `.lexico(U, E, T, D, n_free)` with $E$ computed independently from `param_to_solution(process = TRUE)`; the encoded reference scores exactly $U_{\text{ref}}-D\,E_{\text{ref}}$; every invalid encoding scores below every valid one; `.trial_success_range()` returns $(0,1)$, $(0,4)$ and $(0,1)$ for the three functions in check 6.
+2. **Mutation move** (`R/mutation_helpers.R`) as in 5.4, plus `.g_param_rows()`, with the comment block carrying the explanation from 3.6. Gate: `test-mutation_helpers.R` passes; new tests: with `p_zero = 0` the factory returns a closure whose outputs under `set.seed()` are identical to the present closure's; with `p_zero = 1` every call either sets a free transition parameter to exactly 0 or scales a row to $1-5\times10^{-6}$ within `1e-12`; the row map matches `recover_full_trans_matrix()`'s parameter order for a constrained example; the comment block describes both variants.
+3. **Encoding guard and seeds** (`R/optimisation_start.R`) as in 5.3. Gate: `test-optimisation_start.R` passes; new tests: encoding then decoding the reference of check 9 gives no negative entry, derived entries of exactly $5\times10^{-6}$ where the reference has zeros, and the same edge count; the seed matrix has the reference first, at most `pop_size` rows, and no duplicates; a population of the wrong width is ignored.
+4. **Internal optimisers and choice** (`R/optimisation.R`, `R/choose_graph.R`). Add `suggestions`, `p_zero`, `objective_args` to `.graph_optimise_ga()` and `objective_args` to `.graph_optimise_local()`, both defaulting to today's behaviour; add `ga_objective` / `local_objective`; `choose_graph()` compares them. Gate: `test-optimisation.R` and `test-choose_graph.R` pass with existing snapshots untouched.
+5. **Pruning** (`R/post_optim_processing.R`) as in 5.5; `prune_graph()` gains `threshold` and returns `prune_loss`. Gate: `test-post_optim_processing.R` passes unchanged; new tests: on the 4-hypothesis fixture in that file, a threshold equal to the current gain reproduces the current 7-edge result; a threshold never admits a candidate that raises the edge count or lowers $U$ below it; `prune_loss` equals the difference in $U$ before and after; no row is left with a sum different from one.
+6. **Object and methods** (`R/graph_optimal.R`, `R/optimisation.R`). Constructor gains `alpha` and `sparsity`; `graph_optimise()` stores `alpha`; print and summary lines. Gate: `test-graph_optimal.R` and `test-optimisation.R` pass with existing snapshots untouched; new test that `names()` of a `graph_optimise()` result equals the previous names plus `alpha` and `sparsity`, with `sparsity` `NULL`; new snapshot of print and summary with a populated `sparsity`.
+7. **`graph_simplify()`** (`R/graph_simplify.R`, `NAMESPACE`, `_pkgdown.yml` reference index, roxygen, article). Documentation, all in the roxygen and rendered to `man/graph_simplify.Rd`: `@param` entries stating that the cap is a fraction of the reference gain on the supplied `pvals`, that `alpha` and `control` default to the stored values with `run` halved, and that `pvals` may differ from stage 1; a `@details` section "Edge removal during the global search" carrying the explanation from 3.6 in user-facing terms; a paragraph on what to expect (4.1 to 4.3), including that with `global_search = FALSE` edges are removed only by pruning; the `@returns` entry listing every `sparsity` field from 3.9. The get-started article gains a section calling `graph_simplify()` on the example graph, plotting reference and result side by side, and repeating the edge-removal explanation in one paragraph. Gate: `devtools::document()` runs clean; `man/graph_simplify.Rd` contains the `@details` heading and every `sparsity` field; the article renders; end-to-end test at $m=4$, $n_{\text{sim}}=10^4$ with the fixture of `test-post_optim_processing.R`: for $\lambda\in\{0,10^{-3},10^{-2},1\}$ the returned graph is valid, `gain >= (1 - lambda) * gain_reference`, `n_edges <= n_edges_reference`, `$power$trial_success` is identical to a fresh `calc_power_pvals()` on the returned graph, and at $\lambda=1$ `n_edges_free` equals $m$.
+8. **Regenerate `data/graph_optimal_example.rda`** with `data-raw/graph_optimal_example.R` (the object gained two elements), update `NEWS.md` (section 10), run `R CMD check`. Gate: check clean locally.
 
 ## 8. Test plan
 
 Beyond the per-step gates above:
 
-**Bit-identical when disabled.** Before any change, run the recipe below and save the result and the RNG state. After the change, the test re-runs the recipe and compares.
+**`graph_optimise()` unchanged.** Every existing snapshot in `test-optimisation.R` and `test-graph_optimal.R` passes without update. A new test asserts that a `graph_optimise()` result differs from the previous object shape only by the `alpha` and `sparsity` elements. Because no code on the `graph_optimise()` path changes except the constructor call, no fixture is needed; the reviewer's check A1 covers random-number consumption.
 
-```r
-# tests/testthat/data/make_sparsity_baseline.R (run before the change; commits the RDS)
-set.seed(20260906)
-pvals <- multigrain::simulate_pvalues(
-    c(0.93, 0.91, 0.90, 0.85),
-    corr_matrix = matrix(0.2, 4, 4) + diag(0.8, 4),
-    nsim = 1e4
-)
-ts <- multigrain::trial_success(0.25 * (2 * (r1 && r2) + r1 * r3 + r2 * r4), verbose = "silent")
-ctrl <- multigrain::multigrain_control() |>
-    multigrain::control_global(maxiter = 30, popSize = 40, run = 10) |>
-    multigrain::control_local(maxeval = 500)
-set.seed(1)
-res <- multigrain::graph_optimise(
-    pvals = pvals,
-    graph_constraint = multigrain::graph_constraint_free(4),
-    trial_success = ts,
-    control = ctrl,
-    verbose = "silent"
-)
-saveRDS(
-    list(result = res, seed_after = .Random.seed, versions = c(
-        R = R.version.string, GA = as.character(packageVersion("GA")),
-        nloptr = as.character(packageVersion("nloptr"))
-    )),
-    "tests/testthat/data/sparsity_baseline.rds"
-)
-```
+**Cap invariant.** For seeds 1 to 5 and $\lambda\in\{0,10^{-3},5\times10^{-3},10^{-2},1\}$: `sparsity$gain >= (1 - lambda) * sparsity$gain_reference` on the supplied `pvals`, exactly, with no tolerance.
 
-```r
-# tests/testthat/test-sparsity_baseline.R
-test_that("graph_optimise() is bit-identical to the baseline when gain_tolerance is NULL", {
-    skip_on_cran()
-    base <- readRDS(test_path("data", "sparsity_baseline.rds"))
-    # same recipe as make_sparsity_baseline.R
-    ...
-    res <- graph_optimise(..., control = ctrl, verbose = "silent")
-    keep <- setdiff(names(res), "sparsity")
-    expect_identical(unclass(res)[keep], unclass(base$result)[keep])
-    expect_identical(.Random.seed, base$seed_after)
-    expect_null(res$sparsity)
-})
-```
+**Fallback.** A reference already at its floor (one free edge per row) and $\lambda=0$ returns the reference with `source = "reference"` and zero loss.
 
-The test is skipped on CRAN because nloptr and GA binaries may differ across platforms in the last bits; it is the gate for step 7 locally and in the Ubuntu CI job. The fixture records the R, GA and nloptr versions so a mismatch is diagnosable.
+**Seeds.** `.build_simplify_seeds()` returns at most `popSize` rows with the encoded reference first; with the example object's population appended, `GA::ga()` runs without error.
 
-**Feature tests.** In addition to the per-step gates: `gain_tolerance = 0` runs, returns a non-`NULL` `sparsity`, and never lowers `$power$trial_success` below the `NULL` run's value with the same seed; `num_threads = 2` gives the same `sparsity$n_edges` as `num_threads = 1` for the same seed (appendix check 4 confirms the parallel shortcut returns identical rejections); a constrained example with pinned non-zero edges reports `n_edges > n_edges_free`; `gain_tolerance = 1e-3` on `graph_constraint_free(2)` warns that nothing is removable.
+**Inputs.** An object without `alpha` and no explicit `alpha` errors; an explicit `alpha` is used; `pvals` with the wrong number of columns errors; `pvals` with fewer rows than the stored `nsim_*` triggers the existing `control_prepare()` warnings and runs; `num_threads = 2` gives the same result as `num_threads = 1` for the same seed (check 4 verified identical rejections from the parallel shortcut).
+
+**Degenerate cases.** `graph_constraint_free(2)` warns and returns the reference; a gain function that is never positive errors before any search.
 
 ## 9. Adversarial checks for review
 
-- **A1.** Run `graph_optimise()` before and after the change for seeds 1 to 5, $m\in\{2,3,4\}$, constrained and free, `global_search` on and off, `num_threads` 1 and 2, `gain_tolerance = NULL`. Any non-identical element other than `sparsity`, or any difference in `.Random.seed` afterwards, fails the off-by-default requirement.
-- **A2.** Use a gain function with negative values, such as `r1 - r2`, and a price. Confirm no invalid encoding ever outranks a valid graph in the GA's final population.
-- **A3.** Constant gain function and one that is never positive: confirm the error path in `.edge_price()`, not a silent zero or `NaN`.
-- **A4.** $m=2$ and a fully pinned `trans_constraint`: confirm the warning and that `sparsity$n_removable` is 0.
-- **A5.** Construct a GA population where the zeroing move rescales a row whose parameters sum to more than one. After the move the row sums to $1-5\times10^{-6}$ unless clamped; confirm no parameter exceeds its bound and the objective is finite.
-- **A6.** After `param_to_solution(process = TRUE)` snaps an entry to $0.001$, confirm pruning can remove it when its loss is below $c$, and that it is counted in `n_edges_free` when it stays.
-- **A7.** Try to make best-first pruning loop for ever: every accepted step reduces the edge count by one, so at most $P_G$ iterations; verify with a `gain_tolerance = 1` run.
-- **A8.** Confirm `choose_graph()` picks the GA graph when the local one is invalid and a price is set, and that the comparison uses the objective, not raw $U$.
-- **A9.** The pre-existing abort when `.redistribute_mass()` has no recipients (appendix check 1): confirm it is unreachable through `graph_constraint()` and that the validity skip in best-first pruning makes it unreachable there as well.
-- **A10.** Noise floor at scale: at $m=8$, $n_{\text{sim}}=10^6$, $\lambda=10^{-3}$, $c\approx2\times10^{-5}$ is close to the paired standard error for an edge that flips 0.1% of trials. Check whether pruning's accept/reject at the margin flips between two independent p-value matrices; if it does, the documentation must say that $\lambda$ below $5\times10^{-3}$ at $m\ge8$ is at the noise floor. This is the design's weakest point.
-- **A11.** `global_search = FALSE` with a price: confirm the result differs from the `NULL` run only through pruning, and that the documentation says so.
-- **A12.** Confirm the intermittent Nelder-Mead step inside `GA::ga()` receives the priced fitness (it calls the same `fitness` slot) and does not re-create edges: count zeros before and after `optim` steps on a logged run.
+- **A1.** Run `graph_optimise()` before and after the change for seeds 1 to 5, $m\in\{2,3,4\}$, constrained and free, `global_search` on and off, `num_threads` 1 and 2. Any non-identical element other than `alpha` and `sparsity`, or any difference in `.Random.seed` afterwards, fails the unchanged-behaviour requirement.
+- **A2.** Boundary feasibility across samples: choose $\lambda$ so that a one-edge-removal neighbour of the reference sits within one paired standard error of the threshold on the GA subsample. Confirm that whatever the GA and COBYLA return, the final graph satisfies the cap on the full sample, and that `source` reports `"reference"` when nothing feasible beat it.
+- **A3.** Seeds larger than `popSize`: a reference with many edges and a small `popSize`. `GA::ga()` must not error; the reference must still be in the population.
+- **A4.** Encoding guard on constrained graphs with pinned non-zero entries in rows that also have free entries; on a reference whose derived weight is zero; on a row whose parameters sum to more than one before the guard.
+- **A5.** Gain functions with negative values and with $U_{\text{ref}}\le0$: the error path, not a silent result.
+- **A6.** $\lambda=0$ and $\lambda=1$: the invariants in step 7; at $\lambda=1$ the result has exactly one free edge per row and `source` is not `"reference"`.
+- **A7.** `pvals` different from stage 1 (a fresh sample of the same design, and a sample of a different design): `gain_reference` is recomputed on the supplied matrix and the cap holds there.
+- **A8.** Stored population of the wrong width (object optimised under a different constraint than the one passed): seeds ignore it, no error.
+- **A9.** Start COBYLA from a graph infeasible at the chosen $\lambda$ (as in check 11) and confirm the returned graph is feasible or the fallback fires; never an infeasible return.
+- **A10.** Stored `run` of 1: halving floors at 1, GA still runs.
+- **A11.** Rows with pinned non-zero entries under the row-rescale mutation move: the rescale target must subtract the fixed sum; check that decoded entries stay non-negative.
+- **A12.** Best-first pruning termination and cost: at most $E_{\max}$ iterations; measure shortcut evaluations at $m=4$ and extrapolate to $m=8$, $n_{\text{sim}}=10^6$.
+- **A13.** $\epsilon$-edges: after `param_to_solution(process = TRUE)` snaps an entry to $0.001$, confirm pruning can remove it when feasible and that it is counted in `n_edges_free` when it stays.
+- **A14.** The intermittent Nelder-Mead step inside `GA::ga()` receives the lexicographic fitness and does not re-create edges in feasible individuals: count zeros before and after `optim` steps on a logged run.
+- **A15.** Two consecutive calls, `graph_simplify(graph_simplify(res, pvals, 1e-3), pvals, 1e-3)`: the second call's reference is the first call's result, so the cap compounds; confirm the documentation says so and that nothing breaks.
 
 ## 10. Proposed `NEWS.md` wording
 
@@ -562,32 +697,30 @@ Under `# multigrain (development version)`:
 ```
 ## New functionality
 
-* `graph_optimise()` gains `gain_tolerance`, a total cap on the trial-success
-  value the optimiser may give up in exchange for a graph with fewer edges.
-  The cap is expressed as a fraction of the largest value the trial-success
-  function can take, so for probability-valued functions it is a cap in units
-  of power. Internally it becomes a fixed per-edge price
-  `gain_tolerance * max(psi) / n_removable` that is part of the objective used
-  by the global search, the local search and the pruning step, so the total
-  loss is bounded by the cap however many edges are removed. When
-  `gain_tolerance` is `NULL` (the default) behaviour is unchanged.
-* When `gain_tolerance` is set, the returned `multigrain_graph_optimal` gains a
-  `sparsity` element reporting the edge count, the price, the bound on the
-  total loss and the exact loss incurred during pruning; `print()` and
-  `summary()` show these.
-* When `gain_tolerance` is set, edge pruning is best-first: the edge whose
-  removal costs least is removed first.
+* New `graph_simplify()` takes an optimised graph and searches for one with
+  fewer edges whose trial-success value, on the supplied p-values, is at
+  least `1 - gain_tolerance` times that of the input graph. The search reuses
+  the global and local optimisers with a score that ranks feasibility first,
+  fewer edges second and trial success third, warm-starts from the input
+  graph and the stored population, and finishes with best-first pruning; the
+  input graph is returned if nothing feasible improves on it. The result is a
+  `multigrain_graph_optimal` with a `sparsity` element reporting both graphs'
+  trial success, the edge counts and the exact loss, shown by `print()` and
+  `summary()`.
+* `graph_optimise()` results now store `alpha` and carry a `sparsity`
+  element (`NULL`); nothing else about `graph_optimise()` changes.
 ```
 
-No bug fixes are part of this change. Two pre-existing issues found while reading the code are recorded as open items O2 and O4 and should be fixed separately so that the off-by-default gate stays clean.
+No bug fixes are part of this change. Two pre-existing issues found while reading the code are recorded as open items O2 and O3 and should be fixed separately.
 
 ## 11. Open items
 
-- **O1. Conservatism of the price.** At $\lambda=10^{-3}$ and $m\ge6$ the price removes only edges that flip a few dozen trials per million. Evidence that would close it: on realistic problems of five to eight hypotheses, the distribution of per-edge losses of the edges left after the existing prune. If most lie between $10^{-4}$ and $10^{-3}$, the documented recommendation should be $5\times10^{-3}$, or the two-stage threshold (section 6, alternative 1) becomes worth its cost.
+- **O1. $p_0$ and the split between parameter zeroing and row rescaling.** Proposed $0.2$ and one half. Evidence to close: on $m=4$ examples, the fraction of stage-2 generations in which the elite's edge count decreases, for $p_0\in\{0.1,0.2,0.4\}$.
 - **O2. `global_opt_power` / `local_opt_power`.** The 0.2.0 news entry says the returned object stores the pre-pruning power of the global and local solutions. The constructor in `R/graph_optimal.R` has no such elements; `.graph_optimise_ga()` and `.graph_optimise_local()` compute them as `ga_subset_power` and `local_subset_power`, and `graph_optimise()` discards them. Either reinstate them or correct the news entry. Separate change.
-- **O3. $p_0$ and the split between parameter zeroing and row rescaling.** Proposed $0.2$ and one half. Evidence to close: on $m=4$ examples, the fraction of GA generations in which the elite's edge count decreases, for $p_0\in\{0.1,0.2,0.4\}$.
-- **O4. Pre-existing abort in `prune_edges()`** when a row has no free recipients (appendix check 1). Unreachable through `graph_constraint()`; fix separately if `prune_graph()` is ever exported.
-- **O5. Whether `gain_tolerance = 0` is documented as a supported mode.** It is well defined (best-first, zero price) and cheap; giving it a name is a documentation decision.
+- **O3. Pre-existing abort in `prune_edges()`** when a row has no free recipients (check 1). Unreachable through `graph_constraint()`; fix separately if `prune_graph()` is ever exported.
+- **O4. Halving `run` for stage 2.** Proposed default. Evidence to close: on realistic problems of five to eight hypotheses, the generation at which stage 2 last improved, compared with its `run` value.
+- **O5. Whether `graph_optimise()` should offer a pass-through** (for example `simplify = 1e-3`) that calls `graph_simplify()` on its own result. Convenience only; decide after the function has been used.
+- **O6. Warning when `pvals` differs from stage 1.** The object could store a hash of the p-value matrix and `graph_simplify()` could note when the supplied matrix differs. Decide after use.
 
 ## Appendix: verification runs
 
@@ -874,3 +1007,246 @@ DONE
 ```
 
 Two remarks on the output. In check 2 the local optimum used to seed `x0` differs from the graph used in `show_derived`, so `f(x0)` and the `f(x)` values are not comparable with each other; what matters is that the rescaled row gives a derived entry of exactly $5\times10^{-6}$ and a finite objective. In check 7 the local search was capped at 2000 evaluations and had not converged, which is why the existing prune raised $U$; the comparison of interest is best-first at zero price against the fixed-order prune, which agree.
+
+### Additional checks 8 to 11
+
+Same environment. These checks build the reference graph the same way as check 7 (a local optimum at 2000 evaluations, then the current prune), so the reference has seven edges and $U_{\text{ref}}=0.804825$ on the $10^4$ trials.
+
+```r
+## Additional verification checks for the graph_simplify() design.
+## Constraints: m <= 4, nsim <= 1e4, no test_package(), read-only w.r.t. repo.
+.libPaths(c("C:/Users/advsp/AppData/Local/R/win-library/4.6", .libPaths()))
+suppressPackageStartupMessages({
+    pkgload::load_all("C:/Users/advsp/Documents/repos/multigrain", quiet = TRUE)
+})
+options(multigrain_verbosity = "silent")
+sec <- function(x) cat("\n==== ", x, " ====\n", sep = "")
+
+## shared setup (same as checks.R sections 2 and 7)
+gc4 <- graph_constraint_free(4)
+set.seed(2)
+pv4 <- simulate_pvalues(c(0.93, 0.91, 0.90, 0.85),
+    corr_matrix = matrix(0.2, 4, 4) + diag(0.8, 4), nsim = 1e4)
+ts_custom <- trial_success(0.25 * (2 * (r1 && r2) + r1 * r3 + r2 * r4), verbose = "silent")
+U_of <- function(w, G) calc_power_pvals(pv4, hyp_weight = w, trans_matrix = G,
+    custom_power = ts_custom)$custom_power
+ctrl <- multigrain_control() |> control_local(maxeval = 2000, print_level = 0)
+ctrl <- control_prepare(ctrl, pvals = pv4)
+set.seed(5)
+loc <- .graph_optimise_local(pv4, gc4, ts_custom, local_opts = ctrl$local_opt, verbose = "silent")
+cur <- prune_graph(pv4, loc$local_hyp_weight, loc$local_trans_matrix, ts_custom, gc4,
+    gamma = 1, verbose = "silent")
+w_ref <- cur$hyp_weight; G_ref <- cur$trans_matrix
+U_ref <- U_of(w_ref, G_ref)
+cat("reference (stage-1 output): edges =", sum(G_ref != 0), " U_ref =", format(U_ref, digits = 6), "\n")
+print(round(G_ref, 4)); cat("w_ref:", round(w_ref, 4), "\n")
+free_mask <- is.na(gc4$trans_constraint)
+n_free <- sum(free_mask)
+
+## ---------------------------------------------------------------- 8
+sec("8. stage-1 GA population is stored on the object; GA truncates suggestions")
+x <- graph_optimal_example
+cat("names(graph_optimal_example):", names(x), "\n")
+cat("population dim:", dim(x$global_output@population), " popSize:", x$global_output@popSize, "\n")
+nvars_example <- length(create_start_params(x$constraints))
+cat("encoding nvars for its constraint:", nvars_example, " (matches ncol:", ncol(x$global_output@population) == nvars_example, ")\n")
+set.seed(9)
+sugg <- matrix(runif(12 * 3), nrow = 12, ncol = 3)
+tiny_ga <- function(s, pop) suppressWarnings(GA::ga(type = "real-valued",
+    fitness = function(v) -sum((v - 0.5)^2), lower = rep(0, 3), upper = rep(1, 3),
+    popSize = pop, maxiter = 3, run = 3, suggestions = s, monitor = FALSE))
+res_over <- tryCatch(tiny_ga(sugg, 10), error = function(e) paste("ERROR:", conditionMessage(e)))
+cat("GA::ga with popSize 10 and 12 suggestion rows ->", if (is.character(res_over)) res_over else "ran", "\n")
+res_ok <- tiny_ga(sugg[1:10, ], 10)
+cat("GA::ga with popSize 10 and 10 suggestion rows -> ran, iter =", res_ok@iter, "\n")
+res_fewer <- tiny_ga(sugg[1:3, ], 10)
+cat("GA::ga with popSize 10 and 3 suggestion rows -> ran, iter =", res_fewer@iter, "\n")
+
+## ---------------------------------------------------------------- 9
+sec("9. encoding a pruned graph: derived entries, the guard, and the objective")
+obj_plain <- create_obj_func(4, ts_custom$func, gc4$hyp_constraint, gc4$trans_constraint, pvals = pv4)
+x_ref <- as.numeric(create_start_params(gc4, w0 = w_ref, G0 = G_ref, sum_to_one_constraint = FALSE))
+decode <- function(xx) {
+    th <- split_theta(xx, gc4$hyp_constraint)
+    list(w = recover_full_weights(th$w_pars, gc4$hyp_constraint),
+         G = recover_full_trans_matrix(th$g_pars, gc4$trans_constraint))
+}
+count_edges <- function(G) { G[G < 1e-5] <- 0; sum(G[free_mask] != 0) }
+d0 <- decode(x_ref)
+cat("derived col per row (last free col): ", apply(gc4$trans_constraint, 1, function(r) max(which(is.na(r)))), "\n")
+cat("derived entries after plain re-encoding: ", format(c(d0$G[1, 4], d0$G[2, 4], d0$G[3, 4], d0$G[4, 3]), digits = 3), "\n")
+cat("derived weight (w[4]):", format(d0$w[4], digits = 3), "\n")
+cat("any negative entry:", any(d0$G < 0) || any(d0$w < 0), " -> objective value:", format(obj_plain(x_ref), digits = 6),
+    " (U of reference on same sample:", format(U_ref, digits = 6), ")\n")
+# the guard: rescale rows whose derived entry is < 1e-5 so params sum to 1 - 5e-6;
+# rescale weights if the derived weight is < 1e-4 so they sum to 1 - 5e-5
+guard_encode <- function(xx, gc) {
+    n_w <- max(sum(is.na(gc$hyp_constraint)) - 1L, 0L)
+    k <- rowSums(is.na(gc$trans_constraint))
+    rows <- rep.int(seq_along(k), pmax(k - 1L, 0L))
+    d <- decode(xx)
+    if (n_w > 0) {
+        last_free_w <- max(which(is.na(gc$hyp_constraint)))
+        if (d$w[last_free_w] < 1e-4) {
+            s <- sum(xx[seq_len(n_w)]) + sum(gc$hyp_constraint, na.rm = TRUE)
+            if (s > 0) xx[seq_len(n_w)] <- xx[seq_len(n_w)] * ((1 - 5e-5 - sum(gc$hyp_constraint, na.rm = TRUE)) / sum(xx[seq_len(n_w)]))
+        }
+    }
+    for (i in unique(rows)) {
+        idx <- n_w + which(rows == i)
+        last_free <- max(which(is.na(gc$trans_constraint[i, ])))
+        if (d$G[i, last_free] < 1e-5) {
+            fixed_sum <- sum(gc$trans_constraint[i, ], na.rm = TRUE)
+            s <- sum(xx[idx])
+            if (s > 0) xx[idx] <- xx[idx] * ((1 - 5e-6 - fixed_sum) / s)
+        }
+    }
+    xx
+}
+x_ref_g <- guard_encode(x_ref, gc4)
+d1 <- decode(x_ref_g)
+cat("derived entries after guard:              ", format(c(d1$G[1, 4], d1$G[2, 4], d1$G[3, 4], d1$G[4, 3]), digits = 3), "\n")
+cat("derived weight after guard:", format(d1$w[4], digits = 3), "\n")
+cat("objective after guard:", format(obj_plain(x_ref_g), digits = 6),
+    "; edges counted:", count_edges(d1$G), " (reference has", sum(G_ref != 0), ")\n")
+# an adversarial case: parameters summing to exactly 1 in a row (derived exactly 0)
+xx <- x_ref; xx[4:5] <- c(0.3, 0.7)
+cat("row params (0.3, 0.7): derived =", format(decode(xx)$G[1, 4], digits = 3), "; objective:", format(obj_plain(xx), digits = 6), "\n")
+xx[4:5] <- c(0.1, 0.9)
+cat("row params (0.1, 0.9): derived =", format(decode(xx)$G[1, 4], digits = 3), "; objective:", format(obj_plain(xx), digits = 6), "\n")
+xx[4:5] <- c(0.7, 0.3)
+cat("row params (0.7, 0.3): derived =", format(decode(xx)$G[1, 4], digits = 3), "; objective:", format(obj_plain(xx), digits = 6), "\n")
+xx[4:5] <- c(0.35, 0.65)
+cat("row params (0.35, 0.65): derived =", format(decode(xx)$G[1, 4], digits = 3), "; objective:", format(obj_plain(xx), digits = 6), "\n")
+
+## ---------------------------------------------------------------- 10
+sec("10. threshold prune on the toy reference: budget spent in full")
+best_first_T <- function(w, G, threshold, gc) {
+    fixed_edge <- !is.na(gc$trans_constraint)
+    U_best <- U_of(w, G); loss <- 0; removed <- 0L
+    repeat {
+        cand <- which(G != 0 & !fixed_edge, arr.ind = TRUE)
+        best <- NULL
+        for (k in seq_len(nrow(cand))) {
+            i <- cand[k, 1]; j <- cand[k, 2]
+            Gc <- G
+            Gc[i, ] <- .redistribute_mass(G[i, ], drop_idx = j, fixed_idx = which(fixed_edge[i, ]))
+            if (sum(Gc != 0) >= sum(G != 0)) next
+            if (abs(sum(Gc[i, ]) - 1) > 1e-8) next
+            u <- U_of(w, Gc)
+            if (u >= threshold && (is.null(best) || u > best$u)) best <- list(G = Gc, u = u)
+        }
+        if (is.null(best)) break
+        loss <- loss + (U_best - best$u); U_best <- best$u; G <- best$G; removed <- removed + 1L
+    }
+    list(G = G, U = U_best, loss = loss, removed = removed)
+}
+for (lam in c(1e-3, 1e-2, 2e-2)) {
+    Tt <- (1 - lam) * U_ref
+    r <- best_first_T(w_ref, G_ref, Tt, gc4)
+    cat(sprintf("lambda=%.3f  T=%.5f : edges %d -> %d, removed %d, loss %.2e (budget %.2e, spent %.0f%%), U=%.5f, within cap: %s\n",
+        lam, Tt, sum(G_ref != 0), sum(r$G != 0), r$removed, r$loss, lam * U_ref, 100 * r$loss / (lam * U_ref), r$U, r$U >= Tt))
+    if (lam == 2e-2) print(round(r$G, 4))
+}
+
+## ---------------------------------------------------------------- 11
+sec("11. stage-2 COBYLA within a support: lexicographic objective from the encoded reference")
+u_range <- {
+    pats <- as.matrix(expand.grid(rep(list(c(FALSE, TRUE)), 4)))
+    v <- vapply(seq_len(nrow(pats)), function(i) ts_custom$func(pats[i, , drop = FALSE]), numeric(1))
+    c(min = min(v), max = max(v))
+}
+lam <- 1e-2
+Tt <- (1 - lam) * U_ref
+D <- (u_range[["max"]] - Tt) + 1
+lexico <- function(u, n_edges) if (u >= Tt) u - D * n_edges else u - D * (n_free + 1)
+f_lex <- function(xx) {
+    d <- decode(xx)
+    if (anyNA(d$w) || anyNA(d$G)) return(u_range[["min"]] - D * (n_free + 2) - 1e6)
+    pen <- sum(d$w[d$w < 0]) + sum(d$G[d$G < 0]) - sum(d$w[d$w > 1] - 1) - sum(d$G[d$G > 1] - 1)
+    if (pen < 0) return(u_range[["min"]] - D * (n_free + 2) + pen)
+    d$w[d$w < 1e-4] <- 0; d$G[d$G < 1e-5] <- 0
+    u <- ts_custom$func(graph_shortcut(pv4, 0.025, d$w, d$G))
+    lexico(u, sum(d$G[free_mask] != 0))
+}
+cat(sprintf("T = %.5f, D = %.4f, f(reference, guarded) = %.5f, E = %d\n", Tt, D, f_lex(x_ref_g), count_edges(decode(x_ref_g)$G)))
+set.seed(11)
+nl <- nloptr::nloptr(x0 = x_ref_g, eval_f = function(v) -f_lex(v), lb = rep(0, length(x_ref_g)), ub = rep(1, length(x_ref_g)),
+    opts = list(algorithm = "NLOPT_LN_COBYLA", xtol_rel = 5e-8, xtol_abs = 5e-9, maxeval = 1000, print_level = 0))
+sol <- param_to_solution(nl$solution, gc4, process = TRUE)
+sol <- repair_graph(sol$hyp_weight, sol$trans_matrix, gc4)
+U_sol <- U_of(sol$hyp_weight, sol$trans_matrix)
+cat(sprintf("COBYLA: evaluations = %d, f = %.5f, edges %d -> %d, U %.5f -> %.5f, feasible (U >= T): %s\n",
+    nl$iterations, -nl$objective, sum(G_ref != 0), sum(sol$trans_matrix != 0), U_ref, U_sol, U_sol >= Tt))
+print(round(sol$trans_matrix, 4))
+# and COBYLA started from the 2e-2 threshold-pruned graph (sparser support), same objective
+r2 <- best_first_T(w_ref, G_ref, (1 - 2e-2) * U_ref, gc4)
+x_sp <- guard_encode(as.numeric(create_start_params(gc4, w0 = w_ref, G0 = r2$G, sum_to_one_constraint = FALSE)), gc4)
+cat(sprintf("sparse start: E = %d, U = %.5f, f = %.5f\n", count_edges(decode(x_sp)$G), U_of(w_ref, r2$G), f_lex(x_sp)))
+nl2 <- nloptr::nloptr(x0 = x_sp, eval_f = function(v) -f_lex(v), lb = rep(0, length(x_sp)), ub = rep(1, length(x_sp)),
+    opts = list(algorithm = "NLOPT_LN_COBYLA", xtol_rel = 5e-8, xtol_abs = 5e-9, maxeval = 1000, print_level = 0))
+sol2 <- param_to_solution(nl2$solution, gc4, process = TRUE)
+sol2 <- repair_graph(sol2$hyp_weight, sol2$trans_matrix, gc4)
+U_sol2 <- U_of(sol2$hyp_weight, sol2$trans_matrix)
+cat(sprintf("COBYLA from sparse start: evaluations = %d, edges %d -> %d, U %.5f -> %.5f, feasible at lambda=1e-2: %s\n",
+    nl2$iterations, sum(r2$G != 0), sum(sol2$trans_matrix != 0), U_of(w_ref, r2$G), U_sol2, U_sol2 >= Tt))
+cat("\nDONE\n")
+```
+
+Output:
+
+```
+reference (stage-1 output): edges = 7  U_ref = 0.804825
+       [,1]   [,2]   [,3]   [,4]
+[1,] 0.0000 0.6567 0.3433 0.0000
+[2,] 0.2834 0.0000 0.3354 0.3812
+[3,] 1.0000 0.0000 0.0000 0.0000
+[4,] 0.0000 1.0000 0.0000 0.0000
+w_ref: 0.9951 0 0 0.0049
+
+==== 8. stage-1 GA population is stored on the object; GA truncates suggestions ====
+names(graph_optimal_example): hyp_weight trans_matrix constraints trial_success power solution global_search control global_output local_output start_graph
+population dim: 200 3  popSize: 200
+encoding nvars for its constraint: 3  (matches ncol: TRUE )
+GA::ga with popSize 10 and 12 suggestion rows -> ERROR: number of items to replace is not a multiple of replacement length
+GA::ga with popSize 10 and 10 suggestion rows -> ran, iter = 3
+GA::ga with popSize 10 and 3 suggestion rows -> ran, iter = 3
+
+==== 9. encoding a pruned graph: derived entries, the guard, and the objective ====
+derived col per row (last free col):  4 4 4 3
+derived entries after plain re-encoding:  0.000 0.381 0.000 0.000
+derived weight (w[4]): 0.00494
+any negative entry: FALSE  -> objective value: 0.804825  (U of reference on same sample: 0.804825 )
+derived entries after guard:               0.000005 0.381207 0.000005 0.000005
+derived weight after guard: 0.00494
+objective after guard: 0.804825 ; edges counted: 7  (reference has 7 )
+row params (0.3, 0.7): derived = 0 ; objective: 0.801075
+row params (0.1, 0.9): derived = 0 ; objective: 0.79595
+row params (0.7, 0.3): derived = 0 ; objective: 0.805125
+row params (0.35, 0.65): derived = 0 ; objective: 0.8017
+
+==== 10. threshold prune on the toy reference: budget spent in full ====
+lambda=0.001  T=0.80402 : edges 7 -> 6, removed 1, loss 7.50e-05 (budget 8.05e-04, spent 9%), U=0.80475, within cap: TRUE
+lambda=0.010  T=0.79678 : edges 7 -> 6, removed 1, loss 7.50e-05 (budget 8.05e-03, spent 1%), U=0.80475, within cap: TRUE
+lambda=0.020  T=0.78873 : edges 7 -> 5, removed 2, loss 9.75e-03 (budget 1.61e-02, spent 61%), U=0.79507, within cap: TRUE
+     [,1] [,2]  [,3]  [,4]
+[1,]    0    1 0.000 0.000
+[2,]    0    0 0.468 0.532
+[3,]    1    0 0.000 0.000
+[4,]    0    1 0.000 0.000
+
+==== 11. stage-2 COBYLA within a support: lexicographic objective from the encoded reference ====
+T = 0.79678, D = 1.2032, f(reference, guarded) = -7.61774, E = 7
+COBYLA: evaluations = 118, f = -7.61759, edges 7 -> 7, U 0.80483 -> 0.80497, feasible (U >= T): TRUE
+       [,1]   [,2]   [,3]   [,4]
+[1,] 0.0000 0.6567 0.3433 0.0000
+[2,] 0.2834 0.0000 0.3354 0.3812
+[3,] 1.0000 0.0000 0.0000 0.0000
+[4,] 0.0000 1.0000 0.0000 0.0000
+sparse start: E = 5, U = 0.79507, f = -14.84683
+COBYLA from sparse start: evaluations = 142, edges 5 -> 6, U 0.79507 -> 0.79890, feasible at lambda=1e-2: TRUE
+
+DONE
+```
+
+Remarks on the output. In check 9 no plain re-encoding produced a negative derived entry: `sum()` accumulates in extended precision, so one minus a sum that is one in exact arithmetic rounds to exactly zero. The guard is therefore defensive; it costs nothing and removes a dependence on rounding behaviour. In check 11 the second COBYLA run starts from the five-edge graph produced at $\lambda=0.02$, which is infeasible at $\lambda=0.01$ ($U=0.79507<T=0.79678$, hence the score in the infeasible band, $-14.85$); COBYLA climbs in $U$, crosses the threshold by re-admitting one edge, and ends feasible with six edges. That is the infeasible branch behaving as designed, not an edge being created inside a feasible support: the first run, from the feasible reference, kept all seven edges.
