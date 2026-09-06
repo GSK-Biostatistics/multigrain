@@ -1,9 +1,71 @@
+#' Lexicographic score: feasibility, then fewer edges, then higher gain
+#'
+#' Ranks a candidate graph against a floor on the trial success measure. A
+#' feasible graph (`u >= threshold`) scores `u - edge_price * n_edges`;
+#' because `edge_price`
+#' exceeds the largest possible difference in `u` between two feasible graphs,
+#' one fewer edge always beats any gain in `u`, and among graphs with the same
+#' edge count the higher `u` wins. Every infeasible graph is pushed below every
+#' feasible one but still rises with `u`, so an optimiser that strays outside
+#' the feasible region is pulled back towards the boundary.
+#'
+#' @param u (numeric scalar) Trial success measure of the candidate.
+#' @param n_edges (integer scalar) Number of non-zero free transition entries.
+#' @param threshold (numeric scalar) Floor on `u`.
+#' @param edge_price (numeric scalar) Per-edge price, written `D` in the
+#'   design record; `(u_max - threshold) + 1`.
+#' @param n_free (integer scalar) Number of free transition entries.
+#'
+#' @returns A numeric scalar to be maximised.
+#' @noRd
+.lexico <- function(u, n_edges, threshold, edge_price, n_free) {
+    if (u >= threshold) {
+        u - edge_price * n_edges
+    } else {
+        u - edge_price * (n_free + 1)
+    }
+}
+
+
+#' Exact range of the gain function over all rejection patterns
+#'
+#' Evaluates the compiled trial success function on each of the `2^m` possible
+#' rejection patterns. Used to price an edge in [.lexico()] without assuming
+#' anything about the scale of the user's objective.
+#'
+#' @param trial_success A `multigrain_trial_success` object.
+#'
+#' @returns A numeric vector with named elements `min` and `max`.
+#' @noRd
+.trial_success_range <- function(trial_success) {
+    m <- trial_success$m
+    patterns <- as.matrix(expand.grid(rep(list(c(FALSE, TRUE)), m)))
+    vals <- vapply(
+        seq_len(nrow(patterns)),
+        function(i) trial_success$func(patterns[i, , drop = FALSE]),
+        numeric(1)
+    )
+    c(min = min(vals), max = max(vals))
+}
+
+
 #' Create a parallelised objective function used for optimisation
 #'
 #' Constructs a closure that captures all data needed for fitness evaluation.
 #' The returned function has signature `function(x)` — it takes only the
 #' encoded parameter vector — so that optimisers (`GA::ga`, `nloptr::nloptr`)
 #' do not need to forward large objects like `pvals` via `...`.
+#'
+#' @details When `gain_tolerance` is supplied the closure returns the
+#'   lexicographic score of [.lexico()] rather than the raw trial success
+#'   measure, so that the optimisers minimise the edge count subject to a floor
+#'   on trial success. The floor is computed by this closure, from `ref_graph`,
+#'   on the p-values this closure captured, so the reference and the candidates
+#'   are always judged on the same simulated trials.
+#'
+#'   With the default `gain_tolerance = NULL` every returned value is
+#'   arithmetically the value returned before these arguments existed
+#'   (`penalty_base` is exactly `0`), and no extra random numbers are drawn.
 #'
 #' @param m Number of hypotheses.
 #' @param power_criterion Function accessed from [trial_success()] used to
@@ -14,6 +76,15 @@
 #'   is 0.025.
 #' @param pvals (numeric matrix) Matrix of p-values (`nsim × m`). Each row
 #'   is a simulated trial; each column corresponds to a hypothesis.
+#' @param gain_tolerance (numeric scalar) Fraction of the reference graph's
+#'   trial success that may be traded for a smaller edge count. `NULL` (the
+#'   default) disables the edge-count objective entirely.
+#' @param ref_graph (list) The reference graph, with elements `hyp_weight` and
+#'   `trans_matrix`. Required when `gain_tolerance` is supplied.
+#' @param u_range (numeric) Named vector with elements `min` and `max` giving
+#'   the exact range of `power_criterion` over all rejection patterns, as
+#'   returned by [.trial_success_range()]. Required when `gain_tolerance` is
+#'   supplied.
 #' @inheritParams graph_optimise
 #'
 #' @returns A function with signature `function(x)` that evaluates the trial
@@ -28,7 +99,10 @@ create_obj_func <- function(
     trans_constraint,
     pvals,
     alpha = 0.025,
-    num_threads = 1L
+    num_threads = 1L,
+    gain_tolerance = NULL,
+    ref_graph = NULL,
+    u_range = NULL
 ) {
     force(power_criterion)
     force(hyp_constraint)
@@ -39,6 +113,44 @@ create_obj_func <- function(
 
     use_parallel <- num_threads >= 2L
 
+    shortcut <- function(w, G) {
+        if (use_parallel) {
+            graph_shortcut_parallel(
+                pvals = pvals,
+                alpha = alpha,
+                w = w,
+                G = G,
+                num_threads = num_threads,
+                grain_size = -1L
+            )
+        } else {
+            graph_shortcut(
+                pvals = pvals,
+                alpha = alpha,
+                w = w,
+                G = G
+            )
+        }
+    }
+
+    enabled <- !is.null(gain_tolerance)
+    penalty_base <- 0
+    free_mask <- NULL
+    n_free <- NULL
+    threshold <- NULL
+    edge_price <- NULL
+
+    if (enabled) {
+        free_mask <- is.na(trans_constraint)
+        n_free <- sum(free_mask)
+        u_ref <- power_criterion(
+            shortcut(ref_graph$hyp_weight, ref_graph$trans_matrix)
+        )
+        threshold <- (1 - gain_tolerance) * u_ref
+        edge_price <- (u_range[["max"]] - threshold) + 1
+        penalty_base <- u_range[["min"]] - edge_price * (n_free + 2)
+    }
+
     function(x) {
         theta <- split_theta(x, hyp_constraint)
         hyp_weight <- recover_full_weights(theta$w_pars, hyp_constraint)
@@ -48,43 +160,39 @@ create_obj_func <- function(
         )
 
         if (anyNA(hyp_weight) || anyNA(trans_matrix)) {
-            return(-1e6)
+            return(penalty_base - 1e6)
         }
         if (any(hyp_weight < 0)) {
-            return(sum(hyp_weight[hyp_weight < 0]))
+            return(penalty_base + sum(hyp_weight[hyp_weight < 0]))
         }
         if (any(trans_matrix < 0)) {
-            return(sum(trans_matrix[trans_matrix < 0]))
+            return(penalty_base + sum(trans_matrix[trans_matrix < 0]))
         }
         if (any(hyp_weight > 1)) {
-            return(-sum(hyp_weight[hyp_weight > 1]))
+            return(penalty_base - sum(hyp_weight[hyp_weight > 1]))
         }
         if (any(trans_matrix > 1)) {
-            return(-sum(trans_matrix[trans_matrix > 1]))
+            return(penalty_base - sum(trans_matrix[trans_matrix > 1]))
         }
 
         hyp_weight[hyp_weight < 1e-4] <- 0
         trans_matrix[trans_matrix < 1e-5] <- 0
 
-        rej_matrix <- if (use_parallel) {
-            graph_shortcut_parallel(
-                pvals = pvals,
-                alpha = alpha,
-                w = hyp_weight,
-                G = trans_matrix,
-                num_threads = num_threads,
-                grain_size = -1L
-            )
-        } else {
-            graph_shortcut(
-                pvals = pvals,
-                alpha = alpha,
-                w = hyp_weight,
-                G = trans_matrix
-            )
+        rej_matrix <- shortcut(hyp_weight, trans_matrix)
+
+        u <- power_criterion(rej_matrix)
+
+        if (!enabled) {
+            return(u)
         }
 
-        power_criterion(rej_matrix)
+        .lexico(
+            u = u,
+            n_edges = sum(trans_matrix[free_mask] != 0),
+            threshold = threshold,
+            edge_price = edge_price,
+            n_free = n_free
+        )
     }
 }
 
