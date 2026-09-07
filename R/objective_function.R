@@ -49,6 +49,62 @@
 }
 
 
+#' Scorer for a decoded graph on a whole p-value sample
+#'
+#' `choose_graph()` and the final acceptance test compare graphs on the full
+#' sample, and must use the same ranking the search used. This returns a
+#' function of `(u, trans_matrix)` giving that ranking: the identity on `u`
+#' when no threshold is in force, so the comparison is bit-identical to the
+#' trial-success comparison made before this existed, and [.lexico()]
+#' otherwise. The threshold is recomputed here from the reference graph on
+#' `pvals`, so it belongs to this sample rather than to a subsample.
+#'
+#' @param pvals (numeric matrix) The sample to score on.
+#' @param alpha (numeric scalar) Overall one-sided significance level.
+#' @param trial_success A `multigrain_trial_success` object.
+#' @param trans_constraint (numeric matrix) Transition matrix constraints.
+#' @param objective_args (list) The `gain_tolerance`, `ref_graph` and
+#'   `u_range` arguments of [create_obj_func()], or an empty list.
+#'
+#' @returns A function with signature `function(u, trans_matrix)`.
+#' @noRd
+.make_lexico_scorer <- function(
+    pvals,
+    alpha,
+    trial_success,
+    trans_constraint,
+    objective_args
+) {
+    if (length(objective_args) == 0L) {
+        return(function(u, trans_matrix) u)
+    }
+
+    free_mask <- is.na(trans_constraint)
+    n_free <- sum(free_mask)
+    ref <- objective_args$ref_graph
+    u_ref <- trial_success$func(
+        graph_shortcut(
+            pvals = pvals,
+            alpha = alpha,
+            w = ref$hyp_weight,
+            G = ref$trans_matrix
+        )
+    )
+    threshold <- (1 - objective_args$gain_tolerance) * u_ref
+    edge_price <- (objective_args$u_range[["max"]] - threshold) + 1
+
+    function(u, trans_matrix) {
+        .lexico(
+            u = u,
+            n_edges = sum(trans_matrix[free_mask] != 0),
+            threshold = threshold,
+            edge_price = edge_price,
+            n_free = n_free
+        )
+    }
+}
+
+
 #' Create a parallelised objective function used for optimisation
 #'
 #' Constructs a closure that captures all data needed for fitness evaluation.

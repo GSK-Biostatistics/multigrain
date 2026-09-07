@@ -270,7 +270,10 @@ graph_optimize <- graph_optimise
             trans_matrix = NULL
         )
     ),
-    verbose = c("info", "detail", "silent")
+    verbose = c("info", "detail", "silent"),
+    suggestions = NULL,
+    p_zero = 0,
+    objective_args = list()
 ) {
     verbose <- rlang::arg_match(verbose)
 
@@ -278,33 +281,58 @@ graph_optimize <- graph_optimise
         cli::cli_progress_step("Running global optimization")
     }
 
-    x0 <- .build_start_matrix(graph_constraint, start_graph)
+    x0 <- suggestions %||% .build_start_matrix(graph_constraint, start_graph)
 
     pvals_sampled <- pvals[sample(nsim), ]
 
     immutable_global_args <- list(
         type = "real-valued",
-        fitness = create_obj_func(
-            m = trial_success$m,
-            power_criterion = trial_success$func,
-            hyp_constraint = graph_constraint$hyp_constraint,
-            trans_constraint = graph_constraint$trans_constraint,
-            alpha = alpha,
-            pvals = pvals_sampled,
-            num_threads = num_threads
+        fitness = do.call(
+            create_obj_func,
+            c(
+                list(
+                    m = trial_success$m,
+                    power_criterion = trial_success$func,
+                    hyp_constraint = graph_constraint$hyp_constraint,
+                    trans_constraint = graph_constraint$trans_constraint,
+                    alpha = alpha,
+                    pvals = pvals_sampled,
+                    num_threads = num_threads
+                ),
+                objective_args
+            )
         ),
         lower = rep(0, ncol(x0)),
         upper = rep(1, ncol(x0)),
         population = .cauchy_population,
         mutation = .make_cauchy_mutation_multi(
             p_param_mutate = 0.1,
-            scale = 1.0
+            scale = 1.0,
+            p_zero = p_zero,
+            param_rows = .g_param_rows(
+                graph_constraint$hyp_constraint,
+                graph_constraint$trans_constraint
+            ),
+            row_target = .zeroing_row_targets(
+                graph_constraint$trans_constraint
+            )
         ),
         optim = TRUE,
         suggestions = x0
     )
 
     ga_args <- utils::modifyList(immutable_global_args, global_opts)
+
+    # `global_opts` wins that merge, so a user-supplied `mutation` or
+    # `suggestions` would silently disable the zeroing move or the warm start.
+    # Both are what make the simplification search able to drop an edge, so
+    # they are restored when they are in use.
+    if (p_zero > 0) {
+        ga_args$mutation <- immutable_global_args$mutation
+    }
+    if (!is.null(suggestions)) {
+        ga_args$suggestions <- immutable_global_args$suggestions
+    }
 
     ga_res <- do.call(GA::ga, ga_args)
     best_raw <- ga_res@solution[1, ]
@@ -314,6 +342,7 @@ graph_optimize <- graph_optimise
 
     ga_subset_power <- NULL
     ga_trial_success <- NULL
+    ga_objective <- NULL
 
     if (is_valid) {
         if (verbose != "silent") {
@@ -337,12 +366,21 @@ graph_optimize <- graph_optimise
         )
 
         ga_trial_success <- trial_success$func(rej_mat)
+
+        ga_objective <- .make_lexico_scorer(
+            pvals = pvals,
+            alpha = alpha,
+            trial_success = trial_success,
+            trans_constraint = graph_constraint$trans_constraint,
+            objective_args = objective_args
+        )(ga_trial_success, sol$trans_matrix)
     }
 
     list(
         ga_hyp_weight = sol$hyp_weight,
         ga_trans_matrix = sol$trans_matrix,
         ga_trial_success = ga_trial_success,
+        ga_objective = ga_objective,
         ga_subset_power = ga_subset_power,
         is_graph_valid = is_valid,
         ga_output = ga_res
@@ -388,7 +426,8 @@ graph_optimize <- graph_optimise
     num_threads = 1L,
     nsim = nrow(pvals),
     x0 = NULL,
-    verbose = c("info", "detail", "silent")
+    verbose = c("info", "detail", "silent"),
+    objective_args = list()
 ) {
     verbose <- rlang::arg_match(verbose)
 
@@ -402,14 +441,20 @@ graph_optimize <- graph_optimise
 
     pvals_sampled <- pvals[sample(nsim), ]
 
-    obj_fun <- create_obj_func(
-        m = trial_success$m,
-        power_criterion = trial_success$func,
-        hyp_constraint = graph_constraint$hyp_constraint,
-        trans_constraint = graph_constraint$trans_constraint,
-        alpha = alpha,
-        pvals = pvals_sampled,
-        num_threads = num_threads
+    obj_fun <- do.call(
+        create_obj_func,
+        c(
+            list(
+                m = trial_success$m,
+                power_criterion = trial_success$func,
+                hyp_constraint = graph_constraint$hyp_constraint,
+                trans_constraint = graph_constraint$trans_constraint,
+                alpha = alpha,
+                pvals = pvals_sampled,
+                num_threads = num_threads
+            ),
+            objective_args
+        )
     )
     nlopt_obj_func <- function(x) {
         -obj_fun(x)
@@ -434,6 +479,7 @@ graph_optimize <- graph_optimise
 
     local_subset_power <- NULL
     local_trial_success <- NULL
+    local_objective <- NULL
 
     if (is_valid) {
         if (verbose != "silent") {
@@ -457,12 +503,21 @@ graph_optimize <- graph_optimise
         )
 
         local_trial_success <- trial_success$func(rej_mat)
+
+        local_objective <- .make_lexico_scorer(
+            pvals = pvals,
+            alpha = alpha,
+            trial_success = trial_success,
+            trans_constraint = graph_constraint$trans_constraint,
+            objective_args = objective_args
+        )(local_trial_success, sol$trans_matrix)
     }
 
     list(
         local_hyp_weight = sol$hyp_weight,
         local_trans_matrix = sol$trans_matrix,
         local_trial_success = local_trial_success,
+        local_objective = local_objective,
         local_subset_power = local_subset_power,
         is_graph_valid = is_valid,
         local_output = nlopt_result
