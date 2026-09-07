@@ -84,12 +84,10 @@
 #'   [graph_optimise()]. This is the reference graph.
 #'
 #'   The trial success measure is compiled, and a compiled function does not
-#'   survive being saved and reloaded. An object read back from disk therefore
-#'   needs its measure rebuilt before it can be simplified, with
-#'   `graph_optimal$trial_success <- trial_success(<the same expression>)`;
-#'   the expression is kept on the object as
-#'   `graph_optimal$trial_success$objective`. `graph_simplify()` checks this
-#'   and says so rather than failing obscurely.
+#'   survive being saved and reloaded. `graph_simplify()` rebuilds a dead
+#'   function automatically from the objective stored on the object. A live
+#'   function is checked against that objective before it is used; inconsistent
+#'   or invalid objects produce an error.
 #' @param pvals A numeric matrix of p-values, one row per simulated trial and
 #'   one column per hypothesis. It is supplied again because the optimised
 #'   object does not store it. It need not be the matrix used in stage 1: the
@@ -110,7 +108,12 @@
 #' @param control An optional `multigrain_control` object. Defaults to the
 #'   settings stored on `graph_optimal` with the genetic algorithm's `run`
 #'   halved, since the search starts in the right basin and does not need
-#'   stage 1's floor on cost. A control passed here is used as it is.
+#'   stage 1's floor on cost. When the global search can run, the `GA::ga()`
+#'   options `mutation` and `suggestions` are reserved: simplification requires
+#'   its support-changing mutation and reference-first seed population. Setting
+#'   either option in an explicit `control` object is an error. If they are
+#'   inherited from `graph_optimal`, they are ignored with a warning. They are
+#'   irrelevant and left alone when no global search runs.
 #' @inheritParams graph_optimise verbose
 #'
 #' @returns A `multigrain_graph_optimal` object, so that [print()], [summary()],
@@ -191,17 +194,8 @@ graph_simplify <- function(
             objects."
         )
     }
-    if (!.trial_success_is_live(trial_success)) {
-        cli::cli_abort(c(
-            "The trial success function of {.arg graph_optimal} cannot be \\
-            evaluated.",
-            i = "Compiled trial success functions do not survive being saved \\
-                and reloaded, so an object read back from disk needs its \\
-                measure rebuilt before {.fn graph_simplify} can use it: \\
-                {.code graph_optimal$trial_success <- \\
-                trial_success({trial_success$objective})}."
-        ))
-    }
+    trial_success <- .restore_trial_success(trial_success)
+    graph_optimal$trial_success <- trial_success
     if (trial_success$m != ncol(pvals)) {
         cli::cli_abort(
             "{.arg pvals} must have one column per hypothesis of \\
@@ -242,11 +236,37 @@ graph_simplify <- function(
     free_mask <- is.na(constraints$trans_constraint)
     n_removable <- sum(pmax(rowSums(free_mask) - 1L, 0L))
 
-    if (is.null(control)) {
+    control_supplied <- !is.null(control)
+    if (!control_supplied) {
         control <- graph_optimal_get_control(graph_optimal) %||%
             multigrain_control()
         if (!is.null(control$global_opt$run)) {
             control$global_opt$run <- max(1L, control$global_opt$run %/% 2L)
+        }
+    }
+
+    if (global_search && n_removable > 0L) {
+        reserved <- intersect(
+            names(control$global_opt),
+            c("mutation", "suggestions")
+        )
+        if (length(reserved) > 0L) {
+            reserved_text <- paste0("`", reserved, "`", collapse = ", ")
+            if (control_supplied) {
+                cli::cli_abort(c(
+                    "{.arg control} sets reserved global optimisation \\
+                    options: {reserved_text}.",
+                    i = "{.fn graph_simplify} supplies its own support-changing \\
+                    mutation and reference-first suggestions."
+                ))
+            }
+            cli::cli_warn(c(
+                "The stored control contains global optimisation options that \\
+                {.fn graph_simplify} cannot reuse: {reserved_text}.",
+                i = "Using the simplification mutation and reference-first \\
+                suggestions instead."
+            ))
+            control$global_opt[reserved] <- NULL
         }
     }
     control <- control_prepare(control, pvals = pvals, verbose = verbose)
@@ -396,34 +416,6 @@ graph_simplify <- function(
         global_search = global_search,
         ga_result = ga_result,
         local_result = local_result
-    )
-}
-
-
-#' Can this trial success object's compiled function still be called?
-#'
-#' `trial_success()` compiles its measure with Rcpp, and the resulting function
-#' does not survive serialisation: an object written with `saveRDS()` or
-#' `save()` and read back carries a dead pointer that errors with "NULL value
-#' passed as symbol address" the first time it is used. Every other part of a
-#' `multigrain_graph_optimal` reloads fine, so the problem only shows up in the
-#' functions that actually evaluate the measure.
-#'
-#' @param trial_success A `multigrain_trial_success` object.
-#'
-#' @returns `TRUE` if the compiled function evaluates, `FALSE` otherwise.
-#' @noRd
-.trial_success_is_live <- function(trial_success) {
-    if (!is.function(trial_success$func)) {
-        return(FALSE)
-    }
-    probe <- matrix(TRUE, nrow = 1L, ncol = trial_success$m)
-    tryCatch(
-        {
-            value <- trial_success$func(probe)
-            is.numeric(value) && length(value) == 1L
-        },
-        error = function(e) FALSE
     )
 }
 

@@ -2,8 +2,9 @@
 
 Branch `plan-for-sparsity`, implementing `dev/sparsity_design_record.md`. This
 records what changed, where I departed from the record or the plan and why, what
-I could not verify, and what the record did not anticipate. It is written for
-the adversarial review that runs next.
+I could not verify, and what the record did not anticipate. It was updated
+after the adversarial review and its follow-up fixes; sections 3.1 to 3.3 and
+4.1 describe the final behavior.
 
 Environment: R 4.6.1 (Windows 11), Rtools 4.5, `pkgload::load_all()` from the
 working tree. `lintr` 3.4.0, `devtools` 2.5.2 and `cyclocomp` were installed to
@@ -51,6 +52,16 @@ run the gates (none were present).
   `mutation` and `suggestions` when the simplification is using them; see §3.3.
 * `graph_optimise()` passes `alpha` to the constructor. That is its only change.
 
+### `R/trial_success.R`
+
+* `.trial_success_is_live()` detects a compiled function lost during
+  serialisation.
+* `.restore_trial_success()` validates the stored expression and dimension,
+  verifies a live function over every Boolean rejection pattern for `m <= 12`,
+  or uses matching generated source plus bounded deterministic patterns above
+  that limit. It rebuilds a dead function from the stored objective. Mismatches
+  and rebuild failures abort explicitly.
+
 ### `R/choose_graph.R`
 
 Compares `ga_objective` / `local_objective`, falling back with `%||%` to the
@@ -68,7 +79,8 @@ is what every existing `choose_graph()` test supplies.
 
 * `new_graph_optimal()` and `graph_optimal()` gain `alpha` and `sparsity`, both
   `NULL` by default and appended at the end of the list.
-* `summarise_sparsity()` and its hooks in `print()` and `summary()`.
+* `summarise_sparsity()` and its hooks in `print()` and `summary()`. Signed
+  losses are stored unchanged; negative losses are displayed as gains.
 
 ### `R/utils_verbosity.R`
 
@@ -77,8 +89,13 @@ is what every existing `choose_graph()` test supplies.
 
 ### `R/graph_simplify.R` (new)
 
-* `graph_simplify()`, `.simplify_result()`, `.trial_success_is_live()`, and the
-  constant `.simplify_p_zero`.
+* `graph_simplify()`, `.simplify_result()`, and the constant
+  `.simplify_p_zero`.
+* `mutation` and `suggestions` are reserved while the global simplification
+  search runs. Explicit conflicts abort; inherited stage-1 settings warn and
+  are removed.
+* A dead trial-success function is restored before any evaluation, and the
+  restored function is carried by the returned object.
 
 ### Everything else
 
@@ -86,11 +103,11 @@ is what every existing `choose_graph()` test supplies.
   `devtools::document()`.
 * `_pkgdown.yml` — `graph_simplify` under **Optimisation**.
 * `vignettes/articles/get-started.Rmd` — a "Simplifying the graph" section.
-* `NEWS.md` — the record's §10 wording. No bug fixes are part of this change.
+* `NEWS.md` — the record's §10 wording plus the review follow-up fixes.
 * `data/graph_optimal_example.rda` — `alpha` and `sparsity` added in place.
 * Tests: additions to `test-objective_function.R`, `test-mutation_helpers.R`,
   `test-optimisation_start.R`, `test-post_optim_processing.R`,
-  `test-graph_optimal.R` (and its snapshot file), plus a new
+  `test-trial_success.R`, `test-graph_optimal.R` (and its snapshot file), plus a new
   `test-graph_simplify.R`.
 
 ---
@@ -162,10 +179,13 @@ with the user mid-implementation. Identity is proven by test, and a benchmark
 (2000 evaluations x 5 reps on 1e4 x 4 p-values) put helper and inline at 1.800 s
 vs 1.780 s median with fully overlapping ranges — noise.
 
-### 2.9 Two guards the record does not specify
+### 2.9 Recovery and a guard the record does not specify
 
-* **Serialisation** (§4.1) — `graph_simplify()` aborts early with an actionable
-  message if the trial success function cannot be evaluated.
+* **Serialisation recovery** (§3.1) — `graph_simplify()` restores a dead
+  compiled trial-success function from its durable `$objective`. Before using
+  a live function it compares the function with the expression over the full
+  Boolean input domain. It aborts if the objective is invalid, cannot be
+  rebuilt, has the wrong dimension, or disagrees with the live function.
 * **Invalid search output** — if `choose_graph()` returns a graph that is not
   valid, pruning would abort inside `calc_power_pvals()`. `graph_simplify()`
   skips pruning and falls back to the reference, which §3.2 guarantees is
@@ -173,7 +193,7 @@ vs 1.780 s median with fully overlapping ranges — noise.
   case.
 
 Both follow §3.11's pattern of handling degenerate cases; neither changes the
-search.
+search objective.
 
 ### 2.10 The example dataset was patched, not regenerated
 
@@ -210,32 +230,33 @@ It is pre-existing and package-wide, and was never noticed because
 `graph_optimise()` builds the measure in-session and `print()`/`plot()` only
 read `$objective`. But it bears directly on `graph_simplify()`, whose premise —
 "`pvals` is supplied again because the object does not store it" (§3.1) —
-implies the object may well come from an earlier session. **As things stand,
-a saved optimised graph cannot be simplified.**
+implies the object may well come from an earlier session. The first
+implementation therefore required manual recovery before a saved graph could
+be simplified.
 
-What I did: `graph_simplify()` checks up front and aborts with the exact rebuild
-command, interpolating the stored expression:
+The review follow-up supersedes that abort path:
 
-```
-The trial success function of `graph_optimal` cannot be evaluated.
-i Compiled trial success functions do not survive being saved and reloaded, so
-  an object read back from disk needs its measure rebuilt before
-  `graph_simplify()` can use it: `graph_optimal$trial_success <-
-  trial_success(0.25 * (2 * (r1 && r2) + r1 * r3 + r2 * r4))`.
-```
+* `.restore_trial_success()` lives with the trial-success implementation rather
+  than in `graph_simplify()`, because the durable expression and compiled
+  function are properties of that object.
+* A missing or dead `$func` is rebuilt from `$objective`.
+* For `m <= 12`, a live `$func` is evaluated on all `2^m` one-row Boolean
+  rejection patterns and compared with the stored expression evaluated on the
+  same complete domain. Above that limit, the stored generated C++ source must
+  match the objective and the function is compared on bounded deterministic
+  boundary, singleton, complement and alternating patterns. This avoids making
+  ordinary validation exponential while remaining exact for the package's
+  intended small-graph use.
+* A missing or invalid expression, dimension mismatch, failed rebuild, or live
+  disagreement aborts explicitly. A live disagreement is treated as object
+  corruption rather than silently replacing one side.
+* `graph_simplify()` installs the restored measure on its local copy of the
+  input, so the returned graph carries a live function and can be simplified
+  again.
 
-I verified that remedy works. Note it only works when the expression is typed
-as a **literal**: `trial_success()` captures with `rlang::enexpr()`, so a
-variable holding the string fails ("Symbol `s` ... is not a rejection
-indicator"), while a literal expression, a literal string, and
-`rlang::inject(trial_success(!!str2lang(s)))` all work.
-
-**Left for the record's owner:** `graph_simplify()` could recover silently by
-recompiling from `$objective` via the injection form. That would make the
-function work on saved objects transparently, which is arguably what §3.1
-intends. I did not do it because it is a design decision, not an implementation
-detail. The alternative — fixing serialisation properly in `trial_success()` —
-is a separate bug fix in the O2/O3 category.
+This fixes saved objects for `graph_simplify()`. Other functions do not
+currently evaluate a trial-success function from a saved graph object, so the
+helper is lower-level and reusable without changing unrelated entry points.
 
 ### 3.2 `prune_loss` can be negative
 
@@ -247,6 +268,10 @@ from 0.6649 to 0.6769. I left the value exact rather than clamping it, and
 documented that it can be negative. It is a diagnostic; `sparsity$gain_loss` is
 computed separately against the reference and is the number the cap is about.
 
+The stored values remain signed. After review, `print()` and `summary()` display
+a negative `gain_loss_fraction` as `"gain X% over reference"` rather than
+`"loss -X% of reference"`.
+
 ### 3.3 `modifyList` lets user control settings override the search
 
 `ga_args <- utils::modifyList(immutable_global_args, global_opts)` puts
@@ -255,6 +280,20 @@ computed separately against the reference and is the number the cap is about.
 the two things that let stage 2 drop an edge at all. I restore both after the
 merge when they are in use. `graph_optimise()`'s behaviour is untouched, since
 it passes `p_zero = 0` and `suggestions = NULL`.
+
+The review found the mirror defect: restoring them silently discarded explicit
+user settings even though the documentation said an explicit control was used
+as supplied. The final policy reserves both options for stage 2:
+
+* when an explicit `control` sets either option and the global search can run,
+  `graph_simplify()` aborts and names the reserved settings;
+* when the default control inherited from the stage-1 object contains either
+  option, `graph_simplify()` warns and removes it before preparing the stage-2
+  control;
+* when `global_search = FALSE`, no GA runs and the settings are irrelevant, so
+  they are left alone.
+
+`graph_optimise()` still honours both options exactly as before.
 
 ### 3.4 The subsample is a permutation, not a subsample
 
@@ -304,26 +343,25 @@ that size tie on the fixture sample.
 
 ### 4.1 `graph_optimise()` is unchanged — the claim most likely to be false
 
-Verified by running code, not by a passing test. A script
-(`scratchpad/a1_unchanged.R`) runs `graph_optimise()` over **100 cases**: seeds
-1-5 x `m` in {2,3,4} x free and constrained constraints x `global_search` on and
-off x `num_threads` 1 and 2, on seeded fixtures with `nsim = 1e4`. It records
-the graph, `$power`, `$solution`, `$control`, `$start_graph`, the GA's solution,
-fitness, population and iteration count, the nloptr solution, objective and
-iteration count, `names()`, and `.Random.seed` afterwards. The same script ran
-against a `git worktree` of `main` and against the branch, and the two `.rds`
-files were compared element by element with `identical()`.
+The original report cited `scratchpad/a1_unchanged.R`, but that script was not
+committed and exists in no Git ref. Its described Cartesian grid also contains
+`5 x 3 x 2 x 2 x 2 = 120` cases, not the reported 100. The original sweep and
+its output are therefore not reproducible and are not claimed as evidence.
 
-```
-cases: main 100  branch 100
---- differences outside alpha/sparsity/names --- NONE
---- .Random.seed differences --- 0 of 100 cases differ
-added: alpha, sparsity      removed: (none)
-branch alpha values: 0.025  branch sparsity all NULL: TRUE
-VERDICT: PASS
-```
+The committed adversarial review (`dev/sparsity_review.md`) instead contains
+the complete runner and comparison snippets for three reproducible
+main-versus-branch spot-checks:
 
-This covers adversarial check A1.
+| case | `m` | constraint | global | threads |
+|---|---:|---|:---:|---:|
+| `m2_local_serial` | 2 | free | no | 1 |
+| `m3_global_constrained` | 3 | constrained | yes | 1 |
+| `m4_global_parallel` | 4 | free | yes | 2 |
+
+After removing only the documented `alpha` and `sparsity` additions and the
+unserialisable compiled pointer, all three complete result structures,
+warnings, messages, console output and `.Random.seed` were identical. This is a
+spot-check, not a replacement claim for the missing 120-case grid.
 
 ### 4.2 Per-file gates
 
@@ -339,13 +377,16 @@ them until I noticed.
 | `test-post_optim_processing.R` | all pass |
 | `test-optimisation.R` | 86 pass |
 | `test-choose_graph.R` | 11 pass |
-| `test-graph_optimal.R` | 41 pass |
+| `test-trial_success.R` | 135 pass |
+| `test-graph_optimal.R` | 44 pass |
 | `test-plot_graph_optimal.R`, `test-calc_power.R` | all pass |
-| `test-graph_simplify.R` (new) | 128 pass |
+| `test-graph_simplify.R` (new) | 144 pass |
 
 No existing snapshot changed content. `_snaps/graph_optimal.md` gained three new
 entries and nothing else; the other snapshot files were only rewritten with
-different line endings by testthat, and their blob hashes are unchanged.
+different line endings by testthat, and their blob hashes are unchanged. The
+follow-up tests for restoration, reserved controls and gain-aware output did
+not require further snapshot content changes.
 
 Notable evidence beyond the gates:
 
@@ -413,10 +454,10 @@ output: 6 edges to 5 (free 4 to 3, two being pinned by the constraint), losing
   `m = 8`, `nsim = 1e6`; that is outside the run limit. On a 1e6-row problem
   this is the dominant cost of stage 2 and deserves a measurement before the
   feature is used in anger.
-* **A14 (the Nelder-Mead step inside `GA::ga()`).** Not instrumented. The
-  argument that it cannot create an edge inside a feasible support is the same
-  one that applies to COBYLA — crossing `1e-5` costs `edge_price` — but I did
-  not log zero counts before and after `optim` steps.
+* **A14 (the Nelder-Mead step inside `GA::ga()`).** Closed by the adversarial
+  review: nine forced optimiser steps at `m = 4` selected the elite, remained
+  feasible, and preserved its support and free-edge count. The review records
+  the instrumentation and output.
 * **O4 (halving `run`).** Implemented as specified; no evidence gathered on
   whether half is the right fraction.
 * **Runtime claim of §4.2** (1.3 to 1.6 times a single optimisation) — not
@@ -424,13 +465,12 @@ output: 6 edges to 5 (free 4 to 3, two being pinned by the constraint), losing
 
 ## 6. Suggested follow-ups, in priority order
 
-1. Decide whether `graph_simplify()` should recompile a dead trial success
-   function automatically (§3.1). As it stands the feature does not work on a
-   saved graph, which limits it considerably.
-2. Fix `trial_success()` serialisation properly, so the whole package survives
-   `saveRDS()`. Separate bug fix.
-3. Refresh `vignettes/articles/data/*.rds` — pre-0.3.0 objects (§3.5).
-4. Close O1 with the measurement it asks for.
-5. Correct the record's §2 description of `pvals[sample(nsim), ]` (§3.4).
-6. Extract the duplicated `verbose` coercion in `graph_optimise()` and
+1. Fix `trial_success()` serialisation properly, rather than rebuilding at the
+   point of use. The reusable restoration helper makes saved graphs work for
+   `graph_simplify()`, but the compiled pointer itself remains unserialisable.
+2. Refresh `vignettes/articles/data/*.rds` — pre-0.3.0 objects (§3.5).
+3. Close O1 with the measurement it asks for.
+4. Correct the record's §2 description of `pvals[sample(nsim), ]` (§3.4) in
+   the separate subsampling change; it was deliberately not changed here.
+5. Extract the duplicated `verbose` coercion in `graph_optimise()` and
    `trial_success()` to use `.resolve_verbose()`.

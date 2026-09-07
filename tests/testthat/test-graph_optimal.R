@@ -353,6 +353,31 @@ test_that("summary reports the simplification when sparsity is present", {
     expect_snapshot(summary(sparsity_example_object()))
 })
 
+test_that("print and summary describe improvements as gains", {
+    obj <- sparsity_example_object()
+    obj$power$trial_success <- 0.8055
+    obj$sparsity$gain <- 0.8055
+    obj$sparsity$gain_loss <- obj$sparsity$gain_reference -
+        obj$sparsity$gain
+    obj$sparsity$gain_loss_fraction <- obj$sparsity$gain_loss /
+        obj$sparsity$gain_reference
+
+    print_output <- utils::capture.output(print(obj))
+    summary_output <- utils::capture.output(summary(obj))
+
+    expect_true(any(grepl(
+        "gain 0.09% over reference",
+        print_output,
+        fixed = TRUE
+    )))
+    expect_true(any(grepl(
+        "gain 0.09% over reference",
+        summary_output,
+        fixed = TRUE
+    )))
+    expect_false(any(grepl("loss -", c(print_output, summary_output))))
+})
+
 test_that("print is unchanged when sparsity is NULL", {
     obj <- sparsity_example_object()
     obj$sparsity <- NULL

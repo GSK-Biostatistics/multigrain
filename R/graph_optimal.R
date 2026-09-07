@@ -173,11 +173,23 @@ summarise_sparsity <- function(sparsity) {
         sparsity$n_edges_free
     ))
 
+    if (sparsity$gain_loss_fraction < 0) {
+        change <- sprintf(
+            "gain %.2f%% over reference",
+            -100 * sparsity$gain_loss_fraction
+        )
+    } else {
+        change <- sprintf(
+            "loss %.2f%% of reference",
+            100 * sparsity$gain_loss_fraction
+        )
+    }
+
     cli::cat_line(sprintf(
-        "Trial success %.4f -> %.4f: loss %.2f%% of reference (cap %.1f%%)",
+        "Trial success %.4f -> %.4f: %s (cap %.1f%%)",
         sparsity$gain_reference,
         sparsity$gain,
-        100 * sparsity$gain_loss_fraction,
+        change,
         100 * sparsity$gain_tolerance
     ))
 }

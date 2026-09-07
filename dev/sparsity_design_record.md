@@ -85,7 +85,7 @@ The stage-2 GA population is seeded, in this order, with: the encoded reference 
 
 Encoding uses `create_start_params(gc, w0, G0, sum_to_one_constraint = FALSE)` with a guard: if a row's derived entry decodes below $10^{-5}$, that row's parameters are rescaled to sum to $1-5\times10^{-6}$ minus the row's fixed entries; if the derived hypothesis weight decodes below $10^{-4}$, the weight parameters are rescaled to sum to $1-5\times10^{-5}$ minus the fixed weights. The derived entry then decodes to exactly $5\times10^{-6}$ (or $5\times10^{-5}$), positive and below its threshold, so it is not penalised and not counted (check 9: seven edges before and after, identical objective value).
 
-The GA runs with the reference object's stored control, `run` halved (floor 1), re-prepared against the supplied `pvals` so that `nsim_global` and `nsim_local` are clamped to its row count. A control passed explicitly is used as is.
+The GA runs with the reference object's stored control, `run` halved (floor 1), re-prepared against the supplied `pvals` so that `nsim_global` and `nsim_local` are clamped to its row count. Stage 2 reserves `mutation` and `suggestions`, because they are the support-changing mutation and reference-first warm start described above. If an explicit control supplies either while the global search can run, `graph_simplify()` aborts and names the reserved options. If the inherited stage-1 control contains either, it warns and removes them. When `global_search = FALSE`, no GA runs and these settings are left alone. This reservation is specific to `graph_simplify()`; `graph_optimise()` continues to honour both settings.
 
 **Rationale.** LOCKED. The reference is already near the optimum, so the population should start there: the reference guarantees a feasible individual, its neighbours give the GA one-edge-removal candidates in generation zero, the stage-1 population gives diversity in the right basin, and the fixed-sequence seed is the sparsest graph there is. Truncation to `popSize` is required because `GA::ga()` errors on oversized `suggestions` (check 8); the ordering puts the most valuable seeds first. The encoding guard costs nothing and removes a failure mode that would otherwise depend on floating-point accident; check 9 found no negative derived entries from plain re-encoding, so the guard is defensive rather than a fix for a common failure. Halving `run` reflects that stage 2 starts in the right basin and that its improvements are mostly discrete (an edge removed); the stage-1 `run` of 200 no-improvement generations is a floor on cost that a warm start does not need. Alternatives: identical stage-1 settings (simplest to explain, roughly doubles total time); GA off by default (leaves topology changes to pruning alone, which cannot find removals that only become affordable after weights are re-tuned).
 
@@ -141,6 +141,10 @@ Simplified from 12 edges to 7 (free: 12 -> 7)
 Trial success 0.8048 -> 0.8041: loss 0.09% of reference (cap 0.1%)
 ```
 
+If the returned graph improves on the reference, the signed fields remain
+negative and the display instead says `gain X% over reference`; it never labels
+an improvement as a negative loss.
+
 **Rationale.** LOCKED. The reader must be able to see the unadjusted gain, the edge count, and what the simplification cost; here all three are exact on the same trials, and the reference graph travels with the result so the two can be plotted side by side. Computing `$power` last is the 0.2.0 fix and keeps the reported gain equal to the graph the user sees.
 
 ### 3.10 Changes to `graph_optimise()` and its result
@@ -165,6 +169,15 @@ Cases the implementation must handle:
 8. **A row reduced to one non-zero free entry during pruning.** The uniform fallback raises $E$; the candidate is skipped. The path in `.redistribute_mass()` with no recipients, which returns a row summing to less than one and makes `calc_power_pvals()` abort, is reachable only by bypassing `graph_constraint()` (check 1).
 9. **Sparse two-cycles** $g_{ij}=g_{ji}=1$ hit the shortcut's `denom == 0` branch in `src/graph_shortcut.cpp`, which zeroes the row; that is the correct limit of the Bretz update and already exercised by every $m=2$ graph.
 10. **Unreachable nodes** (zero weight, no incoming edge). Their outgoing edges do not affect $U$; the search reduces them to one edge.
+11. **A serialised trial-success function.** The compiled `$func` may be dead
+after `saveRDS()` / `readRDS()`. Before simplification, validate the stored
+`$objective` and `$m`; rebuild a missing or dead function from the objective;
+and verify a live function against the objective on all $2^m$ Boolean
+rejection patterns when $m\le12$. For larger $m$, require the stored generated
+C++ source to match the objective and compare bounded deterministic boundary,
+singleton, complement and alternating patterns, avoiding an exponential
+verification cost. Missing or invalid metadata, failed rebuilds, and live
+disagreements abort explicitly.
 
 ## 4. What to expect
 

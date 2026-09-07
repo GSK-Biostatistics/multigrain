@@ -21,12 +21,10 @@ graph_simplify(
 \code{\link[=graph_optimise]{graph_optimise()}}. This is the reference graph.
 
 The trial success measure is compiled, and a compiled function does not
-survive being saved and reloaded. An object read back from disk therefore
-needs its measure rebuilt before it can be simplified, with
-\verb{graph_optimal$trial_success <- trial_success(<the same expression>)};
-the expression is kept on the object as
-\code{graph_optimal$trial_success$objective}. \code{graph_simplify()} checks this
-and says so rather than failing obscurely.}
+survive being saved and reloaded. \code{graph_simplify()} rebuilds a dead
+function automatically from the objective stored on the object. A live
+function is checked against that objective before it is used; inconsistent
+or invalid objects produce an error.}
 
 \item{pvals}{A numeric matrix of p-values, one row per simulated trial and
 one column per hypothesis. It is supplied again because the optimised
@@ -57,7 +55,12 @@ explicitly set \code{num_threads} based on your resource allocation. Default is
 \item{control}{An optional \code{multigrain_control} object. Defaults to the
 settings stored on \code{graph_optimal} with the genetic algorithm's \code{run}
 halved, since the search starts in the right basin and does not need
-stage 1's floor on cost. A control passed here is used as it is.}
+stage 1's floor on cost. When the global search can run, the \code{GA::ga()}
+options \code{mutation} and \code{suggestions} are reserved: simplification requires
+its support-changing mutation and reference-first seed population. Setting
+either option in an explicit \code{control} object is an error. If they are
+inherited from \code{graph_optimal}, they are ignored with a warning. They are
+irrelevant and left alone when no global search runs.}
 
 \item{verbose}{An optional string controlling verbosity (\code{"detail"} >
 \code{"info"} > \code{"silent"}). Verbosity can also be set at package level with the

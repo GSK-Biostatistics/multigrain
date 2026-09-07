@@ -304,6 +304,179 @@ test_that("an object without its constraint or trial success errors", {
     )
 })
 
+test_that("a serialised trial success function is rebuilt automatically", {
+    ref <- simplify_reference(global_search = FALSE)
+    path <- tempfile(fileext = ".rds")
+    withr::defer(unlink(path))
+    saveRDS(ref, path)
+    serialised <- readRDS(path)
+    expect_false(.trial_success_is_live(serialised$trial_success))
+
+    res <- withr::with_seed(7, {
+        graph_simplify(
+            serialised,
+            simplify_pvals,
+            gain_tolerance = 0,
+            global_search = FALSE,
+            control = simplify_control(),
+            verbose = "silent"
+        )
+    })
+
+    expect_true(.trial_success_is_live(res$trial_success))
+    expect_identical(
+        res$trial_success$objective,
+        serialised$trial_success$objective
+    )
+    expect_no_error(
+        withr::with_seed(7, {
+            graph_simplify(
+                res,
+                simplify_pvals,
+                gain_tolerance = 0,
+                global_search = FALSE,
+                control = simplify_control(),
+                verbose = "silent"
+            )
+        })
+    )
+})
+
+test_that("an inconsistent live trial success function errors", {
+    ref <- simplify_reference(global_search = FALSE)
+    ref$trial_success$objective <- "r1 + r2 + r3 + r4"
+
+    expect_error(
+        graph_simplify(
+            ref,
+            simplify_pvals,
+            global_search = FALSE,
+            verbose = "silent"
+        ),
+        "does not match its stored objective"
+    )
+})
+
+test_that("an invalid stored trial success objective errors", {
+    ref <- simplify_reference(global_search = FALSE)
+    ref$trial_success$func <- NULL
+    ref$trial_success$objective <- "sqrt(r1)"
+
+    expect_error(
+        graph_simplify(
+            ref,
+            simplify_pvals,
+            global_search = FALSE,
+            verbose = "silent"
+        ),
+        "cannot be rebuilt"
+    )
+})
+
+test_that("stage-2 mutation and suggestions are reserved", {
+    ref <- simplify_reference(global_search = FALSE)
+    mutation <- function(object, parent) object@population[parent, ]
+    suggestions <- matrix(
+        .encode_graph(
+            ref$constraints,
+            unname(ref$hyp_weight),
+            unname(ref$trans_matrix)
+        ),
+        nrow = 1L
+    )
+
+    expect_error(
+        graph_simplify(
+            ref,
+            simplify_pvals,
+            control = simplify_control() |>
+                control_global(mutation = mutation),
+            verbose = "silent"
+        ),
+        "`mutation`"
+    )
+    expect_error(
+        graph_simplify(
+            ref,
+            simplify_pvals,
+            control = simplify_control() |>
+                control_global(suggestions = suggestions),
+            verbose = "silent"
+        ),
+        "`suggestions`"
+    )
+    expect_error(
+        graph_simplify(
+            ref,
+            simplify_pvals,
+            control = simplify_control() |>
+                control_global(
+                    mutation = mutation,
+                    suggestions = suggestions
+                ),
+            verbose = "silent"
+        ),
+        "`mutation`, `suggestions`"
+    )
+})
+
+test_that("reserved stage-1 controls warn and are not inherited", {
+    ref <- simplify_reference(global_search = FALSE)
+    ref$control <- simplify_control() |>
+        control_global(
+            mutation = function(object, parent) {
+                object@population[parent, ]
+            },
+            suggestions = matrix(
+                .encode_graph(
+                    ref$constraints,
+                    unname(ref$hyp_weight),
+                    unname(ref$trans_matrix)
+                ),
+                nrow = 1L
+            )
+        )
+
+    expect_warning(
+        res <- withr::with_seed(7, {
+            graph_simplify(
+                ref,
+                simplify_pvals,
+                gain_tolerance = 1e-2,
+                verbose = "silent"
+            )
+        }),
+        "cannot reuse"
+    )
+    expect_false(any(
+        c("mutation", "suggestions") %in% names(res$control$global_opt)
+    ))
+})
+
+test_that("reserved GA controls are irrelevant without a global search", {
+    ref <- simplify_reference(global_search = FALSE)
+    control <- simplify_control() |>
+        control_global(
+            mutation = function(object, parent) {
+                object@population[parent, ]
+            },
+            suggestions = matrix(0, nrow = 1L, ncol = 1L)
+        )
+
+    expect_no_error(
+        withr::with_seed(7, {
+            graph_simplify(
+                ref,
+                simplify_pvals,
+                gain_tolerance = 1e-2,
+                global_search = FALSE,
+                control = control,
+                verbose = "silent"
+            )
+        })
+    )
+})
+
 test_that("num_threads does not change the result for the same seed", {
     ref <- simplify_reference()
     args <- list(
