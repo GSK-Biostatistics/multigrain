@@ -32,3 +32,20 @@ multigrain_verbosity <- function() {
     }
     mv_opt
 }
+
+
+# Coerce a `verbose` argument to one of `verbosity_levels`.
+#
+# Accepts the historical logical values (TRUE -> "info", FALSE -> "silent")
+# as well as a string, mirroring the coercion `graph_optimise()` performs
+# inline. Used by `graph_simplify()`.
+.resolve_verbose <- function(verbose) {
+    if (isTRUE(verbose)) {
+        return("info")
+    }
+    if (isFALSE(verbose)) {
+        return("silent")
+    }
+    rlang::check_string(verbose)
+    rlang::arg_match(verbose, values = verbosity_levels)
+}

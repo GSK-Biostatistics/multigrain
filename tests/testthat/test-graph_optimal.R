@@ -20,7 +20,9 @@ test_that("new_graph_optimal", {
             "control",
             "global_output",
             "local_output",
-            "start_graph"
+            "start_graph",
+            "alpha",
+            "sparsity"
         )
     )
 })
@@ -227,4 +229,133 @@ test_that("check_graph_optimal", {
         check_graph_optimal(2),
         "`2` must be a multigrain graph optimal object, not the number 2."
     )
+})
+
+
+# ---- alpha and sparsity on the object ----
+
+test_that("graph_optimise() stores alpha and a NULL sparsity", {
+    pv <- withr::with_seed(1, {
+        sims <- mvtnorm::rmvnorm(
+            1000,
+            mean = calc_ncp(c(0.9, 0.8, 0.7)),
+            sigma = diag(3)
+        )
+        stats::pnorm(sims, lower.tail = FALSE)
+    })
+    ts <- trial_success(r1 + r2 + r3, verbose = "silent")
+    ctrl <- multigrain_control() |> control_local(maxeval = 50)
+
+    res <- graph_optimise(
+        pvals = pv,
+        graph_constraint = graph_constraint_free(3),
+        trial_success = ts,
+        alpha = 0.01,
+        global_search = FALSE,
+        control = ctrl,
+        verbose = "silent"
+    )
+
+    # The previous element names, plus the two new ones at the end.
+    expect_identical(
+        names(res),
+        c(
+            "hyp_weight",
+            "trans_matrix",
+            "constraints",
+            "trial_success",
+            "power",
+            "solution",
+            "global_search",
+            "control",
+            "global_output",
+            "local_output",
+            "start_graph",
+            "alpha",
+            "sparsity"
+        )
+    )
+    expect_identical(res$alpha, 0.01)
+    expect_null(res$sparsity)
+})
+
+test_that("graph_optimal() validates alpha and defaults both new elements", {
+    obj <- graph_optimal(
+        hyp_weight = c(0.5, 0.5),
+        trans_matrix = matrix(c(0, 1, 1, 0), nrow = 2)
+    )
+    expect_null(obj$alpha)
+    expect_null(obj$sparsity)
+
+    expect_error(
+        graph_optimal(
+            hyp_weight = c(0.5, 0.5),
+            trans_matrix = matrix(c(0, 1, 1, 0), nrow = 2),
+            alpha = 1.5
+        ),
+        class = "rlang_error"
+    )
+})
+
+
+# ---- reporting the sparsity element ----
+
+sparsity_example_object <- function() {
+    gc <- graph_constraint_free(3)
+    graph_optimal(
+        hyp_weight = c(1, 0, 0),
+        trans_matrix = rbind(c(0, 1, 0), c(0, 0, 1), c(1, 0, 0)),
+        constraints = gc,
+        trial_success = trial_success(r1 + r2 + r3, verbose = "silent"),
+        power = list(
+            local_power = c(0.9, 0.8, 0.7),
+            exp_rejections = 2.4,
+            disj_power = 0.95,
+            conj_power = 0.6,
+            trial_success = 0.8041
+        ),
+        solution = list(
+            opt_source = "simplify:local",
+            graph_valid = c(local = TRUE, global = NA)
+        ),
+        global_search = FALSE,
+        alpha = 0.025,
+        sparsity = list(
+            gain_tolerance = 1e-3,
+            reference = list(
+                hyp_weight = c(1, 0, 0),
+                trans_matrix = rbind(c(0, 0.5, 0.5), c(0.5, 0, 0.5), c(1, 0, 0))
+            ),
+            gain_reference = 0.8048,
+            gain = 0.8041,
+            gain_loss = 0.0007,
+            gain_loss_fraction = 0.0007 / 0.8048,
+            budget = 1e-3 * 0.8048,
+            n_edges_reference = 12L,
+            n_edges = 7L,
+            n_edges_free_reference = 12L,
+            n_edges_free = 7L,
+            prune_loss = 0.0007,
+            source = "local"
+        )
+    )
+}
+
+test_that("summarise_sparsity is silent when there is no sparsity element", {
+    expect_snapshot(summarise_sparsity(NULL))
+})
+
+test_that("print reports the simplification when sparsity is present", {
+    expect_snapshot(print(sparsity_example_object()))
+})
+
+test_that("summary reports the simplification when sparsity is present", {
+    expect_snapshot(summary(sparsity_example_object()))
+})
+
+test_that("print is unchanged when sparsity is NULL", {
+    obj <- sparsity_example_object()
+    obj$sparsity <- NULL
+    out <- utils::capture.output(print(obj))
+    expect_false(any(grepl("Simplified from", out, fixed = TRUE)))
 })

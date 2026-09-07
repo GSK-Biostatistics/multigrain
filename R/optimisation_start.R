@@ -193,7 +193,7 @@
 #' Seed matrix for the simplification GA
 #'
 #' Rows, most valuable first: the encoded reference graph; its single-edge
-#' removal neighbours; the usual seeds from [.build_start_matrix()]; and the
+#' removal neighbours; the usual seeds from `.build_start_matrix()`; and the
 #' rows of the reference object's stored GA population when it is present and
 #' of matching width. Duplicates are dropped and the result is truncated to
 #' `pop_size`, because `GA::ga()` errors when `suggestions` has more rows than

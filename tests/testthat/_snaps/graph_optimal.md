@@ -291,3 +291,84 @@
       Solution source:
       Local optimisation (nloptr)
 
+# summarise_sparsity is silent when there is no sparsity element
+
+    Code
+      summarise_sparsity(NULL)
+    Output
+      NULL
+
+# print reports the simplification when sparsity is present
+
+    Code
+      print(sparsity_example_object())
+    Output
+      <multigrain_graph_optimal>
+      Optimal graph found (given user-defined constraints on graph and computational resources):
+      
+      Hypothesis weights:
+      [1] 1 0 0
+      
+      Transition matrix:
+           [,1] [,2] [,3]
+      [1,]    0    1    0
+      [2,]    0    0    1
+      [3,]    1    0    0
+      
+      Trial success function:
+      r1 + r2 + r3
+      
+      Value of trial success measure:
+      0.8041
+      
+      Simplified from 12 edges to 7 (free: 12 -> 7)
+      Trial success 0.8048 -> 0.8041: loss 0.09% of reference (cap 0.1%)
+
+# summary reports the simplification when sparsity is present
+
+    Code
+      summary(sparsity_example_object())
+    Output
+      Optimisation summary
+      
+      Optimisation results:
+      
+      Hypothesis weights:
+      [1] 1 0 0
+      
+      Transition matrix:
+           [,1] [,2] [,3]
+      [1,]    0    1    0
+      [2,]    0    0    1
+      [3,]    1    0    0
+      
+      Trial success function:
+      r1 + r2 + r3
+      
+      Value of trial success measure:
+      0.8041
+      
+      Power metrics:
+      Power for each hypothesis:
+      [1] 0.9 0.8 0.7
+      Expected number of rejections: 2.4
+      Probability of at least one rejection: 0.95
+      Probability of rejecting all hypotheses: 0.6
+      
+      Simplified from 12 edges to 7 (free: 12 -> 7)
+      Trial success 0.8048 -> 0.8041: loss 0.09% of reference (cap 0.1%)
+      
+      Graph constraints:
+      Constraints on hypothesis weights:
+      H1 H2 H3 
+      NA NA NA 
+      
+      Constraints on transition matrix:
+         H1 H2 H3
+      H1  0 NA NA
+      H2 NA  0 NA
+      H3 NA NA  0
+      
+      Solution source:
+      simplify:local
+

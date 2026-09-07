@@ -458,7 +458,7 @@ prune_edges <- function(
 
 #' Remove edges best-first, subject to a floor on the trial success measure
 #'
-#' Where [prune_edges()] sweeps the matrix in a fixed index order and accepts
+#' Where `prune_edges()` sweeps the matrix in a fixed index order and accepts
 #' any removal that does not lower the trial success measure, this evaluates
 #' every remaining removable edge on the full sample, keeps the candidates that
 #' stay at or above `threshold` and reduce the edge count, removes the one with
@@ -468,7 +468,7 @@ prune_edges <- function(
 #' Candidates that would leave a row unable to sum to one -- because the
 #' dropped entry has no free recipient -- are skipped, as are candidates that
 #' do not actually reduce the edge count (the uniform fallback in
-#' [.redistribute_mass()] can raise it).
+#' `.redistribute_mass()` can raise it).
 #'
 #' @param pvals (numeric) Numeric matrix of p-values (n.sim x m).
 #' @param hyp_weight (numeric) Vector of hypothesis weights (length m); not
@@ -479,7 +479,7 @@ prune_edges <- function(
 #'   is non-`NA`.
 #' @param threshold (numeric) Floor on the trial success measure.
 #' @param alpha (numeric) Overall one-sided significance level.
-#' @param tolerance Tolerance passed to [.redistribute_mass()] and used for the
+#' @param tolerance Tolerance passed to `.redistribute_mass()` and used for the
 #'   row-sum check.
 #'
 #' @returns A list with `hyp_weight`, `trans_matrix`, `power_best`,
@@ -577,10 +577,10 @@ prune_edges <- function(
 #'   that are non-`NA` impose a marginal-power requirement. Defaults to `NULL`
 #'   (no marginal constraints).
 #' @param threshold Optional floor on the trial success measure. When supplied,
-#'   edges are removed best-first by [.prune_edges_best_first()] and a removal
+#'   edges are removed best-first by `.prune_edges_best_first()` and a removal
 #'   is accepted even if it lowers the trial success, provided the result stays
 #'   at or above `threshold`. `NULL` (the default) keeps the fixed-order
-#'   [prune_edges()], which never accepts a removal that lowers it.
+#'   `prune_edges()`, which never accepts a removal that lowers it.
 #'
 #' @returns A list with elements `hyp_weight` and `trans_matrix`, the pruned
 #' graph, and `prune_loss`, the exact loss of trial success across the accepted

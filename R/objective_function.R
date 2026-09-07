@@ -30,7 +30,7 @@
 #' Exact range of the gain function over all rejection patterns
 #'
 #' Evaluates the compiled trial success function on each of the `2^m` possible
-#' rejection patterns. Used to price an edge in [.lexico()] without assuming
+#' rejection patterns. Used to price an edge in `.lexico()` without assuming
 #' anything about the scale of the user's objective.
 #'
 #' @param trial_success A `multigrain_trial_success` object.
@@ -55,7 +55,7 @@
 #' sample, and must use the same ranking the search used. This returns a
 #' function of `(u, trans_matrix)` giving that ranking: the identity on `u`
 #' when no threshold is in force, so the comparison is bit-identical to the
-#' trial-success comparison made before this existed, and [.lexico()]
+#' trial-success comparison made before this existed, and `.lexico()`
 #' otherwise. The threshold is recomputed here from the reference graph on
 #' `pvals`, so it belongs to this sample rather than to a subsample.
 #'
@@ -64,7 +64,7 @@
 #' @param trial_success A `multigrain_trial_success` object.
 #' @param trans_constraint (numeric matrix) Transition matrix constraints.
 #' @param objective_args (list) The `gain_tolerance`, `ref_graph` and
-#'   `u_range` arguments of [create_obj_func()], or an empty list.
+#'   `u_range` arguments of `create_obj_func()`, or an empty list.
 #'
 #' @returns A function with signature `function(u, trans_matrix)`.
 #' @noRd
@@ -113,7 +113,7 @@
 #' do not need to forward large objects like `pvals` via `...`.
 #'
 #' @details When `gain_tolerance` is supplied the closure returns the
-#'   lexicographic score of [.lexico()] rather than the raw trial success
+#'   lexicographic score of `.lexico()` rather than the raw trial success
 #'   measure, so that the optimisers minimise the edge count subject to a floor
 #'   on trial success. The floor is computed by this closure, from `ref_graph`,
 #'   on the p-values this closure captured, so the reference and the candidates
@@ -139,7 +139,7 @@
 #'   `trans_matrix`. Required when `gain_tolerance` is supplied.
 #' @param u_range (numeric) Named vector with elements `min` and `max` giving
 #'   the exact range of `power_criterion` over all rejection patterns, as
-#'   returned by [.trial_success_range()]. Required when `gain_tolerance` is
+#'   returned by `.trial_success_range()`. Required when `gain_tolerance` is
 #'   supplied.
 #' @inheritParams graph_optimise
 #'

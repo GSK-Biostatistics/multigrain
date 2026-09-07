@@ -234,7 +234,8 @@ graph_optimise <- function(
         control = control,
         global_output = ga_result$ga_output,
         local_output = local_result$local_output,
-        start_graph = start_graph
+        start_graph = start_graph,
+        alpha = alpha
     )
 }
 

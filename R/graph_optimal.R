@@ -9,7 +9,9 @@ new_graph_optimal <- function(
     control = NULL,
     global_output = NULL,
     local_output = NULL,
-    start_graph = NULL
+    start_graph = NULL,
+    alpha = NULL,
+    sparsity = NULL
 ) {
     structure(
         list(
@@ -23,7 +25,9 @@ new_graph_optimal <- function(
             control = control,
             global_output = global_output,
             local_output = local_output,
-            start_graph = start_graph
+            start_graph = start_graph,
+            alpha = alpha,
+            sparsity = sparsity
         ),
         class = "multigrain_graph_optimal"
     )
@@ -40,7 +44,9 @@ graph_optimal <- function(
     control = NULL,
     global_output = NULL,
     local_output = NULL,
-    start_graph = NULL
+    start_graph = NULL,
+    alpha = NULL,
+    sparsity = NULL
 ) {
     check_double(hyp_weight)
     check_double_matrix(trans_matrix)
@@ -53,6 +59,7 @@ graph_optimal <- function(
     }
 
     check_logical(global_search, allow_null = TRUE)
+    rlang::check_number_decimal(alpha, min = 0, max = 1, allow_null = TRUE)
     check_control(control, allow_null = TRUE)
     check_ga(global_output, allow_null = TRUE)
     check_nloptr(local_output, allow_null = TRUE)
@@ -79,7 +86,9 @@ graph_optimal <- function(
         control = control,
         global_output = global_output,
         local_output = local_output,
-        start_graph = start_graph
+        start_graph = start_graph,
+        alpha = alpha,
+        sparsity = sparsity
     )
 }
 
@@ -151,6 +160,28 @@ summarise_power_object <- function(power_object) {
     }
 }
 
+summarise_sparsity <- function(sparsity) {
+    if (is.null(sparsity)) {
+        return()
+    }
+
+    cli::cat_line(sprintf(
+        "\nSimplified from %d edges to %d (free: %d -> %d)",
+        sparsity$n_edges_reference,
+        sparsity$n_edges,
+        sparsity$n_edges_free_reference,
+        sparsity$n_edges_free
+    ))
+
+    cli::cat_line(sprintf(
+        "Trial success %.4f -> %.4f: loss %.2f%% of reference (cap %.1f%%)",
+        sparsity$gain_reference,
+        sparsity$gain,
+        100 * sparsity$gain_loss_fraction,
+        100 * sparsity$gain_tolerance
+    ))
+}
+
 summarise_solution_source <- function(solution_object) {
     if (is.null(solution_object)) {
         return()
@@ -209,6 +240,8 @@ print.multigrain_graph_optimal <- function(x, ...) {
         cli::cat_line(format(round(x$power$trial_success, 4)))
     }
 
+    summarise_sparsity(x$sparsity)
+
     invisible(x)
 }
 
@@ -236,6 +269,8 @@ summary.multigrain_graph_optimal <- function(object, ...) {
     summary(object$trial_success)
 
     summarise_power_object(object$power)
+
+    summarise_sparsity(object$sparsity)
 
     summary(object$constraints)
 

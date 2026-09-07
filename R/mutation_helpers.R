@@ -95,9 +95,9 @@
 # @param scale Cauchy scale parameter. Default 1.0 (matching ESCH).
 # @param p_zero Probability that a call performs a zeroing move rather than a
 #   Cauchy perturbation. Default 0, which disables the move entirely.
-# @param param_rows Row map from [.g_param_rows()]. Required when `p_zero` > 0.
+# @param param_rows Row map from `.g_param_rows()`. Required when `p_zero` > 0.
 # @param row_target Per-row parameter-sum targets from
-#   [.zeroing_row_targets()]. Required when `p_zero` > 0.
+#   `.zeroing_row_targets()`. Required when `p_zero` > 0.
 # @returns A function(object, parent) for the [GA::ga()] mutation slot.
 .make_cauchy_mutation_multi <- function(
     p_param_mutate = 0.1,
