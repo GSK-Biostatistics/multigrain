@@ -257,8 +257,8 @@ test_that("graph_optimise() stores alpha and a NULL sparsity", {
     )
 
     # The previous element names, plus the two new ones at the end.
-    expect_identical(
-        names(res),
+    expect_named(
+        res,
         c(
             "hyp_weight",
             "trans_matrix",
@@ -301,11 +301,11 @@ test_that("graph_optimal() validates alpha and defaults both new elements", {
 # ---- reporting the sparsity element ----
 
 sparsity_example_object <- function() {
-    gc <- graph_constraint_free(3)
+    constraints <- graph_constraint_free(3)
     graph_optimal(
         hyp_weight = c(1, 0, 0),
         trans_matrix = rbind(c(0, 1, 0), c(0, 0, 1), c(1, 0, 0)),
-        constraints = gc,
+        constraints = constraints,
         trial_success = trial_success(r1 + r2 + r3, verbose = "silent"),
         power = list(
             local_power = c(0.9, 0.8, 0.7),

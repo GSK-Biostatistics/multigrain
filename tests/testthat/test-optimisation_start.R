@@ -308,7 +308,7 @@ test_that(".encode_graph guards a derived hypothesis weight of zero", {
     w_dec <- recover_full_weights(theta$w_pars, gc$hyp_constraint)
 
     expect_true(all(w_dec >= 0))
-    expect_true(abs(w_dec[3] - 5e-5) < 1e-12)
+    expect_lt(abs(w_dec[3] - 5e-5), 1e-12)
     # Below the 1e-4 weight threshold, so it is still zeroed by the objective.
     expect_lt(w_dec[3], 1e-4)
 })
@@ -340,7 +340,7 @@ test_that(".encode_graph respects a row's pinned non-zero entries", {
 
     expect_true(all(G_dec >= 0))
     expect_identical(G_dec[1, 2], 0.5)
-    expect_true(abs(G_dec[1, 4] - 5e-6) < 1e-12)
+    expect_lt(abs(G_dec[1, 4] - 5e-6), 1e-12)
 })
 
 
@@ -354,7 +354,7 @@ test_that(".build_simplify_seeds puts the reference first and dedupes", {
     seeds <- .build_simplify_seeds(gc, ref, pop_size = pop_size)
 
     expect_true(is.matrix(seeds))
-    expect_identical(typeof(seeds), "double")
+    expect_type(seeds, "double")
     expect_identical(ncol(seeds), length(create_start_params(gc)))
     expect_identical(
         seeds[1, ],

@@ -1,5 +1,20 @@
 # multigrain (development version)
 
+## New functionality
+
+* New `graph_simplify()` takes an optimised graph and searches for one with
+  fewer edges whose trial-success value, on the supplied p-values, is at
+  least `1 - gain_tolerance` times that of the input graph. The search reuses
+  the global and local optimisers with a score that ranks feasibility first,
+  fewer edges second and trial success third, warm-starts from the input
+  graph and the stored population, and finishes with best-first pruning; the
+  input graph is returned if nothing feasible improves on it. The result is a
+  `multigrain_graph_optimal` with a `sparsity` element reporting both graphs'
+  trial success, the edge counts and the exact loss, shown by `print()` and
+  `summary()`.
+* `graph_optimise()` results now store `alpha` and carry a `sparsity`
+  element (`NULL`); nothing else about `graph_optimise()` changes.
+
 # multigrain 0.3.0
 
 ## New functionality
