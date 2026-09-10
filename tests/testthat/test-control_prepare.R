@@ -3,16 +3,50 @@ cli::start_app()
 on.exit(cli::stop_app(), add = TRUE)
 
 test_that("default_control", {
-    expect_snapshot(
-        print.default(
-            default_control()
+    default_ctrl <- default_control()
+
+    expect_identical(
+        names(default_ctrl),
+        c("nsim_local", "nsim_global", "local_opt", "global_opt")
+    )
+
+    expect_identical(
+        default_ctrl$nsim_local,
+        integer(0)
+    )
+
+    expect_identical(
+        default_ctrl$nsim_global,
+        integer(0)
+    )
+
+    expect_identical(
+        default_ctrl$local_opt,
+        list(
+            algorithm = "NLOPT_LN_COBYLA",
+            xtol_rel = 5e-08,
+            xtol_abs = 5e-09,
+            maxeval = 5000,
+            print_level = 0L
         )
     )
 
-    ctrl <- default_control()
-
-    expect_false(ctrl$global_opt$monitor)
-    expect_identical(ctrl$local_opt$print_level, 0L)
+    expect_identical(
+        default_ctrl$global_opt,
+        list(
+            pcrossover = 0.2,
+            pmutation = 0.8,
+            maxiter = 1e+05,
+            popSize = 200,
+            run = 200,
+            monitor = FALSE,
+            optimArgs = list(
+                method = "Nelder-Mead",
+                poptim = 0.2,
+                pressel = 0.6
+            )
+        )
+    )
 
     expect_s3_class(
         default_control(),
