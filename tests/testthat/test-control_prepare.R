@@ -5,8 +5,8 @@ on.exit(cli::stop_app(), add = TRUE)
 test_that("default_control", {
     default_ctrl <- default_control()
 
-    expect_identical(
-        names(default_ctrl),
+    expect_named(
+        default_ctrl,
         c("nsim_local", "nsim_global", "local_opt", "global_opt")
     )
 
