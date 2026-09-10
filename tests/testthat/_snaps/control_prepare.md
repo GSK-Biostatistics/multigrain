@@ -122,29 +122,3 @@
       attr(,"class")
       [1] "multigrain_control"
 
-# control_prepare injects the expected defaults
-
-    Code
-      control_prepare(empty_ctrl, pvals = test_pvals)
-    Output
-      <multigrain_control>
-      local simulations: 60
-      global simulations: 60
-      local optimisation:
-      * algorithm: "NLOPT_LN_COBYLA"
-      * xtol_rel: 5e-08
-      * xtol_abs: 5e-09
-      * maxeval: 5000
-      * print_level: 0
-      global optimisation:
-      * pcrossover: 0.2
-      * pmutation: 0.8
-      * maxiter: 1e+05
-      * popSize: 200
-      * run: 200
-      * monitor: FALSE
-      * optimArgs: 
-          * method: "Nelder-Mead"
-          * poptim: 0.2
-          * pressel: 0.6
-

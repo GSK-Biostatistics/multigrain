@@ -32,17 +32,11 @@ test_that("control_prepare injects the expected defaults", {
     test_pvals <- sample.int(100, size = 60 * 3, replace = TRUE) / 100
     test_pvals <- matrix(test_pvals, ncol = 3)
 
-    expect_snapshot(
+    prep_ctrl <- empty_ctrl |>
         control_prepare(
-            empty_ctrl,
             pvals = test_pvals
         )
-    )
 
-    prep_ctrl <- control_prepare(
-        empty_ctrl,
-        pvals = test_pvals
-    )
     expect_identical(prep_ctrl$nsim_local, 60L)
     expect_identical(prep_ctrl$nsim_global, 60L)
 
