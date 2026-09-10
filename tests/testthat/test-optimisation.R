@@ -68,6 +68,56 @@ constraint_4m <- graph_constraint(hyp_constraint = c(1, 0, 0, 0))
 # number of cores to use for testing (CRAN-aware)
 cores <- cran_cores()
 
+test_that(".sample_pvals_rows samples the full row range", {
+    pvals_identifiable <- cbind(
+        row_id = seq_len(10L),
+        pval = seq_len(10L) / 10
+    )
+
+    set.seed(1)
+    sampled_pvals <- .sample_pvals_rows(pvals_identifiable, nsim = 3L)
+
+    expect_true(any(sampled_pvals[, "row_id"] > 3L))
+})
+
+test_that(".sample_pvals_rows preserves matrix dimensions for one row", {
+    pvals_identifiable <- cbind(
+        row_id = seq_len(10L),
+        pval = seq_len(10L) / 10
+    )
+
+    sampled_pvals <- .sample_pvals_rows(pvals_identifiable, nsim = 1L)
+
+    expect_true(is.matrix(sampled_pvals))
+    expect_identical(dim(sampled_pvals), c(1L, 2L))
+})
+
+test_that(".sample_pvals_rows makes reproducible successive draws", {
+    pvals_identifiable <- cbind(
+        row_id = seq_len(10L),
+        pval = seq_len(10L) / 10
+    )
+
+    set.seed(123)
+    sampled_first <- .sample_pvals_rows(pvals_identifiable, nsim = 3L)
+    sampled_second <- .sample_pvals_rows(pvals_identifiable, nsim = 3L)
+
+    set.seed(123)
+    expected_first <- pvals_identifiable[
+        sample.int(nrow(pvals_identifiable), size = 3L, replace = FALSE),
+        ,
+        drop = FALSE
+    ]
+    expected_second <- pvals_identifiable[
+        sample.int(nrow(pvals_identifiable), size = 3L, replace = FALSE),
+        ,
+        drop = FALSE
+    ]
+
+    expect_identical(sampled_first, expected_first)
+    expect_identical(sampled_second, expected_second)
+})
+
 ## GA::ga optimisation
 test_that(".graph_optimise_ga returns valid object", {
     ctrl <- multigrain_control() |>
