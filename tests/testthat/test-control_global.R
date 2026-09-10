@@ -14,13 +14,22 @@ test_that("control_global can add and remove options", {
 
 test_that("control_global can add and remove multiple options", {
     ctrl <- multigrain_control()
-
-    expect_snapshot(
+    ctrl <- ctrl |>
         control_global(
-            ctrl,
             pcrossover = 0.2,
             pmutation = 0.8,
             maxiter = 1e5,
+            popSize = 200,
+            run = 200,
+            monitor = FALSE
+        )
+
+    expect_equal(
+        ctrl$global_opt,
+        list(
+            pcrossover = 0.2,
+            pmutation = 0.8,
+            maxiter = 1e+05,
             popSize = 200,
             run = 200,
             monitor = FALSE
@@ -49,11 +58,12 @@ test_that("control_global can add and remove multiple options", {
         )
     )
 
-    ctrl <- control_global(
-        ctrl,
-        run = NULL,
-        monitor = TRUE
-    )
+    ctrl <- ctrl |>
+        control_global(
+            run = NULL,
+            monitor = TRUE
+        )
+
     expect_identical(
         ctrl$global_opt,
         list(
