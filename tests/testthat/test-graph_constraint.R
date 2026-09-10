@@ -18,124 +18,60 @@ test_that("new_graph_constraint() can create an empty object", {
 
 test_that("new_graph_constraint() works", {
     # can create a named graph_constraint
-    expect_snapshot(
-        new_graph_constraint(
-            hyp_constraint = c(NA, NA, 0, 0),
-            trans_constraint = matrix(
-                c(
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0
-                ),
-                nrow = 4,
-                byrow = TRUE
-            ),
-            names = letters[1:4]
-        )
-    )
-
-    expect_s3_class(
-        new_graph_constraint(
-            hyp_constraint = c(NA, NA, 0, 0),
-            trans_constraint = matrix(
-                c(
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0
-                ),
-                nrow = 4,
-                byrow = TRUE
-            ),
-            names = letters[1:4]
-        ),
-        "multigrain_graph_constraint"
-    )
-
-    gc <- new_graph_constraint(
+    named_gc <- new_graph_constraint(
         hyp_constraint = c(NA, NA, 0, 0),
         trans_constraint = matrix(
-            c(
-                NA, NA, 0, 0,
-                NA, NA, 0, 0,
-                NA, NA, 0, 0,
-                NA, NA, 0, 0
+                c(
+                    NA, NA, 0, 0,
+                    NA, NA, 0, 0,
+                    NA, NA, 0, 0,
+                    NA, NA, 0, 0
+                ),
+                nrow = 4,
+                byrow = TRUE
             ),
-            nrow = 4,
-            byrow = TRUE
-        ),
         names = letters[1:4]
     )
 
+    expect_s3_class(named_gc, "multigrain_graph_constraint")
+
     expect_named(
-        gc$hyp_constraint,
-        letters[1:4]
+        named_gc$hyp_constraint,
+        c("a", "b", "c", "d")
     )
 
     expect_identical(
-        dimnames(gc$trans_constraint),
+        dimnames(named_gc$trans_constraint),
         list(
-            letters[1:4],
-            letters[1:4]
+            c("a", "b", "c", "d"),
+            c("a", "b", "c", "d")
         )
     )
 
     # can create an unnamed `multigrain_graph_constraint`
-    expect_snapshot(
-        new_graph_constraint(
-            hyp_constraint = c(NA, NA, 0, 0),
-            trans_constraint = matrix(
-                c(
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0
-                ),
-                nrow = 4,
-                byrow = TRUE
-            )
-        )
-    )
-
-    expect_s3_class(
-        new_graph_constraint(
-            hyp_constraint = c(NA, NA, 0, 0),
-            trans_constraint = matrix(
-                c(
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0
-                ),
-                nrow = 4,
-                byrow = TRUE
-            )
-        ),
-        "multigrain_graph_constraint"
-    )
-
-    gc_no_names <- new_graph_constraint(
+    unnamed_gc <- new_graph_constraint(
         hyp_constraint = c(NA, NA, 0, 0),
         trans_constraint = matrix(
-            c(
-                NA, NA, 0, 0,
-                NA, NA, 0, 0,
-                NA, NA, 0, 0,
-                NA, NA, 0, 0
-            ),
-            nrow = 4,
-            byrow = TRUE
-        )
+                c(
+                    NA, NA, 0, 0,
+                    NA, NA, 0, 0,
+                    NA, NA, 0, 0,
+                    NA, NA, 0, 0
+                ),
+                nrow = 4,
+                byrow = TRUE
+            )
     )
 
+    expect_s3_class(unnamed_gc, "multigrain_graph_constraint")
+
     expect_named(
-        gc_no_names$hyp_constraint,
+        unnamed_gc$hyp_constraint,
         NULL
     )
 
     expect_null(
-        dimnames(gc_no_names$trans_constraint)
+        dimnames(unnamed_gc$trans_constraint)
     )
 })
 

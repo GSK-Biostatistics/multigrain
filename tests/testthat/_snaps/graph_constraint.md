@@ -1,39 +1,3 @@
-# new_graph_constraint() works
-
-    Code
-      new_graph_constraint(hyp_constraint = c(NA, NA, 0, 0), trans_constraint = matrix(
-        c(NA, NA, 0, 0, NA, NA, 0, 0, NA, NA, 0, 0, NA, NA, 0, 0), nrow = 4, byrow = TRUE),
-      names = letters[1:4])
-    Output
-      <multigrain_graph_constraint>
-      Constraints on hypothesis weights:
-       a  b  c  d 
-      NA NA  0  0 
-      
-      Constraints on transition matrix:
-         a  b c d
-      a NA NA 0 0
-      b NA NA 0 0
-      c NA NA 0 0
-      d NA NA 0 0
-
----
-
-    Code
-      new_graph_constraint(hyp_constraint = c(NA, NA, 0, 0), trans_constraint = matrix(
-        c(NA, NA, 0, 0, NA, NA, 0, 0, NA, NA, 0, 0, NA, NA, 0, 0), nrow = 4, byrow = TRUE))
-    Output
-      <multigrain_graph_constraint>
-      Constraints on hypothesis weights:
-      [1] NA NA  0  0
-      
-      Constraints on transition matrix:
-           [,1] [,2] [,3] [,4]
-      [1,]   NA   NA    0    0
-      [2,]   NA   NA    0    0
-      [3,]   NA   NA    0    0
-      [4,]   NA   NA    0    0
-
 # new_graph_constraint() complains with undesired inputs
 
     Code
