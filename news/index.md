@@ -21,6 +21,8 @@
 
 ### Bug fixes
 
+- Global and local graph optimiser stages now independently sample from
+  the full p-value simulation matrix when a subset is requested.
 - [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/reference/trial_success.md)
   now accepts expressions/strings containing only `r<digit>` symbols,
   numeric literals, and operators; this fixes failures when an object
