@@ -24,7 +24,7 @@ test_that("control_global can add and remove multiple options", {
             monitor = FALSE
         )
 
-    expect_equal(
+    expect_identical(
         ctrl$global_opt,
         list(
             pcrossover = 0.2,
