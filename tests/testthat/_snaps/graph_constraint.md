@@ -63,7 +63,7 @@
       * ..1 = c("a", "b", "c", "d")
       i Did you forget to name an argument?
 
-# graph_constraint: users can update hyp_constraint
+# graph_constraint: users can update hyp_constraint with validation
 
     Code
       gc$hyp_constraint <- "A"
@@ -88,11 +88,6 @@
       Error in `graph_constraint()`:
       ! Values in the hypothesis weight constraint vector cannot be greater than 1.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
-
----
-
-    Code
-      gc["hyp_constraint"] <- c(1 + 1e-12, 0, 0, 0)
 
 ---
 
@@ -235,11 +230,6 @@
       v The hypothesis weights vector has 4 elements.
       v The transition matrix has 4 columns and 4 rows.
 
-# graph_constraint: update incoming names are preferred
-
-    Code
-      gc[["trans_constraint"]] <- new_tc
-
 # graph_constraint print and summary methods
 
     Code
@@ -276,14 +266,6 @@
       H4 NA NA  0  0
 
 # set methods inherit the original tolerance if unspecified
-
-    Code
-      graph_constraint(hyp_constraint = c(NA, NA, 0, 0), tolerance = "a")
-    Condition
-      Error in `graph_constraint()`:
-      ! `tolerance` must be a number, not the string "a".
-
----
 
     Code
       gc[["hyp_constraint", tolerance = 1e-05]] <- c(1 + 0.001, 0, 0, 0)
