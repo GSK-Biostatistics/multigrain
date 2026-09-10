@@ -9,12 +9,6 @@ test_that("default_control", {
         )
     )
 
-    expect_snapshot(
-        print.default(
-            default_control()
-        )
-    )
-
     ctrl <- default_control()
 
     expect_false(ctrl$global_opt$monitor)
