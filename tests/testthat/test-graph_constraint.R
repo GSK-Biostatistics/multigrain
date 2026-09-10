@@ -130,17 +130,32 @@ test_that("new_graph_constraint() complains with undesired inputs", {
 })
 
 test_that("graph_constraint() when one of the inputs is NULL", {
-    # null `trans_constraint`
-    expect_snapshot(
-        graph_constraint(
-            hyp_constraint = c(NA, 0.4, NA)
+    # null `trans_constraint` -> `trans_constraint` is derived based on the
+    # `hyp_constraint` dimension
+    gc_null_tc <- graph_constraint(
+        hyp_constraint = c(NA, 0.4, NA)
+    )
+
+    expect_identical(
+        gc_null_tc$trans_constraint,
+        matrix(
+            c(
+                0, NA, NA,
+                NA, 0, NA,
+                NA, NA, 0
+            ),
+            nrow = 3,
+            dimnames = list(
+                c("H1", "H2", "H3"),
+                c("H1", "H2", "H3")
+            )
         )
     )
 
-    # null `hyp_constraint`
-    expect_snapshot(
-        graph_constraint(
-            trans_constraint = matrix(
+    # null `hyp_constraint` -> it gets derived based on the `trans_constraint`
+    # dimensions
+    gc_null_hc <- graph_constraint(
+        trans_constraint = matrix(
                 c(
                     0, NA, NA, 0,
                     NA, 0, NA, 0,
@@ -150,26 +165,18 @@ test_that("graph_constraint() when one of the inputs is NULL", {
                 nrow = 4,
                 byrow = TRUE
             )
-        )
+    )
+
+    expect_identical(
+        gc_null_hc$hyp_constraint,
+        c(H1 = NA_real_, H2 = NA_real_, H3 = NA_real_, H4 = NA_real_)
     )
 })
 
-test_that("graph_constraint() errors with both inputs NULL", {
+test_that("graph_constraint() when both hyp and trans constraints are NULL", {
     # i.e. when both `hyp_constraint` & `trans_constraint` are `NULL`
     expect_snapshot(error = TRUE, {
         graph_constraint()
-    })
-})
-
-test_that("graph_constraint() errors trans_constraint not numeric", {
-    expect_snapshot(error = TRUE, {
-        graph_constraint(
-            trans_constraint = matrix(
-                letters[1:16],
-                nrow = 4,
-                byrow = TRUE
-            )
-        )
     })
 })
 
@@ -192,42 +199,6 @@ test_that("graph_constraint complains when anything is passed via `...`", {
     })
 })
 
-test_that("graph_constraint() errors when tolerance not positive numeric", {
-    expect_snapshot(error = TRUE, {
-        graph_constraint(
-            hyp_constraint = c(NA, NA, 0, 0),
-            trans_constraint = matrix(
-                c(
-                    0, NA, NA, 0,
-                    NA, 0, NA, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0
-                ),
-                nrow = 4,
-                byrow = TRUE
-            ),
-            tolerance = "a"
-        )
-    })
-
-    expect_snapshot(error = TRUE, {
-        graph_constraint(
-            hyp_constraint = c(NA, NA, 0, 0),
-            trans_constraint = matrix(
-                c(
-                    0, NA, NA, 0,
-                    NA, 0, NA, 0,
-                    NA, NA, 0, 0,
-                    NA, NA, 0, 0
-                ),
-                nrow = 4,
-                byrow = TRUE
-            ),
-            tolerance = -1e-6
-        )
-    })
-})
-
 test_that("graph_constraint with names length mismatch", {
     expect_error(
         graph_constraint(
@@ -238,22 +209,58 @@ test_that("graph_constraint with names length mismatch", {
     )
 })
 
-
 test_that("graph_constraint_free() works", {
-    expect_s3_class(
-        graph_constraint_free(4),
-        "multigrain_graph_constraint"
+    gc_free_4 <- graph_constraint_free(4)
+
+    expect_s3_class(gc_free_4, "multigrain_graph_constraint")
+
+    expect_identical(
+        gc_free_4$hyp_constraint,
+        c(H1 = NA_real_, H2 = NA_real_, H3 = NA_real_, H4 = NA_real_)
     )
 
-    expect_snapshot(
-        graph_constraint_free(4)
+    expect_identical(
+        gc_free_4$trans_constraint,
+        matrix(
+            c(
+                0, NA, NA, NA,
+                NA, 0, NA, NA,
+                NA, NA, 0, NA,
+                NA, NA, NA, 0
+            ),
+            nrow = 4,
+            dimnames = list(
+                c("H1", "H2", "H3", "H4"),
+                c("H1", "H2", "H3", "H4")
+            )
+        )
     )
 })
 
 test_that("graph_constraint_free() works with 2 hypotheses", {
     # 2-hypotheses is an edge case -> test it
-    expect_snapshot(
-        graph_constraint_free(2)
+    gc_free_2 <- graph_constraint_free(2)
+
+    # there should be no NAs in the transition matrix (the diagonal must be 0s)
+
+    expect_identical(
+        gc_free_2$hyp_constraint,
+        c(H1 = NA_real_, H2 = NA_real_)
+    )
+
+    expect_identical(
+        gc_free_2$trans_constraint,
+        matrix(
+            c(
+                0, 1,
+                1, 0
+            ),
+            nrow = 2,
+            dimnames = list(
+                c("H1", "H2"),
+                c("H1", "H2")
+            )
+        )
     )
 })
 

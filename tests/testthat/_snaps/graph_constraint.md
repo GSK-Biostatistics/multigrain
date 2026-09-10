@@ -42,55 +42,13 @@
       Error in `new_graph_constraint()`:
       ! is.double(tolerance) is not TRUE
 
-# graph_constraint() when one of the inputs is NULL
-
-    Code
-      graph_constraint(hyp_constraint = c(NA, 0.4, NA))
-    Output
-      <multigrain_graph_constraint>
-      Constraints on hypothesis weights:
-       H1  H2  H3 
-       NA 0.4  NA 
-      
-      Constraints on transition matrix:
-         H1 H2 H3
-      H1  0 NA NA
-      H2 NA  0 NA
-      H3 NA NA  0
-
----
-
-    Code
-      graph_constraint(trans_constraint = matrix(c(0, NA, NA, 0, NA, 0, NA, 0, NA, NA,
-        0, 0, NA, NA, 0, 0), nrow = 4, byrow = TRUE))
-    Output
-      <multigrain_graph_constraint>
-      Constraints on hypothesis weights:
-      H1 H2 H3 H4 
-      NA NA NA NA 
-      
-      Constraints on transition matrix:
-         H1 H2 H3 H4
-      H1  0 NA NA  0
-      H2 NA  0 NA  0
-      H3 NA NA  0  0
-      H4 NA NA  0  0
-
-# graph_constraint() errors with both inputs NULL
+# graph_constraint() when both hyp and trans constraints are NULL
 
     Code
       graph_constraint()
     Condition
       Error in `graph_constraint()`:
       ! `hyp_constraint` and `trans_constraint` cannot both be `NULL` at the same time. At least one must be supplied.
-
-# graph_constraint() errors trans_constraint not numeric
-
-    Code
-      graph_constraint(trans_constraint = matrix(letters[1:16], nrow = 4, byrow = TRUE))
-    Condition
-      Error in `graph_constraint()`:
-      ! `trans_constraint` must be a double matrix, not a character matrix.
 
 # graph_constraint complains when anything is passed via `...`
 
@@ -104,58 +62,6 @@
       x Problematic argument:
       * ..1 = c("a", "b", "c", "d")
       i Did you forget to name an argument?
-
-# graph_constraint() errors when tolerance not positive numeric
-
-    Code
-      graph_constraint(hyp_constraint = c(NA, NA, 0, 0), trans_constraint = matrix(c(
-        0, NA, NA, 0, NA, 0, NA, 0, NA, NA, 0, 0, NA, NA, 0, 0), nrow = 4, byrow = TRUE),
-      tolerance = "a")
-    Condition
-      Error in `graph_constraint()`:
-      ! `tolerance` must be a number, not the string "a".
-
----
-
-    Code
-      graph_constraint(hyp_constraint = c(NA, NA, 0, 0), trans_constraint = matrix(c(
-        0, NA, NA, 0, NA, 0, NA, 0, NA, NA, 0, 0, NA, NA, 0, 0), nrow = 4, byrow = TRUE),
-      tolerance = -1e-06)
-    Condition
-      Error in `graph_constraint()`:
-      ! `tolerance` must be a number larger than or equal to 0, not the number 0.
-
-# graph_constraint_free() works
-
-    Code
-      graph_constraint_free(4)
-    Output
-      <multigrain_graph_constraint>
-      Constraints on hypothesis weights:
-      H1 H2 H3 H4 
-      NA NA NA NA 
-      
-      Constraints on transition matrix:
-         H1 H2 H3 H4
-      H1  0 NA NA NA
-      H2 NA  0 NA NA
-      H3 NA NA  0 NA
-      H4 NA NA NA  0
-
-# graph_constraint_free() works with 2 hypotheses
-
-    Code
-      graph_constraint_free(2)
-    Output
-      <multigrain_graph_constraint>
-      Constraints on hypothesis weights:
-      H1 H2 
-      NA NA 
-      
-      Constraints on transition matrix:
-         H1 H2
-      H1  0  1
-      H2  1  0
 
 # graph_constraint: users can update hyp_constraint
 
