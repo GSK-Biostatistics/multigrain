@@ -6,11 +6,6 @@
       Error:
       ! `1` must be a multigrain control object, not the number 1.
 
-# check_control() with correct input
-
-    Code
-      check_control(multigrain_ctrl)
-
 # check_control() with allow_null
 
     Code

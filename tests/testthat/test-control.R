@@ -49,15 +49,13 @@ test_that("is_control()", {
 })
 
 test_that("check_control() gives useful error", {
-    expect_snapshot(error = TRUE, {
-        check_control(1)
-    })
+    expect_snapshot(error = TRUE, check_control(1))
 })
 
 test_that("check_control() with correct input", {
     multigrain_ctrl <- new_multigrain_control()
 
-    expect_snapshot(
+    expect_no_error(
         check_control(
             multigrain_ctrl
         )
