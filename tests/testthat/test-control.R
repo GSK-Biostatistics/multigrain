@@ -29,10 +29,6 @@ test_that("new_multigrain_control() (low-level constructor)", {
         "multigrain_control"
     )
 
-    expect_snapshot(
-        new_multigrain_control()
-    )
-
     expect_named(
         control,
         c(

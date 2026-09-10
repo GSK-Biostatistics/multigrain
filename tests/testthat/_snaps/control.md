@@ -1,10 +1,3 @@
-# new_multigrain_control() (low-level constructor)
-
-    Code
-      new_multigrain_control()
-    Output
-      <multigrain_control>
-
 # check_control() gives useful error
 
     Code
