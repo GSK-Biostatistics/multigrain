@@ -1,14 +1,11 @@
-# to ensure consistent cli output (prevents local vs GHA whitespace differences)
-cli::start_app()
-on.exit(cli::stop_app(), add = TRUE)
-
 test_that("control_global can add and remove options", {
     ctrl <- multigrain_control()
+    ctrl <- ctrl |> control_global(x = 1)
 
-    ctrl <- control_global(ctrl, x = 1)
     expect_identical(ctrl$global_opt, list(x = 1))
 
-    ctrl <- control_global(ctrl, x = NULL)
+    ctrl <- ctrl |> control_global(x = NULL)
+
     expect_identical(ctrl$global_opt, list())
 })
 
@@ -36,15 +33,15 @@ test_that("control_global can add and remove multiple options", {
         )
     )
 
-    ctrl <- control_global(
-        ctrl,
-        pcrossover = 0.2,
-        pmutation = 0.8,
-        maxiter = 1e5,
-        popSize = 200,
-        run = 200,
-        monitor = FALSE
-    )
+    ctrl <- ctrl |>
+        control_global(
+            pcrossover = 0.2,
+            pmutation = 0.8,
+            maxiter = 1e5,
+            popSize = 200,
+            run = 200,
+            monitor = FALSE
+        )
 
     expect_identical(
         ctrl$global_opt,
