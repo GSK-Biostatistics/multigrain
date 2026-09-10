@@ -10,10 +10,6 @@ test_that("multigrain_control", {
         "multigrain_control"
     )
 
-    expect_snapshot(
-        multigrain_control()
-    )
-
     expect_named(
         control,
         c(

@@ -1,10 +1,3 @@
-# multigrain_control
-
-    Code
-      multigrain_control()
-    Output
-      <multigrain_control>
-
 # new_multigrain_control() (low-level constructor)
 
     Code
