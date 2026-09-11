@@ -1,16 +1,4 @@
 test_that("str_trunc_light", {
-    expect_snapshot({
-        str_trunc_light(
-            c(
-                0.182978723405255,
-                0,
-                0.348936170213766,
-                0.251063829788234,
-                0.217021276596745
-            )
-        )
-    })
-
     expect_identical(
         str_trunc_light(
             c(
@@ -31,15 +19,6 @@ test_that("str_trunc_light", {
     )
 
     # transformation to scientific notation should not happen
-    expect_snapshot({
-        str_trunc_light(
-            c(
-                0.182978723405255,
-                0.000000000013766
-            )
-        )
-    })
-
     expect_identical(
         str_trunc_light(
             c(
@@ -54,16 +33,6 @@ test_that("str_trunc_light", {
     )
 
     # NAs are contagious
-    expect_snapshot({
-        str_trunc_light(
-            c(
-                0.182978723405255,
-                0,
-                NA
-            )
-        )
-    })
-
     expect_identical(
         str_trunc_light(
             c(
