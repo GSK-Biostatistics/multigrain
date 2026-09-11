@@ -71,14 +71,23 @@ test_that(".build_start_matrix produces a valid output - WITH constraints", {
 test_that(".build_start_matrix with default start graph", {
     gc <- graph_constraint_free(5)
 
-    expect_snapshot({
+    expect_equal(
         .build_start_matrix(
             gc,
             start_graph = NULL
+        ),
+        matrix(
+            c(
+                0.2, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+                0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25,
+                1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0.25, 0.25, 0.25
+            ),
+            nrow = 2,
+            byrow = TRUE
         )
-    })
+    )
 
-    expect_snapshot({
+    expect_equal(
         .build_start_matrix(
             gc,
             start_graph = list(
@@ -87,8 +96,12 @@ test_that(".build_start_matrix with default start graph", {
                     trans_matrix = NULL
                 )
             )
+        ),
+        .build_start_matrix(
+            gc,
+            start_graph = NULL
         )
-    })
+    )
 })
 
 test_that(".is_default_start_graph", {
