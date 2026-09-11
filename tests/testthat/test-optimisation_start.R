@@ -71,6 +71,7 @@ test_that(".build_start_matrix produces a valid output - WITH constraints", {
 test_that(".build_start_matrix with default start graph", {
     gc <- graph_constraint_free(5)
 
+    # nolint start: expect_identical_linter
     expect_equal(
         .build_start_matrix(
             gc,
@@ -102,6 +103,7 @@ test_that(".build_start_matrix with default start graph", {
             start_graph = NULL
         )
     )
+    # nolint end
 })
 
 test_that(".is_default_start_graph", {
