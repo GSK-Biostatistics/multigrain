@@ -439,6 +439,143 @@ test_that("new_trial_success creates valid objects", {
     expect_identical(test_obj5$m, 2L)
 })
 
+test_that(".restore_trial_success keeps a matching live function", {
+    ts <- trial_success(r1 + 2 * r2, verbose = "silent")
+
+    expect_identical(.restore_trial_success(ts), ts)
+})
+
+test_that(".restore_trial_success accepts semantically equivalent objectives", {
+    ts <- trial_success(r1 + r2, verbose = "silent")
+    ts$objective <- "r2 + r1"
+
+    expect_identical(.restore_trial_success(ts), ts)
+})
+
+test_that(".restore_trial_success supports word logical operators", {
+    ts <- trial_success("r1 or (r2 and r3)", verbose = "silent")
+    patterns <- as.matrix(expand.grid(rep(list(c(FALSE, TRUE)), 3L)))
+    expected <- ts$func(patterns)
+
+    expect_identical(.restore_trial_success(ts), ts)
+
+    ts$func <- NULL
+    restored <- .restore_trial_success(ts)
+    expect_identical(restored$func(patterns), expected)
+})
+
+test_that(".restore_trial_success rebuilds missing and serialised functions", {
+    ts <- trial_success(r1 + 2 * r2, verbose = "silent")
+    patterns <- as.matrix(expand.grid(r1 = c(FALSE, TRUE), r2 = c(FALSE, TRUE)))
+    expected <- ts$func(patterns)
+
+    missing <- ts
+    missing$func <- NULL
+    restored_missing <- .restore_trial_success(missing)
+    expect_true(.trial_success_is_live(restored_missing))
+    expect_identical(restored_missing$func(patterns), expected)
+
+    path <- tempfile(fileext = ".rds")
+    withr::defer(unlink(path))
+    saveRDS(ts, path)
+    serialised <- readRDS(path)
+    expect_false(.trial_success_is_live(serialised))
+
+    restored_serialised <- .restore_trial_success(serialised)
+    expect_true(.trial_success_is_live(restored_serialised))
+    expect_identical(restored_serialised$func(patterns), expected)
+})
+
+test_that(".restore_trial_success rejects inconsistent live functions", {
+    ts <- trial_success(r1 + r2, verbose = "silent")
+
+    objective_mismatch <- ts
+    objective_mismatch$objective <- "r1 && r2"
+    expect_error(
+        .restore_trial_success(objective_mismatch),
+        "does not match its stored objective"
+    )
+
+    function_mismatch <- ts
+    function_mismatch$func <- trial_success(
+        r1 && r2,
+        verbose = "silent"
+    )$func
+    expect_error(
+        .restore_trial_success(function_mismatch),
+        "does not match its stored objective"
+    )
+})
+
+test_that(".restore_trial_success fails loudly when rebuilding is impossible", {
+    ts <- trial_success(r1 + r2, verbose = "silent")
+    ts$func <- NULL
+    ts$objective <- "sqrt(r1)"
+
+    expect_error(
+        .restore_trial_success(ts),
+        "cannot be rebuilt"
+    )
+})
+
+test_that(".restore_trial_success rejects missing and inconsistent metadata", {
+    missing_objective <- trial_success(r1 + r2, verbose = "silent")
+    missing_objective$objective <- NULL
+    expect_error(
+        .restore_trial_success(missing_objective),
+        "missing or invalid"
+    )
+
+    wrong_dimension <- trial_success(r1 + r2, verbose = "silent")
+    wrong_dimension$m <- 3L
+    expect_error(
+        .restore_trial_success(wrong_dimension),
+        "dimension does not match"
+    )
+})
+
+test_that(".restore_trial_success reports verification failures", {
+    ts <- trial_success(r1 + r2, verbose = "silent")
+    ts$func <- function(x) {
+        if (all(x)) {
+            return(2)
+        }
+        stop("cannot evaluate this pattern")
+    }
+
+    expect_error(
+        .restore_trial_success(ts),
+        "could not be verified"
+    )
+})
+
+test_that(".restore_trial_success bounds non-exhaustive checks", {
+    local_mocked_bindings(.trial_success_exhaustive_limit = 2L)
+    objective <- paste0("r", seq_len(4L), collapse = " + ")
+    calls <- 0L
+    ts <- structure(
+        list(
+            func = function(x) {
+                calls <<- calls + 1L
+                mean(rowSums(x))
+            },
+            m = 4L,
+            objective = objective,
+            cpp_code = .trial_success_cpp_code(objective)
+        ),
+        class = "multigrain_trial_success"
+    )
+
+    expect_identical(.restore_trial_success(ts), ts)
+    expect_lt(calls, 17L)
+
+    ts$cpp_code <- NULL
+    expect_error(
+        .restore_trial_success(ts),
+        "stored compiled source must match"
+    )
+})
+
 
 test_that("powerFunc matches numeric and logical matrix inputs", {
     # Regression guard for the LogicalMatrix template change:

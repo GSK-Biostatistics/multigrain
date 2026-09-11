@@ -816,3 +816,358 @@ test_that("recover_full_trans_matrix errors on wrong opt x length", {
         "does not match"
     )
 })
+
+
+# .lexico ----------------------------------------------------------------
+
+test_that(".lexico ranks feasibility, then edge count, then gain", {
+    # Among feasible graphs one fewer edge always wins, however much gain the
+    # denser graph has: edge_price exceeds the largest gain difference possible.
+    threshold <- 0.8
+    edge_price <- (1 - threshold) + 1
+    n_free <- 12L
+
+    expect_gt(
+        .lexico(0.80, 6L, threshold, edge_price, n_free),
+        .lexico(1.00, 7L, threshold, edge_price, n_free)
+    )
+    # Same edge count: higher gain wins.
+    expect_gt(
+        .lexico(0.90, 7L, threshold, edge_price, n_free),
+        .lexico(0.85, 7L, threshold, edge_price, n_free)
+    )
+    # Every infeasible graph sits below every feasible one.
+    worst_feasible <- .lexico(threshold, n_free, threshold, edge_price, n_free)
+    best_infeasible <- .lexico(
+        threshold - .Machine$double.eps,
+        0L,
+        threshold,
+        edge_price,
+        n_free
+    )
+    expect_gt(worst_feasible, best_infeasible)
+    # Infeasible graphs still rise with gain.
+    expect_gt(
+        .lexico(0.79, 0L, threshold, edge_price, n_free),
+        .lexico(0.70, 0L, threshold, edge_price, n_free)
+    )
+})
+
+
+# .trial_success_range ---------------------------------------------------
+
+test_that(".trial_success_range gives the exact range over all patterns", {
+    conj_4m <- trial_success(r1 && r2 && r3 && r4, verbose = "silent")
+    avg_4m <- trial_success(r1 + r2 + r3 + r4, verbose = "silent")
+    custom_4m <- trial_success(
+        0.25 * (2 * (r1 && r2) + r1 * r3 + r2 * r4),
+        verbose = "silent"
+    )
+
+    expect_identical(.trial_success_range(conj_4m), c(min = 0, max = 1))
+    expect_identical(.trial_success_range(avg_4m), c(min = 0, max = 4))
+    expect_identical(.trial_success_range(custom_4m), c(min = 0, max = 1))
+})
+
+
+# create_obj_func: the disabled path is unchanged ------------------------
+
+# Verbatim copy of create_obj_func() as it stood immediately before
+# `gain_tolerance`, `ref_graph` and `u_range` were added. Kept here so the
+# default path can be proven arithmetically unchanged rather than assumed to be.
+# nolint start: object_usage_linter. The internals it calls are in the package
+# namespace at test time, but codetools cannot see them from this file.
+create_obj_func_pre_change <- function(
+    m,
+    power_criterion,
+    hyp_constraint,
+    trans_constraint,
+    pvals,
+    alpha = 0.025,
+    num_threads = 1L
+) {
+    force(power_criterion)
+    force(hyp_constraint)
+    force(trans_constraint)
+    force(alpha)
+    force(pvals)
+    force(num_threads)
+
+    use_parallel <- num_threads >= 2L
+
+    function(x) {
+        theta <- split_theta(x, hyp_constraint)
+        hyp_weight <- recover_full_weights(theta$w_pars, hyp_constraint)
+        trans_matrix <- recover_full_trans_matrix(
+            theta$g_pars,
+            trans_constraint
+        )
+
+        if (anyNA(hyp_weight) || anyNA(trans_matrix)) {
+            return(-1e6)
+        }
+        if (any(hyp_weight < 0)) {
+            return(sum(hyp_weight[hyp_weight < 0]))
+        }
+        if (any(trans_matrix < 0)) {
+            return(sum(trans_matrix[trans_matrix < 0]))
+        }
+        if (any(hyp_weight > 1)) {
+            return(-sum(hyp_weight[hyp_weight > 1]))
+        }
+        if (any(trans_matrix > 1)) {
+            return(-sum(trans_matrix[trans_matrix > 1]))
+        }
+
+        hyp_weight[hyp_weight < 1e-4] <- 0
+        trans_matrix[trans_matrix < 1e-5] <- 0
+
+        rej_matrix <- if (use_parallel) {
+            graph_shortcut_parallel(
+                pvals = pvals,
+                alpha = alpha,
+                w = hyp_weight,
+                G = trans_matrix,
+                num_threads = num_threads,
+                grain_size = -1L
+            )
+        } else {
+            graph_shortcut(
+                pvals = pvals,
+                alpha = alpha,
+                w = hyp_weight,
+                G = trans_matrix
+            )
+        }
+
+        power_criterion(rej_matrix)
+    }
+}
+# nolint end
+
+# A mix of well-scaled, out-of-range and non-finite encodings, so that every
+# early-return branch of the closure is exercised as well as the shortcut.
+random_encodings <- function(n_par, n) {
+    lapply(seq_len(n), function(i) {
+        x <- stats::runif(n_par)
+        if (i %% 10L == 0L) {
+            x[sample.int(n_par, 1L)] <- NA_real_
+        } else if (i %% 10L == 1L) {
+            x[sample.int(n_par, 1L)] <- NaN
+        } else if (i %% 10L == 2L) {
+            x[sample.int(n_par, 1L)] <- 1 + stats::runif(1)
+        } else if (i %% 10L == 3L) {
+            x <- x / (2 * n_par) # small entries, exercises the zeroing
+        }
+        x
+    })
+}
+
+test_that("create_obj_func default arguments are arithmetically unchanged", {
+    pvals_small <- pvals[seq_len(1e4L), ]
+
+    specs <- list(
+        list(m = 3L, gc = graph_constraint_free(3), ts = disjunctive_3m_power),
+        list(m = 4L, gc = graph_constraint_free(4), ts = conjunctive_4m_power)
+    )
+
+    withr::with_seed(101, {
+        for (spec in specs) {
+            gc <- spec$gc
+            pv <- pvals_small[, seq_len(spec$m)]
+            n_par <- length(create_start_params(gc))
+
+            new_f <- create_obj_func(
+                spec$m,
+                power_criterion = spec$ts$func,
+                hyp_constraint = gc$hyp_constraint,
+                trans_constraint = gc$trans_constraint,
+                pvals = pv
+            )
+            old_f <- create_obj_func_pre_change(
+                spec$m,
+                power_criterion = spec$ts$func,
+                hyp_constraint = gc$hyp_constraint,
+                trans_constraint = gc$trans_constraint,
+                pvals = pv
+            )
+
+            for (x in random_encodings(n_par, 100L)) {
+                expect_identical(new_f(x), old_f(x))
+            }
+        }
+    })
+})
+
+
+# create_obj_func: the lexicographic path --------------------------------
+
+# A dense but valid 4-hypothesis reference used by the lexicographic tests.
+lexico_ref_graph <- function() {
+    list(
+        hyp_weight = c(0.4, 0.3, 0.2, 0.1),
+        trans_matrix = matrix(1 / 3, 4, 4) - diag(1 / 3, 4)
+    )
+}
+
+test_that("create_obj_func with gain_tolerance returns .lexico() exactly", {
+    gc <- graph_constraint_free(4)
+    pv <- pvals[seq_len(1e4L), 1:4]
+    ts <- trial_success(
+        0.25 * (2 * (r1 && r2) + r1 * r3 + r2 * r4),
+        verbose = "silent"
+    )
+    lambda <- 1e-2
+    ref <- lexico_ref_graph()
+    expect_true(is_graph_valid(ref$hyp_weight, ref$trans_matrix))
+
+    u_range <- .trial_success_range(ts)
+    obj <- create_obj_func(
+        4,
+        power_criterion = ts$func,
+        hyp_constraint = gc$hyp_constraint,
+        trans_constraint = gc$trans_constraint,
+        pvals = pv,
+        gain_tolerance = lambda,
+        ref_graph = ref,
+        u_range = u_range
+    )
+
+    # Rebuild the score from first principles, independently of the closure.
+    free_mask <- is.na(gc$trans_constraint)
+    n_free <- sum(free_mask)
+    u_ref <- ts$func(
+        graph_shortcut(pv, 0.025, ref$hyp_weight, ref$trans_matrix)
+    )
+    threshold <- (1 - lambda) * u_ref
+    edge_price <- (u_range[["max"]] - threshold) + 1
+
+    expected_score <- function(x) {
+        theta <- split_theta(x, gc$hyp_constraint)
+        w <- recover_full_weights(theta$w_pars, gc$hyp_constraint)
+        G_dec <- recover_full_trans_matrix(theta$g_pars, gc$trans_constraint)
+        w[w < 1e-4] <- 0
+        G_dec[G_dec < 1e-5] <- 0
+        u <- ts$func(graph_shortcut(pv, 0.025, w, G_dec))
+        # Edge count taken from param_to_solution(), i.e. from the graph the
+        # user is shown, not from the closure's own thresholding.
+        sol <- param_to_solution(x, gc, process = TRUE)
+        .lexico(
+            u = u,
+            n_edges = sum(sol$trans_matrix[free_mask] != 0),
+            threshold = threshold,
+            edge_price = edge_price,
+            n_free = n_free
+        )
+    }
+
+    withr::with_seed(202, {
+        for (i in seq_len(40L)) {
+            g <- graph_random(graph_constraint = gc)
+            x <- as.numeric(create_start_params(
+                gc,
+                w0 = g$hyp_weight,
+                G0 = g$trans_matrix,
+                sum_to_one_constraint = FALSE
+            ))
+            expect_identical(obj(x), expected_score(x))
+        }
+    })
+})
+
+test_that("create_obj_func scores the encoded reference at u_ref - D * E", {
+    gc <- graph_constraint_free(4)
+    pv <- pvals[seq_len(1e4L), 1:4]
+    ts <- trial_success(
+        0.25 * (2 * (r1 && r2) + r1 * r3 + r2 * r4),
+        verbose = "silent"
+    )
+    lambda <- 1e-3
+    ref <- lexico_ref_graph()
+
+    u_range <- .trial_success_range(ts)
+    obj <- create_obj_func(
+        4,
+        power_criterion = ts$func,
+        hyp_constraint = gc$hyp_constraint,
+        trans_constraint = gc$trans_constraint,
+        pvals = pv,
+        gain_tolerance = lambda,
+        ref_graph = ref,
+        u_range = u_range
+    )
+
+    u_ref <- ts$func(
+        graph_shortcut(pv, 0.025, ref$hyp_weight, ref$trans_matrix)
+    )
+    threshold <- (1 - lambda) * u_ref
+    edge_price <- (u_range[["max"]] - threshold) + 1
+    n_edges_ref <- sum(ref$trans_matrix != 0)
+
+    x_ref <- as.numeric(create_start_params(
+        gc,
+        w0 = ref$hyp_weight,
+        G0 = ref$trans_matrix,
+        sum_to_one_constraint = FALSE
+    ))
+
+    expect_identical(obj(x_ref), u_ref - edge_price * n_edges_ref)
+    # The reference is feasible against its own threshold by construction.
+    expect_gte(u_ref, threshold)
+})
+
+test_that("create_obj_func scores invalid encodings below every valid one", {
+    gc <- graph_constraint_free(4)
+    pv <- pvals[seq_len(1e4L), 1:4]
+    ts <- trial_success(r1 + r2 + r3 + r4, verbose = "silent")
+    ref <- lexico_ref_graph()
+
+    obj <- create_obj_func(
+        4,
+        power_criterion = ts$func,
+        hyp_constraint = gc$hyp_constraint,
+        trans_constraint = gc$trans_constraint,
+        pvals = pv,
+        gain_tolerance = 1e-2,
+        ref_graph = ref,
+        u_range = .trial_success_range(ts)
+    )
+
+    n_par <- length(create_start_params(gc))
+
+    valid_scores <- withr::with_seed(303, {
+        vapply(
+            seq_len(30L),
+            function(i) {
+                g <- graph_random(graph_constraint = gc)
+                obj(as.numeric(create_start_params(
+                    gc,
+                    w0 = g$hyp_weight,
+                    G0 = g$trans_matrix,
+                    sum_to_one_constraint = FALSE
+                )))
+            },
+            numeric(1)
+        )
+    })
+
+    invalid_scores <- withr::with_seed(404, {
+        vapply(
+            seq_len(30L),
+            function(i) {
+                # Rows overshoot, so the derived entry decodes negative.
+                x <- stats::runif(n_par, 0.6, 1)
+                if (i %% 3L == 0L) {
+                    x[sample.int(n_par, 1L)] <- NA_real_
+                }
+                if (i %% 3L == 1L) {
+                    x[sample.int(n_par, 1L)] <- 1.5
+                }
+                obj(x)
+            },
+            numeric(1)
+        )
+    })
+
+    expect_lt(max(invalid_scores), min(valid_scores))
+})

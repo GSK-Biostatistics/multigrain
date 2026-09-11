@@ -58,6 +58,7 @@ reference:
     contents:
     - graph_optimise
     - graph_optimize
+    - graph_simplify
 
   - title: Post-processing
     desc: >

@@ -456,6 +456,109 @@ prune_edges <- function(
 }
 
 
+#' Remove edges best-first, subject to a floor on the trial success measure
+#'
+#' Where `prune_edges()` sweeps the matrix in a fixed index order and accepts
+#' any removal that does not lower the trial success measure, this evaluates
+#' every remaining removable edge on the full sample, keeps the candidates that
+#' stay at or above `threshold` and reduce the edge count, removes the one with
+#' the highest trial success, and repeats. Spending the budget on the cheapest
+#' edge first is what stops a single expensive removal from consuming it.
+#'
+#' Candidates that would leave a row unable to sum to one -- because the
+#' dropped entry has no free recipient -- are skipped, as are candidates that
+#' do not actually reduce the edge count (the uniform fallback in
+#' `.redistribute_mass()` can raise it).
+#'
+#' @param pvals (numeric) Numeric matrix of p-values (n.sim x m).
+#' @param hyp_weight (numeric) Vector of hypothesis weights (length m); not
+#'   modified here.
+#' @param trans_matrix (numeric) m x m transition matrix to prune.
+#' @param trial_success A `multigrain_trial_success` object.
+#' @param fixed_edge Logical matrix (m x m); `TRUE` where `trans_constraint`
+#'   is non-`NA`.
+#' @param threshold (numeric) Floor on the trial success measure.
+#' @param alpha (numeric) Overall one-sided significance level.
+#' @param tolerance Tolerance passed to `.redistribute_mass()` and used for the
+#'   row-sum check.
+#'
+#' @returns A list with `hyp_weight`, `trans_matrix`, `power_best`,
+#'   `prune_loss` (the exact loss across the accepted removals, negative when
+#'   removing edges raised the measure) and `n_removed`.
+#'
+#' @noRd
+.prune_edges_best_first <- function(
+    pvals,
+    hyp_weight,
+    trans_matrix,
+    trial_success,
+    fixed_edge,
+    threshold,
+    alpha = 0.025,
+    tolerance = sqrt(.Machine$double.eps)
+) {
+    u_of <- function(G) {
+        calc_power_pvals(
+            pvals,
+            hyp_weight = hyp_weight,
+            trans_matrix = G,
+            alpha = alpha,
+            custom_power = trial_success
+        )$custom_power
+    }
+
+    G_best <- trans_matrix
+    u_best <- u_of(G_best)
+    loss <- 0
+    n_removed <- 0L
+
+    repeat {
+        n_edges <- sum(G_best != 0)
+        cand <- which(G_best != 0 & !fixed_edge, arr.ind = TRUE)
+        best <- NULL
+
+        for (k in seq_len(nrow(cand))) {
+            i <- cand[k, 1L]
+            j <- cand[k, 2L]
+            G_try <- G_best
+            G_try[i, ] <- .redistribute_mass(
+                G_best[i, ],
+                drop_idx = j,
+                fixed_idx = which(fixed_edge[i, ]),
+                tolerance = tolerance
+            )
+            if (sum(G_try != 0) >= n_edges) {
+                next
+            }
+            if (abs(sum(G_try[i, ]) - 1) > tolerance) {
+                next
+            }
+            u_try <- u_of(G_try)
+            if (u_try >= threshold && (is.null(best) || u_try > best$u)) {
+                best <- list(G = G_try, u = u_try)
+            }
+        }
+
+        if (is.null(best)) {
+            break
+        }
+
+        loss <- loss + (u_best - best$u)
+        u_best <- best$u
+        G_best <- best$G
+        n_removed <- n_removed + 1L
+    }
+
+    list(
+        hyp_weight = hyp_weight,
+        trans_matrix = G_best,
+        power_best = u_best,
+        prune_loss = loss,
+        n_removed = n_removed
+    )
+}
+
+
 #' Prune graph hypothesis and transition weights according to p-value
 #' distribution and trial success measure.
 #'
@@ -473,9 +576,16 @@ prune_edges <- function(
 #' @param power_constraint Optional numeric vector of length m; only entries
 #'   that are non-`NA` impose a marginal-power requirement. Defaults to `NULL`
 #'   (no marginal constraints).
+#' @param threshold Optional floor on the trial success measure. When supplied,
+#'   edges are removed best-first by `.prune_edges_best_first()` and a removal
+#'   is accepted even if it lowers the trial success, provided the result stays
+#'   at or above `threshold`. `NULL` (the default) keeps the fixed-order
+#'   `prune_edges()`, which never accepts a removal that lowers it.
 #'
 #' @returns A list with elements `hyp_weight` and `trans_matrix`, the pruned
-#' graph.
+#' graph, and `prune_loss`, the exact loss of trial success across the accepted
+#' edge removals (zero unless `threshold` was supplied, and negative when the
+#' removals raised the measure).
 #'
 #' @noRd
 prune_graph <- function(
@@ -487,6 +597,7 @@ prune_graph <- function(
     alpha = 0.025,
     gamma = 1,
     power_constraint = NULL,
+    threshold = NULL,
     verbose = c("info", "detail", "silent")
 ) {
     verbose <- rlang::arg_match(verbose)
@@ -512,21 +623,35 @@ prune_graph <- function(
         tolerance = tolerance
     )
 
-    pruned <- prune_edges(
-        pvals = pvals,
-        hyp_weight = pruned_weights$hyp_weight,
-        trans_matrix = pruned_weights$trans_matrix,
-        trial_success = trial_success,
-        fixed_edge = fixed_edge,
-        alpha = alpha,
-        gamma = gamma,
-        power_best = pruned_weights$power_best,
-        power_constraint = power_constraint,
-        tolerance = tolerance
-    )
+    pruned <- if (is.null(threshold)) {
+        prune_edges(
+            pvals = pvals,
+            hyp_weight = pruned_weights$hyp_weight,
+            trans_matrix = pruned_weights$trans_matrix,
+            trial_success = trial_success,
+            fixed_edge = fixed_edge,
+            alpha = alpha,
+            gamma = gamma,
+            power_best = pruned_weights$power_best,
+            power_constraint = power_constraint,
+            tolerance = tolerance
+        )
+    } else {
+        .prune_edges_best_first(
+            pvals = pvals,
+            hyp_weight = pruned_weights$hyp_weight,
+            trans_matrix = pruned_weights$trans_matrix,
+            trial_success = trial_success,
+            fixed_edge = fixed_edge,
+            threshold = threshold,
+            alpha = alpha,
+            tolerance = tolerance
+        )
+    }
 
     list(
         hyp_weight = pruned$hyp_weight,
-        trans_matrix = pruned$trans_matrix
+        trans_matrix = pruned$trans_matrix,
+        prune_loss = pruned$prune_loss %||% 0
     )
 }
