@@ -166,19 +166,19 @@ result <- graph_optimise(
 #> ✔ Running global optimization [26.9s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [15ms]
+#> ✔ Evaluating trial success of globally optimised graph [16ms]
 #> 
 #> ℹ Running local optimization
 #> ✔ Running local optimization [88ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [14ms]
+#> ✔ Evaluating trial success of locally optimised graph [15ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [19ms]
+#> ✔ Pruning redundant weights and edges [20ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [7ms]
+#> ✔ Evaluating trial success of pruned graph [8ms]
 #> 
 # }
 ```
