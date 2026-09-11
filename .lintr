@@ -45,7 +45,8 @@ linters: all_linters(
       "suppressWarnings"
     )
   ),
-  implicit_integer_linter = NULL
+  implicit_integer_linter = NULL,
+  one_call_pipe_linter = NULL
   ) # see vignette("lintr")
 encoding: "UTF-8"
 exclusions: list(

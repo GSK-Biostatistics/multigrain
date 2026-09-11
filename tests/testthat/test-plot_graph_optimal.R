@@ -164,8 +164,26 @@ test_that("create_edges() works", {
 
     edges_df <- create_edges(trans_matrix)
 
-    expect_snapshot(
-        create_edges(trans_matrix)
+    expect_equal(
+        create_edges(trans_matrix),
+        # nolint start: commas_linter
+        tibble::tribble(
+            ~from , ~to  , ~value ,
+            "H1"  , "H2" , 0.098  ,
+            "H1"  , "H3" , 0.439  ,
+            "H1"  , "H4" , 0.462  ,
+            "H2"  , "H1" , 0.488  ,
+            "H2"  , "H3" , 0.465  ,
+            "H2"  , "H4" , 0.045  ,
+            "H3"  , "H1" , 0.192  ,
+            "H3"  , "H2" , 0.165  ,
+            "H3"  , "H4" , 0.642  ,
+            "H4"  , "H1" , 0.232  ,
+            "H4"  , "H2" , 0.466  ,
+            "H4"  , "H3" , 0.301
+        ),
+        # nolint end
+        tolerance = 1e-2
     )
 
     expect_s3_class(
@@ -206,11 +224,21 @@ test_that("create_nodes() works", {
 
     nodes <- create_nodes(hyp_weight, edges = edges_df)
 
-    expect_snapshot(
+    expect_equal(
         create_nodes(
             hyp_weight,
             edges = edges_df
-        )
+        ),
+        # nolint start: commas_linter
+        tibble::tribble(
+            ~hypothesis , ~weight , ~optimised ,
+            "H1"        , 0.125   , TRUE       ,
+            "H2"        , 0.176   , TRUE       ,
+            "H3"        , 0.270   , TRUE       ,
+            "H4"        , 0.429   , TRUE
+        ),
+        # nolint end
+        tolerance = 1e-2
     )
 
     expect_s3_class(
@@ -243,15 +271,15 @@ test_that("modify node position manually", {
 
     trans_matrix <- matrix(
         c(
-            0, 1 / 3, 1 / 3, 1 / 3,     0,     0,     0,     0,     0,
+                0, 1 / 3, 1 / 3, 1 / 3,     0,     0,     0,     0,     0,
             1 / 3,     0, 1 / 3, 1 / 3,     0,     0,     0,     0,     0,
             1 / 6, 1 / 6,     0, 1 / 6, 1 / 4, 1 / 4,     0,     0,     0,
             1 / 6, 1 / 6, 1 / 6,     0,     0,     0, 1 / 6, 1 / 6, 1 / 6,
-            0,     0,   0.2,     0,     0,   0.8,     0,     0,     0,
-            0,     0,   0.2,     0,     0.8,   0,     0,     0,     0,
-            0,     0,     0,   0.2,     0,     0,     0,   0.4,   0.4,
-            0,     0,    0,    0.2,     0,     0,   0.4,     0,   0.4,
-            0,     0,    0,    0.2,     0,     0,   0.4,   0.4,     0
+                0,     0,   0.2,     0,     0,   0.8,     0,     0,     0,
+                0,     0,   0.2,     0,   0.8,     0,     0,     0,     0,
+                0,     0,     0,   0.2,     0,     0,     0,   0.4,   0.4,
+                0,     0,     0,   0.2,     0,     0,   0.4,     0,   0.4,
+                0,     0,     0,   0.2,     0,     0,   0.4,   0.4,     0
         ),
         nrow = 9,
         byrow = TRUE
