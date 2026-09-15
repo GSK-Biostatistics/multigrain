@@ -2,7 +2,7 @@
 .Rhistory
 docs
 vignettes/articles/get-started_cache
-debug
+debug/
 
 /.quarto/
 **/.quarto/
