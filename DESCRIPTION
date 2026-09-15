@@ -4,8 +4,7 @@ Version: 0.3.0
 Authors@R: c(
     person("Alex", "Spiers", , "alex.d.spiers@gsk.com", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8874-085X")),
-    person("Dragoș", "Moldovan-Grünfeld", , "dragos.v.moldovan-grunfeld@gsk.com",
-           role = "aut"),
+    person("Dragoș", "Moldovan-Grünfeld", , "dragos.v.moldovan-grunfeld@gsk.com", role = "aut"),
     person("GlaxoSmithKline Research & Development Limited", role = c("cph", "fnd"))
   )
 Description: Optimises graphical approaches to multiple testing
@@ -37,6 +36,7 @@ Imports:
     vctrs,
     withr
 Suggests:
+    spelling,
     gMCPLite,
     svglite,
     testthat (>= 3.0.0),
@@ -51,5 +51,6 @@ Config/testthat/edition: 3
 Config/testthat/parallel: true
 Config/testthat/start-first: optimisation*
 Encoding: UTF-8
+Language: en-GB
 LazyData: true
 SystemRequirements: GNU make

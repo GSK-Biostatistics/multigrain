@@ -44,7 +44,7 @@ power to reject hypotheses 1 and 3 one could specify:
 1 and 2 is also of interest one would use an (optionally named) list:
 \code{f = list( power1and3 = function(x) {x[1] && x[3]}, power1and2 = function(x) {x[1] && x[2]} )}.
 If the list has no names, the functions will be referenced as \code{"func1"},
-\code{"func2"}, etc. in the output. The user can also provide a
+\code{"func2"}, and so on, in the output. The user can also provide a
 \code{multigrain_trial_success} object instead (resulting in a faster
 calculation).
 \item Instead of anonymous functions, one can pass a \code{multigrain_trial_success}

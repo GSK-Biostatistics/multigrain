@@ -165,7 +165,7 @@ calc_power_pvals(
 
 - [Getting
   Started](https://gsk-biostatistics.github.io/multigrain/articles/get-started.html)
-  — full walkthrough of the asthma example above
+  — full walk-through of the asthma example above
 - [Graph
   Constraints](https://gsk-biostatistics.github.io/multigrain/articles/graph_constraint.html)
   — specifying and visualising constraints
