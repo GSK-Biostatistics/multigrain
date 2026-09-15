@@ -68,7 +68,7 @@ new_graph_constraint <- function(
 #' @inheritParams rlang::args_dots_empty
 #' @param names An optional character vector containing hypotheses' names. If
 #'   not provided it defaults to `"auto"` meaning the hypotheses will be
-#'   automatically named `"H1"`, `"H2"` and so on.
+#'   automatically named `"H1"`, `"H2"`, and so on.
 #' @param diagnose A logical value enabling detailed diagnosis. Default is
 #'   `FALSE`.
 #' @param tolerance numeric >= 0. Differences smaller than `tolerance` will not
