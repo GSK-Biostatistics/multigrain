@@ -154,7 +154,7 @@ alpha level. This is distinct from the **local power**, which is the
 actual probability of rejecting a hypothesis *after* the graphical
 procedure is applied.
 
-#### Asthsma example: simulating the p-value matrix using `simulate_pvalues()`
+#### Asthma example: simulating the p-value matrix using `simulate_pvalues()`
 
 with working correlation matrix for $`(H_1,\dots,H_4)`$:
 
@@ -207,7 +207,7 @@ maximises. It encodes the success criteria for a trial by mapping the
 outcomes of the graphical test to a numerical score. (A dedicated
 vignette on trial success measures is planned for a future release.)
 
-After analyzing the collected data from our trial, we obtain four raw
+After analysing the collected data from our trial, we obtain four raw
 p-values: $`p_1, p_2, p_3, p_4`$, each corresponding to one of our
 hypotheses $`H_1, H_2, H_3, H_4`$.
 

@@ -18,8 +18,9 @@ trial_success(objective, verbose = multigrain_verbosity())
   An expression or string encoding the trial-success utility \\\psi\\.
   The symbols `r1, r2, ...` refer to rejection indicators for the
   corresponding hypotheses. To inject values from your R session, use
-  rlang's unquote operator `!!` (see Examples). Arithmetic and logical
-  operators are allowed.
+  rlang's injection operator -
+  [`!!`](https://rlang.r-lib.org/reference/injection-operator.html) -
+  (see Examples). Arithmetic and logical operators are allowed.
 
 - verbose:
 

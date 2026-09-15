@@ -40,7 +40,7 @@ graph_constraint(
 
   An optional character vector containing hypotheses' names. If not
   provided it defaults to `"auto"` meaning the hypotheses will be
-  automatically named `"H1"`, `"H2"`, etc.
+  automatically named `"H1"`, `"H2"`, and so on.
 
 - diagnose:
 

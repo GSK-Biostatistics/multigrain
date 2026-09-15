@@ -137,9 +137,9 @@
 ### Bug fixes
 
 - `$power$trial_success` from `graph_optimal` object did not match the
-  graph the user sees (eg when plotting), due to power being calculated
-  before pruning. `multigrain` now stores pre-pruned powers as
-  `$global_opt_power` / `$local_opt_power`, and set `$power` to the
+  graph the user sees (e.g. when plotting), due to power being
+  calculated before pruning. `multigrain` now stores pre-pruned powers
+  as `$global_opt_power` / `$local_opt_power`, and set `$power` to the
   post-pruned evaluation.
 - Improved argument checking and error messages for optimisation
   parameters.
@@ -190,7 +190,7 @@
   - users can get and set `graph_constraint` elements with `[` and `$`.
     A modified `graph_constraint` is then automatically (re-)validated.
   - `graph_constraint` validation happens with tolerance
-- pkgwdown site and vignette
+- {pkgwdown} site and vignette
 - [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/reference/simulate_pvalues.md)
   function simulates raw p-values from under the alternative hypotheses
   and the assumption that the distribution of test statistics is a
@@ -220,8 +220,8 @@
     snake-case convention, e.g.,
     - `graphOpt()` function is now `optimise_graph()`
     - `graphConstraint()` function is now
-      [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_constraint.md),
-      etc.
+      [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_constraint.md)
+      and so on.
   - Checks of `pvals`/`graph_constraint`/`start_graph` dimensions and
     arguments have been introduced for `optimise_graph()` to prevent
     downstream crashing.
@@ -246,7 +246,7 @@
 
 ### Changes
 
-- Confirmed R package dependencies (GA, nloptr, gMCPLite, etc.)
+- Confirmed R package dependencies (GA, nloptr, gMCPLite, and so on)
 - Updated the version in the DESCRIPTION file from 0.0.1 to 0.0.2
 - Removed inequality constraints from NLOPT routine
 

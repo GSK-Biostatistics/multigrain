@@ -86,7 +86,7 @@ gc
 In the example above names were automatically generated (`"H1"`, `"H2"`,
 `"H3"`, and `"H4"`). This is controlled by the `names` *optional*
 argument, which, if unspecified, will name the hypotheses `"H1"`,
-`"H2"`, etc.
+`"H2"`, and so on.
 
 We can also supply custom names.
 
