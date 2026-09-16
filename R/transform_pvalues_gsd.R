@@ -217,6 +217,10 @@ transform_pvalues_gsd <- function(
 
 # Constructor ------------------------------------------------------------
 
+# Low-level constructor for a `multigrain_pvals_gsd` object: the repeated
+# p-value array plus everything needed to describe and print the transform
+# (per-hypothesis boundary tables, look-back flags, spending labels). Does no
+# validation; `transform_pvalues_gsd()` has already done it.
 new_pvals_gsd <- function(
     pvals = array(double(), dim = c(0L, 0L, 0L)),
     nsim = integer(),
@@ -420,6 +424,10 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
     invisible(TRUE)
 }
 
+# Section 4.1, well-ordering: within each analysis the nominal boundary must
+# not decrease as the allocated level increases, otherwise the table cannot be
+# inverted and the graphical procedure is invalid. Aborts on the first analysis
+# that fails, with a tolerance of sqrt(machine eps) times the column maximum.
 .gsd_check_well_ordered <- function(
     bounds,
     hyp = NULL,
@@ -449,6 +457,9 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
 
 # Helpers ----------------------------------------------------------------
 
+# Call one spending function and return the cumulative spend at `t_look` as
+# a plain numeric vector, unwrapping the `spend` element that the `gsDesign`
+# spending functions return. Aborts if the length is wrong or any value is NA.
 .gsd_spend <- function(
     spending,
     alpha,
@@ -508,6 +519,10 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
     list(looks = have[have <= maturity], maturity = maturity)
 }
 
+# Warn once if a hypothesis has non-missing raw p-values after its maturity
+# analysis that differ from the value at maturity. Those values are ignored
+# by the transform (the maturity value is copied forward), so a difference
+# means the caller supplied data the procedure will not use.
 .gsd_warn_matured <- function(raw, hyp, maturity, n_look) {
     if (maturity >= n_look) {
         return(invisible(FALSE))
@@ -531,6 +546,9 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
     invisible(FALSE)
 }
 
+# Coerce `info_frac` to an `m` by `n_look` double matrix: a vector is
+# recycled across hypotheses by row, a matrix must already have the right
+# dimensions. NULL (no argument and no attribute on `pvals`) is an error.
 .gsd_info_frac <- function(
     info_frac,
     m,
@@ -574,6 +592,7 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
     out
 }
 
+# Coerce `look_back` to a logical of length `m`, recycling a scalar.
 .gsd_look_back <- function(look_back, m, call = rlang::caller_env()) {
     check_logical(look_back, call = call)
     if (anyNA(look_back)) {
@@ -593,6 +612,7 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
     look_back
 }
 
+# Coerce `spending` to a list of `m` functions, recycling a single function.
 .gsd_spending_list <- function(spending, m, call = rlang::caller_env()) {
     if (is.function(spending)) {
         return(rep(list(spending), m))
@@ -616,6 +636,9 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
     spending
 }
 
+# Labels for the spending functions as printed by the object: the list names
+# if all are set, else `label[[i]]` when the functions differ, else `label`.
+# `label` is the deparsed `spending` argument captured by the caller.
 .gsd_spending_labels <- function(spending, label) {
     m <- length(spending)
     if (!is.null(names(spending)) && all(nzchar(names(spending)))) {
@@ -628,10 +651,13 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
     rep(label, m)
 }
 
+# "H1", "H2", ... for `m` hypotheses.
 .gsd_hyp_labels <- function(m) {
     paste0("H", seq_len(m))
 }
 
+# Attach hypothesis and analysis dimnames to an `m` by `n_look` matrix for
+# printing.
 .gsd_hyp_matrix <- function(x, m, n_look) {
     dimnames(x) <- list(
         .gsd_hyp_labels(m),
