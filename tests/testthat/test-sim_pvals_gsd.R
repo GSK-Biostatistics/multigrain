@@ -232,5 +232,5 @@ test_that("K = 1 at full information reproduces simulate_pvalues()", {
     # full information the mean vector is `ncp * sqrt(1)` and the covariance is
     # `corr_matrix * 1`, both bit-for-bit the arguments `simulate_pvalues()`
     # passes, so the two `rmvnorm()` calls are the same call
-    expect_identical(gsd[, , 1L], fixed)
+    expect_identical(gsd[,, 1L], fixed)
 })
