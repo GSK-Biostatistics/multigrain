@@ -1,0 +1,397 @@
+# The group sequential optimisation workflow, end to end: what happens, in what
+# order, to what data. Companion to gsd-architecture.yaml, which answers the
+# different question of what calls what.
+#
+# Sources. For P0 to P2 (built) the authority is the branch itself -- R/,
+# src/ and dev/gsd_progress.md -- because the branch ships helpers the design
+# record never names. For P3 to P5 (not built) the only source is
+# dev/gsd_design_record.md; section numbers are cited per stage.
+#
+# Idiom is that of optimisation_pipeline.excalidraw: a spine that forks into
+# lanes and re-merges, colour marking a box's ROLE (api / subsystem / helper /
+# decision / terminal). New-vs-reused is therefore the last body line of each
+# box, and a box for something not yet coded is faded (`built: false`).
+
+kind: workflow
+
+meta:
+  title: "Group sequential optimisation: simulate, transform once, then search"
+  sources:
+    - dev/gsd_progress.md        # P0-P2, as built
+    - dev/gsd_design_record.md   # P3-P5, as specified
+  branch: gsd-build
+  date: 2026-09-16
+
+stages:
+
+  # -- 1. simulate ------------------------------------------------------ S4.7
+  - id: simulate
+    place: spine
+    role: api
+    title: "simulate_pvalues_gsd()"
+    body:
+      - "one rmvnorm draw over (hypothesis, look) pairs"
+      - "matured columns copied forward, NA before a"
+      - "hypothesis has data"
+    status: "new . P1 . built 96dba9f"
+
+  # -- 2a. the transform, its own lane ---------------------------- S4.1, P0
+  # Two independent preparation branches run side by side: the data goes left,
+  # the gain function goes right, and they meet at the optimiser.
+  - id: transform
+    place: left
+    header:
+      id: transform_entry
+      role: api
+      title: "transform_pvalues_gsd()"
+      status: "new . P0 . built e4ec646"
+    steps:
+      - id: tf_args
+        role: helper
+        title: ".gsd_info_frac() / .gsd_look_back() /"
+        body:
+          - ".gsd_spending_list()"
+          - "info_frac falls back to the attribute"
+      - id: tf_check
+        role: helper
+        title: ".gsd_check_spending()"
+        body:
+          - "per hypothesis: phi(a, 1) == a, else"
+          - "the design would silently waste alpha"
+      - id: tf_hyp
+        role: subsystem
+        title: ".gsd_transform_hyp()  per hypothesis"
+        body:
+          - ".gsd_looks() -> looks, maturity"
+          - "single matured look? copy raw forward"
+          - "else .gsd_boundary_table(): log grid of"
+          - "levels on 1e-14 to alpha, one"
+          - "gsDesign::gsBound1() call per level"
+          - ".gsd_check_well_ordered()"
+          - ".gsd_invert() log-log, per look"
+          - "copy forward past maturity"
+          - "pmin along looks if look_back[i]"
+      - id: tf_new
+        role: helper
+        title: "new_pvals_gsd()"
+        body:
+          - "the array starts as all 1s, so a look"
+          - "with no data is already cannot-reject"
+          - "and needs no mask"
+    result:
+      id: pvals_gsd
+      role: subsystem
+      title: "multigrain_pvals_gsd"
+      body:
+        - "N x m x K repeated p-values, + the"
+        - "boundary tables for reporting"
+
+  # -- 2b. the gain, in parallel ---------------------------------- S4.6, P3
+  - id: gain
+    place: right
+    align: transform
+    header:
+      id: gain_entry
+      role: api
+      built: false
+      title: "trial_success_gsd()"
+      status: "new . P3 . not built"
+    steps:
+      - id: gain_parse
+        role: helper
+        built: false
+        title: "validator / index counter /"
+        body:
+          - "parse_and_transform"
+          - "copies of the R/trial_success.R trio"
+      - id: gain_lang
+        role: helper
+        built: false
+        title: "symbols r<i> and t<i>, comparisons,"
+        body:
+          - "discount tables written d(t1)"
+          - "m from the symbols, K from the tables"
+    result:
+      id: compiled_gain
+      role: subsystem
+      built: false
+      title: "compiled: double f(IntegerMatrix t)"
+      body:
+        - "the time matrix is the only input, so"
+        - "r<i> is derived as t > 0 and d(0) = 0"
+
+  # -- 3. the optimiser ------------------------------------------- S4.5, P4
+  - id: optimise
+    place: spine
+    role: api
+    built: false
+    title: "graph_optimise_gsd()"
+    status: "new . P4 . not built"
+
+  - id: prep
+    place: spine
+    role: api
+    built: false
+    title: "validation + control_prepare_dims()"
+    body:
+      - "N and m read from the object: an array is"
+      - "not a double matrix, so the fixed-sample"
+      - "control_prepare() cannot be used"
+    status: "new . P4"
+
+  - id: is_global
+    place: spine
+    role: decision
+    built: false
+    title: "global_search"
+    body: ["== TRUE?"]
+
+  # -- 4a. the GA driver ------------------------------------------ S4.7, P4
+  - id: ga
+    place: left
+    header:
+      id: ga_entry
+      role: subsystem
+      built: false
+      title: ".graph_optimise_ga_gsd()"
+      status: "new . P4"
+    steps:
+      - id: ga_seeds
+        role: helper
+        title: ".build_start_matrix() /"
+        body:
+          - "create_start_params()"
+          - "reused unchanged"
+      - id: ga_sub
+        role: helper
+        built: false
+        title: "row subsample, drop = FALSE"
+        body:
+          - "a drop = TRUE slip silently turns"
+          - "N x m x 1 into a matrix"
+        status: "new . P4"
+      - id: ga_obj
+        role: helper
+        built: false
+        title: "create_obj_func_gsd()"
+        body: ["the closure detailed on the right"]
+        status: "new . P4"
+      - id: ga_run
+        role: helper
+        title: "GA::ga()"
+        body:
+          - "Cauchy population, Cauchy mutation,"
+          - "intermittent Nelder-Mead"
+          - "reused unchanged"
+      - id: ga_score
+        role: subsystem
+        built: false
+        title: "decode, validity, then re-score on"
+        body:
+          - "the FULL array with graph_shortcut_gsd()"
+    result:
+      id: ga_result
+      role: subsystem
+      built: false
+      title: "GA result"
+      body: ["{ graph, is_valid, gain on full data }"]
+
+  - id: skip_ga
+    place: right
+    align: ga
+    role: api
+    width: 230
+    built: false
+    title: "Skip GA"
+    body:
+      - "x0 from start_graph,"
+      - "or the local optimiser"
+      - "makes its own"
+
+  # -- 4b. one candidate evaluation, as a side panel --------- S4.3, S4.5, P4
+  # Detached on purpose: this is what both drivers call, and the source diagram
+  # uses a standalone gutter panel rather than crossing lines to say so.
+  - id: evaluate
+    place: gutter
+    align: ga
+    role: subsystem
+    built: false
+    font: 11
+    title: "one candidate evaluation"
+    body:
+      - "split_theta() ->"
+      - "recover_full_weights() /"
+      - "recover_full_trans_matrix()"
+      - "penalty return on NA or off-box"
+      - "snap w < 1e-4, edges < 1e-5"
+      - "dim <- c(N, m*K): column (k-1)m+i"
+      - "is hypothesis i at look k, so the"
+      - "reshape is free (column-major)"
+      - "graph_shortcut_gsd():"
+      - "  K passes of the SAME cascade,"
+      - "  graph state carried look to look,"
+      - "  time(set,i) = k+1 on rejection,"
+      - "  early exit at sumrej == m,"
+      - "  strict < keeps K = 1 identical"
+      - "-> rejected N x m, time N x m"
+      - "compiled gain on time -> scalar"
+    status: "new . P4"
+
+  # -- 4c. the local driver --------------------------------------- S4.7, P4
+  - id: local
+    place: right
+    header:
+      id: local_entry
+      role: subsystem
+      built: false
+      title: ".graph_optimise_local_gsd()"
+      status: "new . P4"
+    steps:
+      - id: lo_obj
+        role: helper
+        built: false
+        title: "create_obj_func_gsd()"
+        body: ["the same closure, on its own subsample"]
+        status: "new . P4"
+      - id: lo_run
+        role: helper
+        title: "nloptr::nloptr()"
+        body:
+          - "COBYLA on -objective, maxeval 5000"
+          - "reused unchanged"
+      - id: lo_fix
+        role: subsystem
+        title: "param_to_solution() + repair_graph()"
+        body:
+          - "undo COBYLA tolerance drift"
+          - "reused unchanged"
+      - id: lo_score
+        role: subsystem
+        built: false
+        title: "validity, then re-score on the FULL"
+        body: ["array with graph_shortcut_gsd()"]
+    result:
+      id: local_result
+      role: subsystem
+      built: false
+      title: "Local result"
+      body: ["{ graph, is_valid, gain on full data }"]
+
+  # -- 5. select, prune, report ----------------------------- S4.7, S10.8, P4
+  - id: choose
+    place: spine
+    role: subsystem
+    title: "choose_graph()"
+    body:
+      - "GA wins only if it is valid and scores"
+      - "above a valid local result"
+    status: "reused unchanged"
+
+  - id: prune
+    place: spine
+    role: api
+    built: false
+    title: "prune_graph_gsd()"
+    body:
+      - "greedy weights, then edges, accepting on"
+      - ">= so a power-neutral simplification is"
+      - "taken; .try_prune_gsd() scores each try"
+    status: "new . P4"
+
+  - id: power
+    place: spine
+    role: api
+    built: false
+    title: "calc_power_pvals_gsd()"
+    body:
+      - "local_power_by_analysis (m x K),"
+      - "time_distribution (m x (K+1)),"
+      - "mean_decision_time, expected gain"
+    status: "new . P4"
+
+  - id: result
+    place: spine
+    role: terminal
+    title: "multigrain_graph_optimal"
+    body:
+      - "the same class the fixed-sample path"
+      - "returns, so plot(), print(), summary()"
+      - "and graph_optimal_get_control() work"
+    status: "reused class"
+
+# Only intra-lane links are implicit; everything crossing a column is declared.
+edges:
+  - from: simulate
+    to: transform_entry
+    caption: ["raw p-values, N x m x K,", "with the info_frac attribute"]
+
+  - from: pvals_gsd
+    to: optimise
+    caption: ["multigrain_pvals_gsd"]
+
+  - from: compiled_gain
+    to: optimise
+    caption: ["objective"]
+
+  - {from: optimise, to: prep}
+  - {from: prep, to: is_global}
+
+  - {from: is_global, to: ga_entry, branch: "YES"}
+  - {from: is_global, to: skip_ga, branch: "NO"}
+
+  - from: ga_result
+    to: local_entry
+    caption: ["x0 <- GA solution", "(warm start for COBYLA)"]
+
+  - from: skip_ga
+    to: local_entry
+    caption: ["the local search always runs"]
+
+  - from: ga_result
+    to: choose
+    route: left
+    caption: ["GA result"]
+
+  - from: local_result
+    to: choose
+    caption: ["Local result"]
+
+  - {from: choose, to: prune, caption: ["chosen graph"]}
+  - {from: prune, to: power, caption: ["pruned graph"]}
+  - {from: power, to: result}
+
+# Free text, positioned against the computed geometry. `at` is [x, y], absolute,
+# on the same origin as the boxes (110, 131). It is a sequence rather than a
+# mapping because YAML 1.1 reads a bare `y:` key as the boolean true.
+annotations:
+  - id: inputs
+    at: [700, 140]
+    text:
+      - "fixed inputs, not decision variables:"
+      - "m, K, info_frac T (m x K, NA where a"
+      - "hypothesis has no data yet), a spending"
+      - "function per hypothesis, alpha, look_back,"
+      - "and the gain expression with its tables"
+
+  - id: transform_cost
+    at: [110, 155]
+    text:
+      - "the only place spending functions"
+      - "and gsDesign appear, and it is paid"
+      - "once: about a second per 1e6 trials"
+
+  - id: gain_independent
+    at: [590, 240]
+    text: ["defined independently of the data"]
+
+  - id: evaluate_head
+    at: [883, 1213]
+    text: ["inside both drivers, per candidate:"]
+
+  - id: evaluate_cost
+    at: [883, 1528]
+    text:
+      - "at most K times the fixed-sample"
+      - "cost. The transformed array is fixed,"
+      - "so common random numbers still apply,"
+      - "and the search itself is untouched."
