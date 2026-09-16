@@ -371,12 +371,14 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
         )
     }
 
-    out <- exp(stats::approx(
-        log(bounds[keep]),
-        log(grid[keep]),
-        xout = log(p),
-        rule = 1
-    )$y)
+    out <- exp(
+        stats::approx(
+            log(bounds[keep]),
+            log(grid[keep]),
+            xout = log(p),
+            rule = 1
+        )$y
+    )
     # above the table nothing rejects at any allocation up to alpha; below it
     # the level is floored rather than set to zero
     out[which(p >= max(bounds))] <- 1
