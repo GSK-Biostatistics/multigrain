@@ -39,7 +39,7 @@ cat("\nequal to cummin along each row?", isTRUE(all.equal(seq_p[, 1, ], by_hand)
 # Build one trial by hand. Two hypotheses, alpha split 0.0125 each, with an
 # edge H2 -> H1 (H2's alpha goes to H1 when H2 is rejected).
 #
-#   H1: strong evidence at look 2, weaker at look 3.
+#   H1: strong evidence at look 2, none to speak of at look 3.
 #   H2: rejected only at look 3.
 #
 # Without look-back, H1 at look 3 is judged on its look-3 evidence, which
@@ -84,9 +84,10 @@ cat("\nwith look-back:\n");    print(run_looks(ps))
 # >>> Question: trace it. At look 2, H1's repeated p is ~0.015 > 0.0125: not
 #     rejected (close, but H1 only holds half the alpha). At look 3, H2 is
 #     rejected (~0.005 < 0.0125) and passes its alpha to H1, which now holds
-#     0.025. Without look-back H1 is judged on its look-3 repeated p (~0.032),
-#     which is > 0.025: still not rejected. With look-back H1 is judged on
-#     its sequential p, min(1, 0.015, 0.032) = 0.015 < 0.025: rejected.
+#     0.025. Without look-back H1 is judged on its look-3 repeated p, which
+#     is 1: raw 0.03 is above the look-3 boundary even at the full alpha
+#     (about 0.023), so no allocation could reject it. With look-back H1 is
+#     judged on its sequential p, min(1, 0.015, 1) = 0.015 < 0.025: rejected.
 #
 #     Same data, same graph, different answer. The protocol has to say which
 #     rule the trial uses.

@@ -175,11 +175,12 @@ this with `all.equal(seq_p, cummin(rep_p))`.
 
 **Surprise:** the script constructs a specific two-hypothesis example where the
 decision flips. H1 has strong evidence at look 2 (repeated p about 0.015) but
-weaker evidence at look 3 (repeated p about 0.032). H2 is rejected at look 3
-and recycles its alpha to H1, which now holds the full 0.025. Without
-look-back, H1 is judged on its look-3 evidence (0.032 > 0.025: not rejected).
-With look-back, H1 is judged on its best evidence so far
-(min(1, 0.015, 0.032) = 0.015 < 0.025: rejected). The `stopifnot()` block
+nothing usable at look 3 (raw 0.03 is above the look-3 boundary even at the
+full alpha, so repeated p = 1). H2 is rejected at look 3 and recycles its
+alpha to H1, which now holds the full 0.025. Without look-back, H1 is judged
+on its look-3 evidence (1 > 0.025: not rejected). With look-back, H1 is
+judged on its best evidence so far (min(1, 0.015, 1) = 0.015 < 0.025:
+rejected). The `stopifnot()` block
 confirms: without look-back `rejected = (FALSE, TRUE)`; with look-back
 `rejected = (TRUE, TRUE)`. The decision flips only because the hand-picked
 raw p-values put H1's look-2 repeated p-value between 0.0125 and 0.025.
