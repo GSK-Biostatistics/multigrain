@@ -7,6 +7,12 @@ test_that("random_graph", {
         c("H1", "H2", "H3", "H4", "H5")
     )
 
+    expect_equal(
+        first_random_graph$hyp_weight,
+        c(H1 = 0.114, H2 = 0.160, H3 = 0.246, H4 = 0.391, H5 = 0.086),
+        tolerance = 1e-2
+    )
+
     expect_identical(
         dimnames(first_random_graph$trans_matrix),
         list(
@@ -15,15 +21,61 @@ test_that("random_graph", {
         )
     )
 
+    expect_equal(
+        first_random_graph$trans_matrix,
+        matrix(
+            c(
+                0, 0.054, 0.162, 0.321, 0.168,
+                0.286, 0, 0.324, 0.123, 0.518,
+                0.301, 0.182, 0, 0.252, 0.099,
+                0.210, 0.156, 0.210, 0, 0.212,
+                0.200, 0.607, 0.302, 0.303, 0
+            ),
+            nrow = 5,
+            dimnames = list(
+                c("H1", "H2", "H3", "H4", "H5"),
+                c("H1", "H2", "H3", "H4", "H5")
+            )
+        ),
+        tolerance = 1e-2
+    )
+
     set.seed(1)
     second_random_graph <- graph_random(5)
 
     expect_identical(first_random_graph, second_random_graph)
 
     set.seed(1)
-    expect_snapshot({
-        graph_random(6)
-    })
+    random_graph_4 <- graph_random(4)
+
+    expect_equal(
+        random_graph_4$hyp_weight,
+        c(
+            H1 = 0.125,
+            H2 = 0.175,
+            H3 = 0.270,
+            H4 = 0.428
+        ),
+        tolerance = 1e-2
+    )
+
+    expect_equal(
+        random_graph_4$trans_matrix,
+        matrix(
+            c(
+                    0, 0.488, 0.192, 0.232,
+                0.098,     0, 0.165, 0.466,
+                0.439, 0.465,     0, 0.301,
+                0.462, 0.045, 0.642,     0
+            ),
+            nrow = 4,
+            dimnames = list(
+                c("H1", "H2", "H3", "H4"),
+                c("H1", "H2", "H3", "H4")
+            )
+        ),
+        tolerance = 1e-2
+    )
 })
 
 test_that("random_graph with user supplied names", {

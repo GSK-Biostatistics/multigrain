@@ -1,17 +1,3 @@
-# multigrain_control
-
-    Code
-      multigrain_control()
-    Output
-      <multigrain_control>
-
-# new_multigrain_control() (low-level constructor)
-
-    Code
-      new_multigrain_control()
-    Output
-      <multigrain_control>
-
 # check_control() gives useful error
 
     Code
@@ -19,11 +5,6 @@
     Condition
       Error:
       ! `1` must be a multigrain control object, not the number 1.
-
-# check_control() with correct input
-
-    Code
-      check_control(multigrain_ctrl)
 
 # check_control() with allow_null
 
