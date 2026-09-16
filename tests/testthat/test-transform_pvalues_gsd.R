@@ -301,8 +301,8 @@ test_that("the transform agrees with graphicalMCP", {
 
     set.seed(21)
     raw <- array(NA_real_, dim = c(5L, 2L, 2L))
-    raw[, , 1L] <- 10^stats::runif(10, -5, -3.2)
-    raw[, , 2L] <- 10^stats::runif(10, -4, -2)
+    raw[,, 1L] <- 10^stats::runif(10, -5, -3.2)
+    raw[,, 2L] <- 10^stats::runif(10, -4, -2)
 
     repeated <- transform_pvalues_gsd(
         raw,
