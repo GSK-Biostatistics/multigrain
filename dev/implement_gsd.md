@@ -7,6 +7,11 @@
 > Before starting the session: copy `debug/gsd_design_record.md` to `dev/gsd_design_record.md`
 > and commit it. `debug/` is git-ignored and a fresh clone cannot see it; `dev/` is tracked and
 > build-ignored.
+>
+> **Status 2026-09-16.** P0 (`e4ec646`), P1 (`96dba9f`) and P2 (`d0b6556`) are done on
+> `gsd-build`, each gate re-run by the orchestrator and each phase adversarially reviewed; see
+> `dev/gsd_progress.md`. Remaining: P3, P4, P5. Lessons from those phases are folded in below
+> and marked `[Rev 2026-09-16]`.
 
 ---
 
@@ -21,7 +26,15 @@ implement it faithfully, not to improve it.
   Run the two appendix scripts before writing any code and confirm you get the numbers quoted
   in the record. If you do not, stop and report; do not proceed on a machine where the
   reference numbers do not reproduce.
-- `CLAUDE.md` and `NEWS.md`, for house conventions on naming, argument style and news entries.
+- `NEWS.md`, for house conventions on naming, argument style and news entries. (There is no
+  `CLAUDE.md` in this repository `[Rev 2026-09-16]`. House style as practised: 4-space
+  indentation, rlang standalone checks from `R/check_types.R`, `rlang::check_dots_empty()`,
+  optional arguments after `...` and named, `cli::cli_abort()` for errors.)
+- The P0 to P2 files, which later phases build on: `R/transform_pvalues_gsd.R` (the
+  `multigrain_pvals_gsd` object and its fields `pvals`, `nsim`, `m`, `K`, `alpha`, `info_frac`,
+  `look_back`, `spending`, `tables`; the internal `.gsd_looks()`), `R/sim_pvals_gsd.R`,
+  `src/graph_shortcut_gsd.cpp` (internal kernels returning `list(rejected, time)`),
+  `tests/testthat/helper-gsd_reference.R` (`gsd_reference_direct()`, `gsd_pvals_matrix()`).
 - Every file the roadmap says you will touch, before changing any of them:
   `src/graph_shortcut.cpp`, `R/objective_function.R`, `R/optimisation.R`, `R/trial_success.R`,
   `R/post_optim_processing.R`, `R/calc_power.R`, `R/sim_pvals.R`, `R/control_prepare.R`,
@@ -51,18 +64,21 @@ create merge conflicts there.
 
 The record is authoritative; this is the summary.
 
-- **P0 Transform.** `transform_pvalues_gsd()` and the per-hypothesis boundary tables built with
-  `gsDesign::gsBound1()`. Gate: Maurer–Bretz (2013) Table 1 boundaries and Table 2 repeated
-  p-values reproduced to four significant figures; the monotonicity assertion fires on a
-  deliberately non-monotone spending function; grid inverse within 1e-5 of `uniroot()` at 200
-  random p-values; agreement with `graphicalMCP::repeated_p()` and `sequential_p()` within 1e-5
-  (`skip_if_not_installed("graphicalMCP")`).
-- **P1 Simulator.** `simulate_pvalues_gsd()`. Gate: empirical correlations match the canonical
-  joint model within 5e-3 at N = 1e6; matured columns identical to the maturity column.
-- **P2 Kernel.** `graph_shortcut_gsd()` and `graph_shortcut_gsd_parallel()`. Gate: with K = 1 the
-  `rejected` output is `identical()` to `graph_shortcut()`; exact match to the R reference
-  implementation in the record's appendix on N = 400 trials with mixed `look_back`; parallel
-  output identical to serial at 1, 2, 4 and 8 threads; agreement with
+- **P0 Transform. DONE (`e4ec646`).** `transform_pvalues_gsd()` and the per-hypothesis boundary
+  tables built with `gsDesign::gsBound1()`. Gate: Maurer–Bretz (2013) Table 1 boundaries and
+  Table 2 repeated p-values reproduced to four significant figures against the record's Appendix A
+  `gsDesign` values (the paper's Table 2 digits match only to about 3.5 s.f., see record 4.1
+  `[Rev 2026-09-16]`); the monotonicity assertion fires on a deliberately non-monotone spending
+  function; grid inverse within 1e-5 of `uniroot()` at 200 random p-values; agreement with
+  `graphicalMCP::repeated_p()` and `sequential_p()` within 1e-5 **absolute** at K = 2
+  (`skip_if_not_installed("graphicalMCP")`, but the package is installed so the tests run).
+- **P1 Simulator. DONE (`96dba9f`).** `simulate_pvalues_gsd()`. Gate: empirical correlations
+  match the canonical joint model within 5e-3 at N = 1e6; matured columns identical to the
+  maturity column. Takes `power_nominal` as `simulate_pvalues()` does (record item 1).
+- **P2 Kernel. DONE (`d0b6556`).** `graph_shortcut_gsd()` and `graph_shortcut_gsd_parallel()`.
+  Gate: with K = 1 the `rejected` output is `identical()` to `graph_shortcut()`; exact match to
+  the R reference implementation in the record's appendix on N = 400 trials with mixed
+  `look_back`; parallel output identical to serial at 1, 2, 4 and 8 threads; agreement with
   `graphicalMCP::graph_test_shortcut_gsd()` on the Maurer–Bretz case study.
 - **P3 Gain.** `trial_success_gsd()`. Gate: manuscript Example 5 and the three supplement forms
   compile and evaluate correctly on hand-built time matrices; `d(0)` is 0; snapshot tests of the
@@ -80,7 +96,14 @@ The record is authoritative; this is the summary.
 
 - **Complete files, not diffs**, unless a patch is explicitly requested.
 - **Testing:** `testthat::test_file()` on the specific files affected. Never
-  `testthat::test_package()`; that is reserved for CI on the PR.
+  `testthat::test_package()`; that is reserved for CI on the PR. `[Rev 2026-09-16]` Set
+  `Sys.setenv(NOT_CRAN = "true")` first, or every `skip_on_cran()` gate (P1's N = 1e6 block,
+  P4's Figure 3b) silently skips when run from `Rscript`. Tests that reach the internal kernels
+  need `devtools::load_all()` or `test_file(..., package = "multigrain")`. Bash on the Windows
+  build machine truncates commands over about 8k characters: write scripts to files and run them
+  with `Rscript`. If `testthat` rewrites `tests/testthat/_snaps/*.md` with CRLF endings when you
+  run existing test files, revert them before committing, and `git add` your own paths
+  explicitly rather than `git add -A`.
 - **No large runs.** m ≤ 4 hypotheses, nsim ≤ 1e4. The one exception is the P4 Figure 3b
   reproduction (m = 2, K = 2, N = 1e5, a grid over a single parameter). Do not run `zhan_m5`,
   `cvot_m6` or `split_m8`. No HPC, no Slurm.
@@ -98,7 +121,19 @@ The record is authoritative; this is the summary.
 Treat your own reasoning about what the existing code does as a hypothesis and check it by
 running it. This applies with particular force to anything involving `graphicalMCP`, whose
 conventions for matured hypotheses and `NA`-padded looks differ from the record's, and where
-confident-but-wrong claims have been made before.
+confident-but-wrong claims have been made before. The conventions established in P0 and P2 are
+listed in record section 4.9 (`[Rev 2026-09-16]`): wrap spending functions so they return a
+plain numeric vector; no column names on `p`; `decision_at` is written for tested-not-rejected
+hypotheses; the oracle uses `<=`; `repeated_p()` is absolute-1e-6 and not reproducible at
+K >= 3; our repeated p-values are capped at 1 above `alpha`.
+
+`[Rev 2026-09-16]` For P4: the kernel silently treats `NA`/`NaN` as "never reject"; put a single
+`anyNA()` assertion in `create_obj_func_gsd()`. The no-change gate of record 4.10 must allow
+`src/RcppExports.cpp` as well as `R/RcppExports.R`, `NAMESPACE` and `DESCRIPTION`. Subsampling
+the transformed array must use `drop = FALSE` on the first dimension; note that subsetting the
+raw simulator output drops its `info_frac` attribute, so subsample the `multigrain_pvals_gsd`
+object, not the array. The record's Appendix B `P <- lapply(...)` block is not the joint model
+of 4.7 and must not be used as a reference for the simulator.
 
 The claims most likely to be quietly false, and which you must demonstrate by running code:
 
@@ -124,7 +159,8 @@ yourself first.
 
 ## Report at the end
 
-Write to `dev/gsd_report.md`:
+Write to `dev/gsd_report.md` (P0 to P2 are already reported in `dev/gsd_progress.md`; continue
+that file or start `dev/gsd_report.md` for P3 onward):
 
 - What changed, file by file.
 - Where the implementation diverged from the record, and why.
