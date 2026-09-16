@@ -83,8 +83,9 @@ stages:
       role: subsystem
       title: "multigrain_pvals_gsd"
       body:
-        - "N x m x K repeated p-values, + the"
-        - "boundary tables for reporting"
+        - "N x m x K transformed p-values:"
+        - "repeated, or sequential where"
+        - "look_back[i], + boundary tables"
 
   # -- 2b. the gain, in parallel ---------------------------------- S4.6, P3
   - id: gain
