@@ -3,14 +3,18 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "export": "node export.mjs",
+    "diagrams": "pwsh -NoProfile -File ./build.ps1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Diagram build pipeline: spec YAML -> Excalidraw scene -> SVG.",
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.1",
     "playwright": "^1.63.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
   }
 }
