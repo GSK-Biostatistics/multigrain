@@ -9,7 +9,6 @@
 # with the semantics kept exactly as the record states them. Every hypothesis
 # must reach full information at some analysis, as in the record's setup.
 
-
 # Cumulative spend of a spending function, whether it returns a plain numeric
 # vector or an object with a `spend` element.
 gsd_reference_spend <- function(spending, level, info) {
