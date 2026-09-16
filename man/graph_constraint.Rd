@@ -27,7 +27,7 @@ which remain set to 0.}
 
 \item{names}{An optional character vector containing hypotheses' names. If
 not provided it defaults to \code{"auto"} meaning the hypotheses will be
-automatically named \code{"H1"}, \code{"H2"}, etc.}
+automatically named \code{"H1"}, \code{"H2"}, and so on.}
 
 \item{diagnose}{A logical value enabling detailed diagnosis. Default is
 \code{FALSE}.}

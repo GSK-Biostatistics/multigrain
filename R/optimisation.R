@@ -244,6 +244,15 @@ graph_optimise <- function(
 graph_optimize <- graph_optimise
 
 
+.sample_pvals_rows <- function(pvals, nsim) {
+    pvals[
+        sample.int(nrow(pvals), size = nsim, replace = FALSE),
+        ,
+        drop = FALSE
+    ]
+}
+
+
 #' Optimise graph-based multiple testing procedures using [GA::ga()]
 #'
 #' This internal function optimises the hypothesis weights and transition matrix
@@ -280,7 +289,7 @@ graph_optimize <- graph_optimise
 
     x0 <- .build_start_matrix(graph_constraint, start_graph)
 
-    pvals_sampled <- pvals[sample(nsim), ]
+    pvals_sampled <- .sample_pvals_rows(pvals, nsim)
 
     immutable_global_args <- list(
         type = "real-valued",
@@ -400,7 +409,7 @@ graph_optimize <- graph_optimise
         x0 <- create_start_params(graph_constraint)
     }
 
-    pvals_sampled <- pvals[sample(nsim), ]
+    pvals_sampled <- .sample_pvals_rows(pvals, nsim)
 
     obj_fun <- create_obj_func(
         m = trial_success$m,

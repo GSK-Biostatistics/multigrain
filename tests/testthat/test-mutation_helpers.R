@@ -154,11 +154,16 @@ test_that("scale parameter affects perturbation magnitude", {
 
 test_that("mutation selects correct parent from multi-row population", {
     set.seed(42)
+
     d <- 5
-    pop <- matrix(c(
-    rep(0.1, d),
-    rep(0.9, d)
-  ), nrow = 2, byrow = TRUE)
+    pop <- matrix(
+        c(
+            rep(0.1, d),
+            rep(0.9, d)
+        ),
+        nrow = 2,
+        byrow = TRUE
+    )
     obj <- make_mock_ga(pop, lower = rep(0, d), upper = rep(1, d))
 
     mut_fn <- .make_cauchy_mutation_multi(p_param_mutate = 1.0, scale = 0.001)

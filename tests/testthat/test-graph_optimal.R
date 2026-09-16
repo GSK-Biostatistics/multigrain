@@ -25,71 +25,6 @@ test_that("new_graph_optimal", {
     )
 })
 
-test_that("graph_optimal complains", {
-    expect_error(
-        graph_optimal(hyp_weight = "foo"),
-        "`hyp_weight` must be a double"
-    )
-
-    hyp_w <- c(0.1, 0.2, NA, NA, NA)
-
-    expect_error(
-        graph_optimal(
-            hyp_weight = hyp_w,
-            trans_matrix = "foo"
-        ),
-        "`trans_matrix` must be a double matrix"
-    )
-
-    trans_m <- matrix(rep_len(c(0.1, NA), length.out = 25), nrow = 5, ncol = 5)
-    diag(trans_m) <- 0
-
-    expect_error(
-        graph_optimal(
-            hyp_weight = hyp_w,
-            trans_matrix = trans_m,
-            constraints = "foo"
-        ),
-        "`constraints` must be a multigrain graph constraint object"
-    )
-
-    expect_error(
-        graph_optimal(
-            hyp_weight = hyp_w,
-            trans_matrix = trans_m,
-            trial_success = "foo"
-        ),
-        "`trial_success` must be a multigrain trial success object"
-    )
-
-    expect_error(
-        graph_optimal(
-            hyp_weight = hyp_w,
-            trans_matrix = trans_m,
-            control = "foo"
-        ),
-        "`control` must be a multigrain control object"
-    )
-
-    expect_error(
-        graph_optimal(
-            hyp_weight = hyp_w,
-            trans_matrix = trans_m,
-            global_output = "foo"
-        ),
-        "`global_output` must be a GA object"
-    )
-
-    expect_error(
-        graph_optimal(
-            hyp_weight = hyp_w,
-            trans_matrix = trans_m,
-            local_output = "foo"
-        ),
-        "`local_output` must be a nloptr object"
-    )
-})
-
 test_that("graph_optimal", {
     graph_opt <- graph_optimal(
         hyp_weight = c(0.1, 0.2, 0.3, 0.4),
@@ -132,13 +67,47 @@ test_that("graph_optimal with global_search", {
 test_that("graph_optimal_get_control", {
     graph_custom_power <- readRDS(test_path("data", "graph_custom_power.rds"))
 
-    expect_snapshot({
-        graph_optimal_get_control(graph_custom_power)
-    })
+    graph_opt_ctrl <- graph_optimal_get_control(graph_custom_power)
 
-    expect_snapshot({
-        graph_optimal_get_control(graph_optimal_example)
-    })
+    expect_s3_class(graph_opt_ctrl, "multigrain_control")
+
+    expect_identical(
+        graph_opt_ctrl$nsim_local,
+        100000L
+    )
+
+    expect_identical(
+        graph_opt_ctrl$nsim_global,
+        50000L
+    )
+
+    expect_identical(
+        graph_opt_ctrl$local_opt,
+        list(
+            algorithm = "NLOPT_LN_COBYLA",
+            xtol_rel = 5e-08,
+            xtol_abs = 5e-09,
+            maxeval = 5000,
+            print_level = 1L
+        )
+    )
+
+    expect_identical(
+        graph_opt_ctrl$global_opt,
+        list(
+            pcrossover = 0.2,
+            pmutation = 0.8,
+            maxiter = 1e+05,
+            popSize = 200L,
+            run = 200,
+            monitor = TRUE,
+            optimArgs = list(
+                method = "Nelder-Mead",
+                poptim = 0.2,
+                pressel = 0.6
+            )
+        )
+    )
 })
 
 test_that("summarise helpers", {

@@ -499,12 +499,16 @@ test_that("normalise_sum complains when anything is passed via `...`", {
 
 test_that("calc_ncp", {
     set.seed(1)
-    expect_snapshot({
-        calc_ncp(power = c(0.8, 0.9))
-    })
+    expect_equal(
+        calc_ncp(power = c(0.8, 0.9)),
+        c(2.801, 3.241),
+        tolerance = 1e-2
+    )
 
     set.seed(2)
-    expect_snapshot({
-        calc_ncp(power = c(0.8, 0.9), alpha = 0.01)
-    })
+    expect_equal(
+        calc_ncp(power = c(0.8, 0.9), alpha = 0.01),
+        c(3.167, 3.607),
+        tolerance = 1e-2
+    )
 })

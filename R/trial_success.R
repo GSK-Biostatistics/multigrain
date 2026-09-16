@@ -14,8 +14,8 @@
 #' @param objective An expression or string encoding the trial-success utility
 #'   \eqn{\psi}. The symbols `r1, r2, ...` refer to rejection indicators for
 #'   the corresponding hypotheses. To inject values from your R session, use
-#'   rlang's unquote operator `!!` (see Examples). Arithmetic and logical
-#'   operators are allowed.
+#'   rlang's injection operator - [`!!`][rlang::injection-operator] - (see
+#'   Examples). Arithmetic and logical operators are allowed.
 #'
 #' @param verbose An optional string controlling verbosity ("detail" >
 #'   "info" > "silent"). Verbosity can also be set at package level with the
@@ -465,7 +465,7 @@ parse_and_transform <- function(node) {
         }
         return(list(expr = as.symbol(txt), type = "real"))
     } else {
-        # Strings, etc => real
+        # Strings, etc. => real
         return(list(expr = node, type = "real"))
     }
 }

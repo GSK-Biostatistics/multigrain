@@ -14,24 +14,13 @@ test_that("control_local can add and remove options", {
 
 test_that("control_local can add and remove multiple options", {
     ctrl <- multigrain_control()
-
-    expect_snapshot(
+    ctrl <- ctrl |>
         control_local(
-            ctrl,
             algorithm = "NLOPT_LN_COBYLA",
             xtol_rel = 5e-8,
             xtol_abs = 5e-9,
             maxeval = 5000
         )
-    )
-
-    ctrl <- control_local(
-        ctrl,
-        algorithm = "NLOPT_LN_COBYLA",
-        xtol_rel = 5e-8,
-        xtol_abs = 5e-9,
-        maxeval = 5000
-    )
 
     expect_identical(
         ctrl$local_opt,
@@ -43,11 +32,12 @@ test_that("control_local can add and remove multiple options", {
         )
     )
 
-    ctrl <- control_local(
-        ctrl,
-        maxeval = NULL,
-        xtol_abs = NULL
-    )
+    ctrl <- ctrl |>
+        control_local(
+            maxeval = NULL,
+            xtol_abs = NULL
+        )
+
     expect_identical(
         ctrl$local_opt,
         list(
