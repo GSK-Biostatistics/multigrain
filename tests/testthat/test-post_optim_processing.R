@@ -1071,3 +1071,283 @@ test_that("prune_graph() forwards the graph_constraint tolerance", {
     expect_gt(length(tolerances$values), 0)
     expect_true(all(tolerances$values == 0.01))
 })
+
+
+# --- .prune_edges_best_first() ----------------------------------------------
+
+# A dense-ish 4-hypothesis graph and the fixture p-values, cut to 1e4 rows.
+best_first_fixture <- function() {
+    list(
+        pvals = pvals[seq_len(1e4L), 1:4],
+        hyp_weight = c(0.5, 0.5, 0, 0),
+        trans_matrix = rbind(
+            c(0, 0.641, 0.335, 0.024),
+            c(0.283, 0, 0.335, 0.382),
+            c(0.597, 0.336, 0, 0.067),
+            c(0.337, 0.585, 0.078, 0)
+        ),
+        gc = graph_constraint_free(4),
+        ts = conjunctive_4m_power
+    )
+}
+
+test_that("a threshold at the current gain reproduces the fixed-order prune", {
+    fx <- best_first_fixture()
+
+    fixed_order <- prune_graph(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        trial_success = fx$ts,
+        graph_constraint = fx$gc,
+        gamma = 1,
+        verbose = "silent"
+    )
+    u_fixed <- calc_power_pvals(
+        fx$pvals,
+        hyp_weight = fixed_order$hyp_weight,
+        trans_matrix = fixed_order$trans_matrix,
+        custom_power = fx$ts
+    )$custom_power
+
+    # The threshold is the gain of the graph going in. Nothing may be traded
+    # away, which is also the fixed-order rule, so the two must arrive at the
+    # same place.
+    u_start <- calc_power_pvals(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        custom_power = fx$ts
+    )$custom_power
+
+    best_first <- prune_graph(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        trial_success = fx$ts,
+        graph_constraint = fx$gc,
+        gamma = 1,
+        threshold = u_start,
+        verbose = "silent"
+    )
+    u_best_first <- calc_power_pvals(
+        fx$pvals,
+        hyp_weight = best_first$hyp_weight,
+        trans_matrix = best_first$trans_matrix,
+        custom_power = fx$ts
+    )$custom_power
+
+    expect_identical(best_first$hyp_weight, fixed_order$hyp_weight)
+    expect_identical(
+        sum(best_first$trans_matrix != 0),
+        sum(fixed_order$trans_matrix != 0)
+    )
+    # Several graphs of that size tie on this sample, so the two orders need
+    # not pick the same one; what must agree is the gain they achieve.
+    expect_identical(u_best_first, u_fixed)
+    expect_true(is_graph_valid(best_first$hyp_weight, best_first$trans_matrix))
+
+    # The unthresholded path reports no loss.
+    expect_identical(fixed_order$prune_loss, 0)
+})
+
+test_that("best-first never drops below the threshold or adds an edge", {
+    fx <- best_first_fixture()
+    fixed_edge <- !is.na(fx$gc$trans_constraint)
+
+    u_start <- calc_power_pvals(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        custom_power = fx$ts
+    )$custom_power
+
+    for (lambda in c(0, 1e-3, 1e-2, 5e-2, 1)) {
+        threshold <- (1 - lambda) * u_start
+        out <- .prune_edges_best_first(
+            fx$pvals,
+            hyp_weight = fx$hyp_weight,
+            trans_matrix = fx$trans_matrix,
+            trial_success = fx$ts,
+            fixed_edge = fixed_edge,
+            threshold = threshold
+        )
+
+        expect_lte(sum(out$trans_matrix != 0), sum(fx$trans_matrix != 0))
+        expect_gte(out$power_best, threshold)
+        # power_best must describe the graph actually returned.
+        expect_identical(
+            out$power_best,
+            calc_power_pvals(
+                fx$pvals,
+                hyp_weight = out$hyp_weight,
+                trans_matrix = out$trans_matrix,
+                custom_power = fx$ts
+            )$custom_power
+        )
+        # Every row still sums to one, so the graph stays valid.
+        expect_true(all(abs(rowSums(out$trans_matrix) - 1) < 1e-8))
+        expect_true(is_graph_valid(out$hyp_weight, out$trans_matrix))
+        # A looser budget can never leave more edges than a tighter one.
+        expect_identical(out$n_removed, as.integer(out$n_removed))
+    }
+})
+
+test_that("a bigger budget removes at least as many edges", {
+    fx <- best_first_fixture()
+    fixed_edge <- !is.na(fx$gc$trans_constraint)
+    u_start <- calc_power_pvals(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        custom_power = fx$ts
+    )$custom_power
+
+    removed <- vapply(
+        c(0, 1e-3, 1e-2, 5e-2),
+        function(lambda) {
+            .prune_edges_best_first(
+                fx$pvals,
+                hyp_weight = fx$hyp_weight,
+                trans_matrix = fx$trans_matrix,
+                trial_success = fx$ts,
+                fixed_edge = fixed_edge,
+                threshold = (1 - lambda) * u_start
+            )$n_removed
+        },
+        integer(1)
+    )
+    expect_false(is.unsorted(removed))
+})
+
+test_that("prune_loss equals the exact drop in trial success", {
+    fx <- best_first_fixture()
+    fixed_edge <- !is.na(fx$gc$trans_constraint)
+    u_start <- calc_power_pvals(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        custom_power = fx$ts
+    )$custom_power
+
+    out <- .prune_edges_best_first(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        trial_success = fx$ts,
+        fixed_edge = fixed_edge,
+        threshold = 0.9 * u_start
+    )
+
+    # prune_loss telescopes to the difference between the gain going in and
+    # the gain coming out. It is negative when removing edges raises the
+    # measure, which best-first does whenever it can.
+    expect_equal(out$prune_loss, u_start - out$power_best, tolerance = 1e-12)
+})
+
+test_that("prune_loss is negative when pruning raises the measure", {
+    fx <- best_first_fixture()
+    fixed_edge <- !is.na(fx$gc$trans_constraint)
+    u_start <- calc_power_pvals(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        custom_power = fx$ts
+    )$custom_power
+
+    # At a threshold equal to the starting gain nothing may be traded away,
+    # so any accepted removal must have raised the measure.
+    out <- .prune_edges_best_first(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        trial_success = fx$ts,
+        fixed_edge = fixed_edge,
+        threshold = u_start
+    )
+
+    expect_gt(out$n_removed, 0L)
+    expect_gte(out$power_best, u_start)
+    expect_lte(out$prune_loss, 0)
+    expect_equal(out$prune_loss, u_start - out$power_best, tolerance = 1e-12)
+})
+
+test_that("best-first at lambda = 1 leaves one free edge per row", {
+    fx <- best_first_fixture()
+    fixed_edge <- !is.na(fx$gc$trans_constraint)
+
+    # Every non-negative graph is feasible, so removal stops only when a row
+    # has nothing left to give away.
+    out <- .prune_edges_best_first(
+        fx$pvals,
+        hyp_weight = fx$hyp_weight,
+        trans_matrix = fx$trans_matrix,
+        trial_success = fx$ts,
+        fixed_edge = fixed_edge,
+        threshold = -Inf
+    )
+
+    expect_identical(rowSums(out$trans_matrix != 0), rep(1, 4))
+    expect_true(all(abs(rowSums(out$trans_matrix) - 1) < 1e-8))
+})
+
+test_that("best-first skips candidates that would leave a row unfixable", {
+    # Row 3 is a single edge of weight one: removing it has no free recipient,
+    # so it must never be taken, whatever the budget.
+    gc <- graph_constraint_free(3)
+    w <- c(0.5, 0.5, 0)
+    G <- rbind(c(0, 0.5, 0.5), c(0.5, 0, 0.5), c(1, 0, 0))
+    ts <- trial_success(r1 + r2 + r3, verbose = "silent")
+    pv <- pvals[seq_len(1e4L), 1:3]
+
+    out <- .prune_edges_best_first(
+        pv,
+        hyp_weight = w,
+        trans_matrix = G,
+        trial_success = ts,
+        fixed_edge = !is.na(gc$trans_constraint),
+        threshold = -Inf
+    )
+
+    expect_identical(out$trans_matrix[3, ], c(1, 0, 0))
+    expect_true(all(abs(rowSums(out$trans_matrix) - 1) < 1e-8))
+    expect_true(is_graph_valid(out$hyp_weight, out$trans_matrix))
+})
+
+test_that("best-first respects fixed entries of the constraint", {
+    gc <- graph_constraint(
+        hyp_constraint = c(NA, NA, 0, 0),
+        trans_constraint = rbind(
+            c(0, NA, NA, 0),
+            c(NA, 0, 0, NA),
+            c(0, 1, 0, 0),
+            c(1, 0, 0, 0)
+        )
+    )
+    w <- c(0.5, 0.5, 0, 0)
+    G <- rbind(
+        c(0, 0.6, 0.4, 0),
+        c(0.5, 0, 0, 0.5),
+        c(0, 1, 0, 0),
+        c(1, 0, 0, 0)
+    )
+    expect_true(is_graph_valid(w, G))
+    ts <- conjunctive_4m_power
+
+    out <- .prune_edges_best_first(
+        pvals[seq_len(1e4L), 1:4],
+        hyp_weight = w,
+        trans_matrix = G,
+        trial_success = ts,
+        fixed_edge = !is.na(gc$trans_constraint),
+        threshold = -Inf
+    )
+
+    # Pinned entries survive whatever the budget.
+    expect_identical(out$trans_matrix[3, 2], 1)
+    expect_identical(out$trans_matrix[4, 1], 1)
+    # Zeros pinned by the constraint stay zero.
+    expect_identical(out$trans_matrix[1, 4], 0)
+    expect_identical(out$trans_matrix[2, 3], 0)
+    expect_true(all(abs(rowSums(out$trans_matrix) - 1) < 1e-8))
+})
