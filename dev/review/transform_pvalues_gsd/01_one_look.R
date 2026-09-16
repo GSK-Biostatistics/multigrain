@@ -54,10 +54,12 @@ cat("table built for H1?", !is.null(tr$tables[[1]]$bounds), "\n\n")
 # single matured look. Its look-1 repeated p-value is 1 (no data); its look-2
 # value is the raw value; and a table is still not built.
 
-raw2 <- array(runif(4), dim = c(2, 1, 2))
-info <- matrix(c(NA, 1), nrow = 1)                 # H1: nothing at look 1
+raw2 <- array(runif(4), dim = c(2, 1, 2))          # nsim = 2, m = 1, K = 2
+info <- matrix(c(NA, 1), nrow = 1)                 # 1 hypothesis x 2 looks: no data
+                                                   # at look 1, all of it at look 2
 tr2 <- transform_pvalues_gsd(raw2, info_frac = info, spending = sfLDOF)
 
+# each printed pair below is (simulation 1, simulation 2) for the one hypothesis
 cat("info_frac:\n"); print(info)
 cat("raw look 2      :", raw2[, 1, 2], "\n")
 cat("repeated look 1 :", tr2$pvals[, 1, 1], "\n")
