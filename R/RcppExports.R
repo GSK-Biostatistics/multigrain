@@ -96,6 +96,63 @@ graph_shortcut_parallel <- function(pvals, alpha, w, G, num_threads = 1L, grain_
     .Call(`_multigrain_graph_shortcut_parallel`, pvals, alpha, w, G, num_threads, grain_size)
 }
 
+#' Group sequential graphical shortcut algorithm -- fast serial backend
+#'
+#' Applies the sequentially rejective graphical test procedure of Maurer and
+#' Bretz (2013) to a matrix of transformed (repeated or sequential) p-values
+#' and returns the rejection matrix together with the analysis at which each
+#' rejection was made.
+#'
+#' @param pvals NumericMatrix (N x m*K) of transformed p-values. Column
+#'   (k - 1) * m + i is hypothesis i at look k.
+#' @param alpha Scalar significance level.
+#' @param w NumericVector (length m) of hypothesis weights.
+#' @param G NumericMatrix (m x m) transition matrix. Diagonal must be 0,
+#'   row sums must be <= 1.
+#' @param K Number of analyses (>= 1). Must divide ncol(pvals).
+#' @return A list with `rejected`, a LogicalMatrix (N x m) of rejection
+#'   indicators, and `time`, an IntegerMatrix (N x m) of decision times
+#'   (0 = never rejected).
+#'
+#' @seealso \code{\link{graph_shortcut_gsd_parallel}} for the multithreaded
+#'   variant.
+#' @name graph_shortcut_gsd
+#' @noRd
+graph_shortcut_gsd <- function(pvals, alpha, w, G, K) {
+    .Call(`_multigrain_graph_shortcut_gsd`, pvals, alpha, w, G, K)
+}
+
+#' Group sequential graphical shortcut algorithm -- parallel backend
+#'
+#' Multithreaded implementation of the group sequential shortcut algorithm via
+#' RcppParallel, parallelised across trials. Bit-identical to
+#' \code{graph_shortcut_gsd()}.
+#'
+#' @param pvals NumericMatrix (N x m*K) of transformed p-values. Column
+#'   (k - 1) * m + i is hypothesis i at look k.
+#' @param alpha Scalar significance level.
+#' @param w NumericVector (length m) of hypothesis weights.
+#' @param G NumericMatrix (m x m) transition matrix. Diagonal must be 0,
+#'   row sums must be <= 1.
+#' @param K Number of analyses (>= 1). Must divide ncol(pvals).
+#' @param num_threads Number of parallel threads (>= 1). Default 1.
+#' @param grain_size Chunk size for parallelFor. Default -1 (auto-tuned).
+#'   When negative, grain size is chosen so each chunk does approximately
+#'   TARGET_OPS worth of inner-loop operations. Per-trial work is O(K * m^3)
+#'   worst case (K looks, each with up to m rejections triggering an m*m
+#'   graph update).
+#'
+#' @return A list with `rejected`, a LogicalMatrix (N x m) of rejection
+#'   indicators, and `time`, an IntegerMatrix (N x m) of decision times
+#'   (0 = never rejected).
+#'
+#' @seealso \code{\link{graph_shortcut_gsd}} for the single-threaded variant.
+#' @name graph_shortcut_gsd_parallel
+#' @noRd
+graph_shortcut_gsd_parallel <- function(pvals, alpha, w, G, K, num_threads = 1L, grain_size = -1L) {
+    .Call(`_multigrain_graph_shortcut_gsd_parallel`, pvals, alpha, w, G, K, num_threads, grain_size)
+}
+
 #' Graph violation score
 #'
 #' Computes scalar violation score used to penalise invalid graphs during
