@@ -12,6 +12,9 @@
 > `gsd-build`, each gate re-run by the orchestrator and each phase adversarially reviewed; see
 > `dev/gsd_progress.md`. Remaining: P3, P4, P5. Lessons from those phases are folded in below
 > and marked `[Rev 2026-09-16]`.
+>
+> **Status 2026-09-17.** P3 (`0908406`) is done; see `dev/gsd_progress.md`. Remaining: P4,
+> P5. Lessons marked `[Rev 2026-09-17]`.
 
 ---
 
@@ -80,9 +83,15 @@ The record is authoritative; this is the summary.
   the R reference implementation in the record's appendix on N = 400 trials with mixed
   `look_back`; parallel output identical to serial at 1, 2, 4 and 8 threads; agreement with
   `graphicalMCP::graph_test_shortcut_gsd()` on the Maurer–Bretz case study.
-- **P3 Gain.** `trial_success_gsd()`. Gate: manuscript Example 5 and the three supplement forms
-  compile and evaluate correctly on hand-built time matrices; `d(0)` is 0; snapshot tests of the
-  generated C++.
+- **P3 Gain. DONE (`0908406`).** `trial_success_gsd()` in `R/trial_success_gsd.R`. Gate: manuscript
+  Example 5 and the three supplement forms compile and evaluate correctly on hand-built time
+  matrices; `d(0)` is 0; snapshot tests of the generated C++. `[Rev 2026-09-17]` The parser
+  could not copy the fixed-sample placeholder substitution (`%AND%`/`%OR%` cannot sit next to
+  `==` in R); it parses natively, so precedence is R's. See record 4.6, "Parsing and
+  precedence". The object's fields are `func`, `m`, `K` (may be `NULL`), `objective`,
+  `cpp_code`, `tables`; class `c("multigrain_trial_success_gsd", "multigrain_trial_success")`;
+  `is_trial_success_gsd()` is the internal predicate. The compiled `func` takes the kernel's
+  `time` matrix (`IntegerMatrix`, 0 = never) and nothing else.
 - **P4 Optimiser and post-processing.** `graph_optimise_gsd()`, `create_obj_func_gsd()`,
   `prune_graph_gsd()`, `calc_power_pvals_gsd()`. Gate: manuscript Figure 3b (optimal `w_PFS`
   against the OS/PFS value ratio at δ = 1, 0.75, 0.5) reproduced within 0.02 at N = 1e5;
@@ -126,6 +135,16 @@ listed in record section 4.9 (`[Rev 2026-09-16]`): wrap spending functions so th
 plain numeric vector; no column names on `p`; `decision_at` is written for tested-not-rejected
 hypotheses; the oracle uses `<=`; `repeated_p()` is absolute-1e-6 and not reproducible at
 K >= 3; our repeated p-values are capped at 1 above `alpha`.
+
+`[Rev 2026-09-17]` For P4, from P3: when the gain object carries tables, its compiled function
+indexes a C array with the time value, unchecked. Assert `gain$K == pvals$K` whenever `gain$K`
+is not `NULL` (in `create_obj_func_gsd()` and `calc_power_pvals_gsd()`), and never call
+`gain$func()` on anything but the kernel's `time` matrix. A `multigrain_trial_success_gsd`
+object passes `check_trial_success()` because it inherits the fixed-sample class; P4 must
+distinguish the two with `is_trial_success_gsd()` where it matters (a fixed-sample gain
+expects a `LogicalMatrix` of rejections, not the time matrix). When writing cli messages that
+mention comparison operators, interpolate them as values (`{.code {ops}}`): a literal `<`
+inside cli markup is read as an internal delimiter and the message fails to format.
 
 `[Rev 2026-09-16]` For P4: the kernel silently treats `NA`/`NaN` as "never reject"; put a single
 `anyNA()` assertion in `create_obj_func_gsd()`. The no-change gate of record 4.10 must allow
