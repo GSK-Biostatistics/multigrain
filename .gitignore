@@ -2,7 +2,7 @@
 .Rhistory
 docs
 vignettes/articles/get-started_cache
-debug
+debug/
 
 /.quarto/
 **/.quarto/
@@ -10,3 +10,5 @@ debug
 .positai
 .claude/
 CLAUDE.md
+dev/diagrams/node_modules/
+.vscode/
