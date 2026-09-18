@@ -63,9 +63,10 @@ test_that(".make_pvalue_generator_n: matches the manual formula", {
     gen <- .make_pvalue_generator_n(s$z_null, s$effect_size)
     pvals <- gen(100L)
 
-    expected <- 1 - pnorm(
-        sweep(s$z_null, 2, s$effect_size * sqrt(100), "+")
-    )
+    expected <- 1 -
+        pnorm(
+            sweep(s$z_null, 2, s$effect_size * sqrt(100), "+")
+        )
 
     expect_equal(pvals, expected, tolerance = 1e-12, ignore_attr = TRUE)
 })
@@ -498,8 +499,14 @@ test_that(".run_cauchy_mutation_block: structure and frozen p-values", {
     expect_named(
         out,
         c(
-            "best_x", "best_f", "parents", "f_par", "history",
-            "n", "gens_run", "local_searches"
+            "best_x",
+            "best_f",
+            "parents",
+            "f_par",
+            "history",
+            "n",
+            "gens_run",
+            "local_searches"
         )
     )
     expect_identical(out$gens_run, 10L)

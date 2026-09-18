@@ -4,7 +4,6 @@
 # runs Cauchy-mutation evolutionary search blocks with greedy step-down.
 # The search engine itself lives in R/cauchy_evolution.R.
 
-
 #' Memoized CRN p-value generator
 #'
 #' Returns a function `get_pvals(n)` producing the \eqn{nsim \times m} matrix
@@ -1421,7 +1420,6 @@ graph_optimize_n <- graph_optimise_n
 # than in R/control_prepare.R, R/sim_pvals.R and R/post_optim_processing.R) so
 # the sample-size feature stays self-contained.
 # ==========================================================================
-
 
 #' Create the default control object for sample-size optimisation
 #'

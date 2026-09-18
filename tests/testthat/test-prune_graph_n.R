@@ -304,8 +304,11 @@ test_that("prune_graph_n: prunes while preserving feasibility", {
     expect_named(
         out,
         c(
-            "hyp_weight", "trans_matrix", "trial_success_value",
-            "local_power", "feasible"
+            "hyp_weight",
+            "trans_matrix",
+            "trial_success_value",
+            "local_power",
+            "feasible"
         )
     )
     expect_true(out$feasible)
