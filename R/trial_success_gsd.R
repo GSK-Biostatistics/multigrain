@@ -24,10 +24,14 @@
 #' @param objective An expression or string encoding the trial-success utility
 #'   \eqn{\psi} over `r1, r2, ...` and `t1, t2, ...`. To inject values from
 #'   your R session, use rlang's injection operator -
-#'   [`!!`][rlang::injection-operator] - (see Examples).
+#'   [`!!`][rlang::injection-operator] - (see Examples). Use `!!` only inside
+#'   `objective`; it has a different meaning in ordinary arguments (see
+#'   **Common mistakes**).
 #' @param ... Discount tables, each a named numeric vector of length `K` (one
-#'   value per analysis). Every table must be named; the names are used as
-#'   functions in `objective`.
+#'   value per analysis). Supply only the values for analyses 1 through `K`;
+#'   the value for "never rejected" (`ti = 0`) is always `0` and is supplied
+#'   automatically — do not include it yourself (see **Common mistakes**).
+#'   Every table must be named; the names are used as functions in `objective`.
 #' @param K An optional whole number giving the number of analyses. When
 #'   discount tables are supplied `K` is inferred from their common length and,
 #'   if also given, must agree with it. When neither is given `K` is left
@@ -48,31 +52,116 @@
 #'   * `cpp_code`: the generated C++ source.
 #'   * `tables`: the discount tables, as supplied.
 #'
-#' @details The utility \eqn{\psi} is evaluated on each simulated trial and
-#'   averaged, yielding the **expected gain** for a given graph and
-#'   data-generating scenario. In a group sequential design the outcome of a
-#'   trial is the vector of decision times, one per hypothesis; the compiled
-#'   function takes only that matrix, and the rejection indicators are derived
-#'   from it, so `ri` and `ti` can never disagree.
+#' @details
 #'
-#'   Operator precedence is R's own: write `(t1 == 1 && t2 == 1)` rather than
-#'   relying on `&&` binding tighter than `+`.
+#'   ## Decision times
+#'
+#'   Each `ti` records the analysis at which the graphical procedure *declared*
+#'   hypothesis \eqn{H_i} rejected. This may be later than the analysis at
+#'   which the data for \eqn{H_i} matured or first crossed a boundary. For
+#'   example, suppose PFS data are final at analysis 1 but PFS carries zero
+#'   initial weight. PFS cannot reject until OS rejects at analysis 2 and
+#'   recycles its alpha to PFS. The result is `t_PFS = 2`, even though the PFS
+#'   p-value was available at analysis 1.
+#'
+#'   The rejection indicator `ri` is derived from `ti > 0` inside the compiled
+#'   function, so `ri` and `ti` can never disagree: if `ti = 0` then
+#'   `ri = FALSE`, and if `ti >= 1` then `ri = TRUE`.
+#'
+#'   ## Discount tables
+#'
+#'   A discount table maps each decision time to a value. You supply one value
+#'   per analysis, for analyses 1 through `K`. The constructor automatically
+#'   prepends `0.0` for `ti = 0` (never rejected), so you should **not**
+#'   include a leading zero yourself. For a two-analysis design where a
+#'   rejection at the final analysis is worth 75% of one at the interim, write
+#'   `d = c(1, 0.75)`. Element names on the vector are ignored; only the
+#'   argument name matters (the name you use to apply it in `objective`, e.g.
+#'   `d(t1)`).
+#'
+#'   ## Operator precedence
+#'
+#'   Operator precedence follows R's own rules (unlike [trial_success()],
+#'   whose expression-input parser treats `&&` and `||` at a different
+#'   precedence level). Always parenthesise to make intent explicit: write
+#'   `(t1 == 1 && t2 == 1)` rather than relying on `&&` binding tighter
+#'   than `+`.
+#'
+#' @section Common mistakes:
+#'
+#'   **Including a leading zero in a discount table.** Writing
+#'   `d = c(0, 1, 0.75)` does not give a two-analysis table — it gives a
+#'   *three*-analysis table with `K = 3`, where analysis 1 has value 0 and
+#'   analysis 2 has value 1. Every claim is mispriced and there is no warning.
+#'   For `K = 2`, write `d = c(1, 0.75)`.
+#'
+#'   **Using `!!` inside a discount table argument.** The injection operator
+#'   [`!!`][rlang::injection-operator] is only meaningful inside `objective`,
+#'   where `rlang::enexpr()` captures the expression. In an ordinary argument
+#'   like `d = c(1, !!delta)`, `!!` is R's double negation: `!!0.75` evaluates
+#'   to `TRUE` (i.e. `1`), so the table silently becomes `c(1, 1)` and the
+#'   discount is lost. Write `d = c(1, delta)` instead.
+#'
+#'   **Passing a GSD object to the fixed-sample optimiser.** Because
+#'   `multigrain_trial_success_gsd` inherits from `multigrain_trial_success`,
+#'   `graph_optimise(trial_success = <gsd_object>)` passes validation. However,
+#'   the compiled function then receives a logical rejection matrix (not a
+#'   decision-time matrix). Rcpp silently coerces `TRUE`/`FALSE` to `1`/`0`,
+#'   so every rejection is scored as though it occurred at analysis 1 — a
+#'   wrong answer with no error.
+#'
+#' @section Interpreting the gain:
+#'
+#'   The gain returned by `$func()` is the mean of \eqn{\psi} over simulated
+#'   trials and is **not** a probability. Its scale depends entirely on how you
+#'   define `objective`. For instance, \eqn{\psi = r_1 + r_2} at 60% power
+#'   per hypothesis returns roughly 1.2, not 0.6. Only relative values matter
+#'   for optimisation (the argmax is invariant to positive affine
+#'   transformations of \eqn{\psi}), but normalise for reporting if you want
+#'   interpretable numbers.
+#'
+#'   Non-monotone discount tables (e.g. `d = c(0.5, 1)`, which values a late
+#'   decision more than an early one) compile without complaint. This is by
+#'   design — the package does not enforce a particular preference ordering —
+#'   but check that the table reflects your intent.
+#'
+#' @note The public GSD consumer (`calc_power_pvals_gsd()`) does not exist
+#'   yet. The gain function can currently only be evaluated via the internal
+#'   GSD kernel.
 #'
 #' @seealso [trial_success()] for the fixed-sample version.
 #'
 #' @export
 #' @examples
 #' # Manuscript Example 5: PFS (H1) and OS (H2), two analyses; a rejection at
-#' # the final analysis is worth 75% of one at the interim
+#' # the final analysis is worth 75% of one at the interim.
+#' # d = c(1, 0.75): full value at analysis 1, 75% at analysis 2.
+#' # The zero for "never rejected" is supplied automatically.
 #' v_pfs <- 0.4
-#' v_os <- 1
+#' v_os  <- 0.6
 #' gain <- trial_success_gsd(
 #'     !!v_pfs * d(t1) + !!v_os * d(t2),
 #'     d = c(1, 0.75)
 #' )
 #' gain
 #'
+#' # The gain on every possible (t1, t2) pair for K = 2:
+#' #
+#' #   t1 \ t2 |    0      1      2
+#' #   --------+---------------------
+#' #      0    | 0.000  0.600  0.450
+#' #      1    | 0.400  1.000  0.850
+#' #      2    | 0.300  0.900  0.750
+#'
 #' \donttest{
+#' # Mixed r and t: OS value plus a bonus only if PFS was declared at
+#' # the interim
+#' trial_success_gsd(r2 + 0.5 * (r1 && t1 == 1), K = 2)
+#'
+#' # Hurdle gain with a time-discounted base value: both claims required,
+#' # and the package is worth less if the confirmatory claim is late
+#' trial_success_gsd((r1 && r2) * d(t2), d = c(1, 0.75))
+#'
 #' # Co-primary endpoints rejected at the same analysis
 #' trial_success_gsd((t1 == 1 && t2 == 1) + 0.5 * (t1 == 2 && t2 == 2))
 #'
