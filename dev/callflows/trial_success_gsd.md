@@ -10,12 +10,15 @@ Notation follows the design record: *m* hypotheses, *K* analyses
 where 0 means "never rejected". The rejection indicator of hypothesis
 *i*, written `ri` in code, is the boolean `ti > 0`. A discount table is
 a user-supplied numeric vector of length K, indexed by the decision
-time; the table's value at index 0 is always 0. The gain function
-(the utility) is written as an R expression over `r1, r2, ..., rm`,
+time; the table's value at index 0 is always 0. Users may supply one
+shared table or multiple tables with different values and apply them to
+different hypotheses, for example `d_pfs(t1) + d_os(t2)`. The gain
+function (the utility) is written as an R expression over `r1, r2, ..., rm`,
 `t1, t2, ..., tm`, arithmetic, comparisons, logical connectives, and
 discount-table calls; it is compiled to a C++ function that takes an
 integer matrix of decision times (simulations by hypotheses) and returns
-the mean utility.
+the mean utility. Discount lookup uses the shared analysis index, not the
+numeric information fraction used earlier to construct repeated p-values.
 
 
 ## The call chain at a glance
@@ -68,7 +71,10 @@ in the pipeline, by the optimiser setup code) and calls
 
 - `...`: named numeric vectors (discount tables). Each name becomes a
   function in the expression language (e.g. `d = c(1, 0.75)` makes
-  `d(t1)` valid). Every table must be the same length; that length is K.
+  `d(t1)` valid). A table can be reused for several decision times, or
+  separate tables can encode hypothesis-specific values, such as
+  `d_pfs(t1)` and `d_os(t2)`. Every table must be the same length; that
+  length is K. Their values do not need to be equal.
 
 - `K`: an optional positive integer giving the number of analyses. When
   tables are supplied, K is inferred from their common length; if also
@@ -131,7 +137,9 @@ Validates the discount tables collected from `...` in
   `rlang::list2(...)`.
 
 The function returns a named list of double vectors that all share one
-length. An empty list is returned if no tables were supplied.
+length. The vectors may contain different values, which is how the API
+can represent hypothesis-specific discount schedules. An empty list is
+returned if no tables were supplied.
 
 ### How it works
 
@@ -153,6 +161,12 @@ a cli error on failure.
 - All tables must have the same length (one value per analysis).
 
 Finally, every table is coerced to double with `as.double()`.
+
+The common length reflects the common set of K planned analyses. It does not
+require hypotheses to have the same information fractions at those analyses.
+`info_frac` is consumed by `transform_pvalues_gsd()` when repeated p-values are
+constructed; it is not passed to `trial_success_gsd()` and is not consulted
+during discount lookup.
 
 ### Edge cases
 
@@ -311,12 +325,12 @@ containing `func`, `m`, `K`, `objective`, `cpp_code`, and `tables`.
    the display string. It returns a C++ expression string that can be
    dropped into the body of a `for` loop.
 
-3. For each discount table, a `static const double` array is generated.
-   Index 0 is always `0.0` (the "never rejected" case); indices 1
-   through K hold the table values, written with `.gsd_gain_cpp_number()`
-   to ensure exact double round-tripping. For example,
-   `d = c(1, 0.75)` produces
-   `static const double d_tab[] = {0.0, 1.0, 0.75};`.
+3. For each discount table, a separate `static const double` array is
+   generated. Index 0 is always `0.0` (the "never rejected" case);
+   indices 1 through K hold the table values, written with
+   `.gsd_gain_cpp_number()` to ensure exact double round-tripping. For example,
+   `d_pfs = c(1, 0.5)` and `d_os = c(1, 0.75)` produce independent
+   `d_pfs_tab` and `d_os_tab` arrays.
 
 4. The full C++ source is assembled by `sprintf()`. It includes Rcpp,
    defines `std_min` as `std::min` (so that the deparsed R call
@@ -531,7 +545,9 @@ name (e.g. `t1` gives `idx = 0`), and the call is rewritten as
 `name_tab[t(i, idx)]` -- an array lookup into the static C array
 declared by `new_trial_success_gsd()`. Index 0 of the array is `0.0`,
 so a never-rejected hypothesis contributes zero from every table. Type
-is `"real"`.
+is `"real"`. The table name chooses the value schedule, while `t<i>` chooses
+both the hypothesis column and the declaration-analysis index. No information
+fraction is present in this lookup.
 
 **Logical operators** (`&&` and `||`). Both operands are transformed
 recursively. If either operand's type is not `"bool"`, the function
@@ -772,15 +788,16 @@ gain language is translated. The translations were verified by running
 | `t1 == 1`          | `double(double(t(i, 0)) == 1.0)`                     | bool |
 | `A && B`           | `A * B`                                              | bool |
 | `A \|\| B`         | `std_min(double(1), A + B)`                          | bool |
-| `d(t1)`            | `d_tab[t(i, 0)]`                                     | real |
+| `d_pfs(t1)`        | `d_pfs_tab[t(i, 0)]`                                 | real |
 | numeric `0.4`      | `0.4`                                                | real |
 | `TRUE`             | `1.0`                                                | bool |
 | integer `2`        | `2.0`                                                | real |
 
 
-## Complete C++ for Example 5
+## Complete C++ for a hypothesis-specific example
 
-The gain `0.4 * d(t1) + 1 * d(t2)` with `d = c(1, 0.75)` compiles to:
+The gain `0.4 * d_pfs(t1) + 0.6 * d_os(t2)` with
+`d_pfs = c(1, 0.5)` and `d_os = c(1, 0.75)` compiles to:
 
 ```cpp
 #include <Rcpp.h>
@@ -788,7 +805,8 @@ using namespace Rcpp;
 
 #define std_min std::min
 
-static const double d_tab[] = {0.0, 1.0, 0.75};
+static const double d_pfs_tab[] = {0.0, 1.0, 0.5};
+static const double d_os_tab[] = {0.0, 1.0, 0.75};
 
 // [[Rcpp::export]]
 double powerFunc(IntegerMatrix t) {
@@ -799,21 +817,23 @@ double powerFunc(IntegerMatrix t) {
     double total = 0.0;
 
     for (int i = 0; i < n; i++) {
-        total += (0.4 * d_tab[t(i, 0)] + 1.0 * d_tab[t(i, 1)]);
+        total += (0.4 * d_pfs_tab[t(i, 0)] + 0.6 * d_os_tab[t(i, 1)]);
     }
 
     return total / n;
 }
 ```
 
-The `d_tab` array has three entries: index 0 is `0.0` (never rejected),
-index 1 is `1.0` (rejected at look 1, full value), index 2 is `0.75`
-(rejected at look 2, discounted). The body reads the decision time of
-each hypothesis from the integer matrix `t`, uses it as an index into
-`d_tab`, multiplies by the hypothesis weight, and sums. The function
-returns the mean over all simulated trials.
+Each table array has three entries: index 0 is `0.0` (never rejected), and
+indices 1 and 2 contain that table's values for declarations at analyses 1
+and 2. The body reads each hypothesis's decision time from the integer matrix
+`t` and uses it to index the table named in the objective. Thus H1 and H2 can
+receive different values for a declaration at the same analysis. The
+information fractions that generated the repeated p-values are not inputs to
+this function. The function returns the mean over all simulated trials.
 
 Evaluated on a three-row time matrix where row 1 has H1 rejected at
 look 1 and H2 at look 2, row 2 has only H2 rejected at look 1, and
 row 3 has no rejections, the function returns
-(0.4 * 1.0 + 1 * 0.75 + 0.4 * 0.0 + 1 * 1.0 + 0 + 0) / 3 = 0.7167.
+(0.4 * 1.0 + 0.6 * 0.75 + 0.4 * 0.0 + 0.6 * 1.0 + 0 + 0) / 3 =
+0.4833.
