@@ -125,8 +125,8 @@ $\tau_{\text{PFS}} = 2$, not 1.
 
 ### Discount tables
 
-You assign a value to each analysis time by passing a named numeric vector
-through `...`. For $K = 2$ analyses:
+You assign values to declaration analyses by passing one or more named numeric
+vectors through `...`. For $K = 2$ analyses:
 
 ```{r}
 #| label: discount-table-concept
@@ -142,11 +142,34 @@ In the `objective` expression, apply a table to a decision time as `d(t1)`.
 When $t_1 = 0$ the result is 0; when $t_1 = 1$ the result is `d[1]`; when
 $t_1 = 2$ the result is `d[2]`.
 
-### Worked example: PFS and OS with two analyses
+The same table can be shared across hypotheses, as in `d(t1) + d(t2)`, or each
+hypothesis can use a different table, as in `d_pfs(t1) + d_os(t2)`. All tables
+must contain $K$ values, but the values may differ.
+
+::: {.callout-important}
+## Discounts are indexed by analysis, not information fraction
+
+A discount vector maps the shared analysis indices $1, \ldots, K$ to values.
+It does not look up or interpolate from the numeric information fraction.
+Information fractions determine the group sequential boundaries and may differ
+by hypothesis; the gain function receives only the analysis at which each
+rejection was declared.
+:::
+
+### Worked example: hypothesis-specific discounts
 
 Consider a trial with two hypotheses — PFS ($H_1$) and OS ($H_2$) — and
-$K = 2$ analyses. You value PFS at 0.4 and OS at 0.6, and a rejection at the
-final analysis is worth 75% of one at the interim:
+$K = 2$ analyses. PFS is fully mature at analysis 1, while OS has 70%
+information at analysis 1 and reaches full information at analysis 2:
+
+| Analysis | PFS information fraction | PFS discount | OS information fraction | OS discount |
+|---|---:|---:|---:|---:|
+| 1 | 1.0 | 1.00 | 0.7 | 1.00 |
+| 2 | 1.0 | 0.50 | 1.0 | 0.75 |
+
+You value PFS at 0.4 and OS at 0.6. A PFS declaration delayed until analysis 2
+retains 50% of its early value, whereas an OS declaration at analysis 2 retains
+75%:
 
 ```{r}
 #| label: gsd-example5
@@ -154,28 +177,37 @@ final analysis is worth 75% of one at the interim:
 v_pfs <- 0.4
 v_os  <- 0.6
 gain <- trial_success_gsd(
-    !!v_pfs * d(t1) + !!v_os * d(t2),
-    d = c(1, 0.75)
+    !!v_pfs * d_pfs(t1) + !!v_os * d_os(t2),
+    d_pfs = c(1, 0.50),
+    d_os  = c(1, 0.75)
 )
 gain
 #> <multigrain_trial_success_gsd/multigrain_trial_success>
-#> 0.4 * d(t1) + 0.6 * d(t2)
+#> 0.4 * d_pfs(t1) + 0.6 * d_os(t2)
 #> Analyses (K): 2
-#> Discount table d(t): 1.00, 0.75
+#> Discount table d_pfs(t): 1.0, 0.5
+#> Discount table d_os(t): 1.00, 0.75
 ```
 
 The gain for every possible combination of decision times is:
 
-| | $t_2 = 0$ (OS never) | $t_2 = 1$ (OS interim) | $t_2 = 2$ (OS final) |
+| | $t_2 = 0$ (OS never) | $t_2 = 1$ (OS at analysis 1) | $t_2 = 2$ (OS at analysis 2) |
 |---|---|---|---|
 | **$t_1 = 0$ (PFS never)** | 0.000 | 0.600 | 0.450 |
-| **$t_1 = 1$ (PFS interim)** | 0.400 | 1.000 | 0.850 |
-| **$t_1 = 2$ (PFS final)** | 0.300 | 0.900 | 0.750 |
+| **$t_1 = 1$ (PFS at analysis 1)** | 0.400 | 1.000 | 0.850 |
+| **$t_1 = 2$ (PFS at analysis 2)** | 0.200 | 0.800 | 0.650 |
 
 Reading the table: $(t_1 = 0, t_2 = 1)$ means PFS was not rejected and OS was
-rejected at the interim. The gain is $0.4 \times d(0) + 0.6 \times d(1) =
-0 + 0.6 \times 1 = 0.6$. The entry $(t_1 = 2, t_2 = 2)$ — both rejected at
-the final — gives $0.4 \times 0.75 + 0.6 \times 0.75 = 0.75$.
+rejected at analysis 1. The gain is
+$0.4 \times d_{\mathrm{PFS}}(0) + 0.6 \times d_{\mathrm{OS}}(1) =
+0 + 0.6 \times 1 = 0.6$. The entry $(t_1 = 2, t_2 = 2)$ — both declared at
+analysis 2 — gives $0.4 \times 0.50 + 0.6 \times 0.75 = 0.65$.
+
+For PFS, $t_1 = 2$ still selects the second discount value even though its
+information fraction was already 1 at analysis 1. The discount reflects the
+later **declaration**, not a second information-fraction lookup. This is the
+alpha-recycling case described above: mature PFS data can support a decision
+only after OS releases alpha at the later analysis.
 
 ### More expressions
 
