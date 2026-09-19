@@ -4,6 +4,7 @@ docs
 vignettes/articles/get-started_cache
 debug/
 
+.vscode
 /.quarto/
 **/.quarto/
 **/*.quarto_ipynb
@@ -11,4 +12,3 @@ debug/
 .claude/
 CLAUDE.md
 dev/diagrams/node_modules/
-.vscode/
