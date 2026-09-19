@@ -92,8 +92,9 @@
 #'   **Including a leading zero in a discount table.** Writing
 #'   `d = c(0, 1, 0.75)` does not give a two-analysis table — it gives a
 #'   *three*-analysis table with `K = 3`, where analysis 1 has value 0 and
-#'   analysis 2 has value 1. Every claim is mispriced and there is no warning.
-#'   For `K = 2`, write `d = c(1, 0.75)`.
+#'   analysis 2 has value 1, so every claim is mispriced. The increase from
+#'   `0` to `1` triggers a warning, but the table still compiles. For
+#'   `K = 2`, write `d = c(1, 0.75)`.
 #'
 #'   **Using `!!` inside a discount table argument.** The injection operator
 #'   [`!!`][rlang::injection-operator] is only meaningful inside `objective`,
@@ -102,13 +103,11 @@
 #'   to `TRUE` (i.e. `1`), so the table silently becomes `c(1, 1)` and the
 #'   discount is lost. Write `d = c(1, delta)` instead.
 #'
-#'   **Passing a GSD object to the fixed-sample optimiser.** Because
-#'   `multigrain_trial_success_gsd` inherits from `multigrain_trial_success`,
-#'   `graph_optimise(trial_success = <gsd_object>)` passes validation. However,
-#'   the compiled function then receives a logical rejection matrix (not a
-#'   decision-time matrix). Rcpp silently coerces `TRUE`/`FALSE` to `1`/`0`,
-#'   so every rejection is scored as though it occurred at analysis 1 — a
-#'   wrong answer with no error.
+#'   **Passing a GSD object to the fixed-sample optimiser.** This is an error.
+#'   `graph_optimise()` and `calc_power_pvals()` supply a logical rejection
+#'   matrix, not a decision-time matrix, so they refuse a
+#'   `multigrain_trial_success_gsd` object and point you at the group
+#'   sequential consumers, [graph_optimise_gsd()] and [calc_power_pvals_gsd()].
 #'
 #' @section Interpreting the gain:
 #'
@@ -120,16 +119,18 @@
 #'   transformations of \eqn{\psi}), but normalise for reporting if you want
 #'   interpretable numbers.
 #'
-#'   Non-monotone discount tables (e.g. `d = c(0.5, 1)`, which values a late
-#'   decision more than an early one) compile without complaint. This is by
-#'   design — the package does not enforce a particular preference ordering —
-#'   but check that the table reflects your intent.
+#'   A discount table is expected to take values in `[0, 1]` and to assign no
+#'   more value to a later decision than to an earlier one. A table that
+#'   breaks either expectation still compiles — the package does not forbid
+#'   other value tables — but it warns once, naming the table and the
+#'   offending values or analyses. Both the range and the ordering are judged
+#'   with a tolerance of `sqrt(.Machine$double.eps)`, so a table computed
+#'   rather than typed is not flagged for rounding: a value of `1 + 1e-12` is
+#'   not reported as outside `[0, 1]`. The first value need not be `1`.
 #'
-#' @note The public GSD consumer (`calc_power_pvals_gsd()`) does not exist
-#'   yet. The gain function can currently only be evaluated via the internal
-#'   GSD kernel.
-#'
-#' @seealso [trial_success()] for the fixed-sample version.
+#' @seealso [trial_success()] for the fixed-sample version,
+#'   [graph_optimise_gsd()] and [calc_power_pvals_gsd()] for the consumers of
+#'   the resulting object.
 #'
 #' @export
 #' @examples
@@ -335,7 +336,83 @@ is_trial_success_gsd <- function(x) {
         )
     }
 
+    .gsd_gain_warn_tables(tables, call = call)
+
     lapply(tables, as.double)
+}
+
+# Semantic guidance, not a restriction: the manuscript's discount function is
+# valued on [0, 1] and non-increasing in time. Anything else compiles, but at
+# most one warning per table says so.
+.gsd_gain_warn_tables <- function(tables, call = rlang::caller_env()) {
+    for (nm in names(tables)) {
+        bullets <- .gsd_gain_table_bullets(nm, tables[[nm]])
+        if (length(bullets) > 0L) {
+            names(bullets)[[1L]] <- ""
+            cli::cli_warn(bullets, call = call)
+        }
+    }
+
+    invisible(NULL)
+}
+
+# The warning bullets for one discount table: values outside [0, 1], and
+# increases from one analysis to a later one. Both tests carry the same
+# `sqrt(eps)` tolerance, so a computed table is not flagged for rounding (a
+# value of 1 + 1e-12 is not "outside [0, 1]"). A leading zero is the common
+# "I supplied the never-rejected value myself" mistake and gets its own hint.
+# Returns `character(0)` when the table is unremarkable.
+.gsd_gain_table_bullets <- function(nm, tab) {
+    fmt <- function(x) {
+        vapply(x, format, character(1L), trim = TRUE)
+    }
+
+    tol <- sqrt(.Machine$double.eps)
+    bullets <- character()
+
+    outside <- tab[tab < -tol | tab > 1 + tol]
+    if (length(outside) > 0L) {
+        bullets <- c(
+            bullets,
+            x = sprintf(
+                "Discount table `%s` contains values outside [0, 1]: %s.",
+                nm,
+                toString(fmt(outside))
+            ),
+            i = "The manuscript defines discount multipliers on [0, 1]."
+        )
+    }
+
+    steps <- which(diff(tab) > tol)
+    if (length(steps) > 0L) {
+        increases <- sprintf(
+            paste0(
+                "Discount table `%s` increases from analysis %d (%s) ",
+                "to analysis %d (%s)."
+            ),
+            nm,
+            steps,
+            fmt(tab[steps]),
+            steps + 1L,
+            fmt(tab[steps + 1L])
+        )
+        bullets <- c(
+            bullets,
+            rlang::set_names(increases, rep("x", length(increases))),
+            i = "A discount table normally assigns no more value to a later \\
+            decision."
+        )
+        if (isTRUE(tab[[1L]] == 0)) {
+            bullets <- c(
+                bullets,
+                i = "`trial_success_gsd()` supplies `d(0) = 0` for \\
+                \"never rejected\" automatically, so a leading zero shifts \\
+                every value by one analysis."
+            )
+        }
+    }
+
+    bullets
 }
 
 # Settle the number of analyses `K`: the common table length when tables are
