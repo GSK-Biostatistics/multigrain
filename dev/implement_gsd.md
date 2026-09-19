@@ -15,6 +15,15 @@
 >
 > **Status 2026-09-17.** P3 (`0908406`) is done; see `dev/gsd_progress.md`. Remaining: P4,
 > P5. Lessons marked `[Rev 2026-09-17]`.
+>
+> **Status 2026-09-18.** P4 is being built. The record was amended before the build
+> (`[Rev 2026-09-18]`): the Figure 3b gate is now stated on the gain, not the argmax
+> (record 6 P4 and Appendix B "Figure 3b argmax noise"); `mean_decision_time` became
+> `mean_decision_look` (4.4, 4.7); the fixed-sample consumers get a guard against GSD gain
+> objects (4.10, the one exception to new-files-only); `trial_success_gsd()` gains a
+> discount-table warning (6 P3). P4 is delivered as three separable change sets in the
+> working tree, **uncommitted**: the user reviews and commits. Reference material for
+> Figure 3b is in `dev/review/fig3b/`.
 
 ---
 
@@ -92,11 +101,17 @@ The record is authoritative; this is the summary.
   `cpp_code`, `tables`; class `c("multigrain_trial_success_gsd", "multigrain_trial_success")`;
   `is_trial_success_gsd()` is the internal predicate. The compiled `func` takes the kernel's
   `time` matrix (`IntegerMatrix`, 0 = never) and nothing else.
-- **P4 Optimiser and post-processing.** `graph_optimise_gsd()`, `create_obj_func_gsd()`,
-  `prune_graph_gsd()`, `calc_power_pvals_gsd()`. Gate: manuscript Figure 3b (optimal `w_PFS`
-  against the OS/PFS value ratio at δ = 1, 0.75, 0.5) reproduced within 0.02 at N = 1e5;
-  pruning never lowers the gain; `graph_optimise()` on `main` and on your branch give
-  `identical()` results for the same seed and inputs.
+- **P4 Optimiser and post-processing. DONE (uncommitted, 2026-09-18).**
+  `graph_optimise_gsd()`, `create_obj_func_gsd()`,
+  `prune_graph_gsd()`, `calc_power_pvals_gsd()`, plus `R/check_gsd.R` for the shared
+  validation. Gate `[Rev 2026-09-18]`: record section 6 P4 in full, including the revised
+  Figure 3b block (gain at the paper's optimal `w_PFS` within 5e-4 of the package's own grid
+  maximum in all 21 cells at N = 1e5, reference in
+  `tests/testthat/data/gsd_example5_reference.rds`); pruning never lowers the gain;
+  `graph_optimise()` on `main` and on your branch give `identical()` results for the same
+  seed and inputs (`dev/gsd_identity_check.R`). Delivered as three separable change sets
+  (guard in `R/optimisation.R` and `R/calc_power.R`; discount-table warning in
+  `R/trial_success_gsd.R`; P4 proper in new files), none committed.
 - **P5 Documentation.** roxygen for every new export, pkgdown reference group, a GSD article
   under `vignettes/articles/`, the `NEWS.md` entry, `DESCRIPTION` (`Imports: gsDesign`;
   `Suggests: graphicalMCP (>= 0.3.0)`).
@@ -154,6 +169,41 @@ raw simulator output drops its `info_frac` attribute, so subsample the `multigra
 object, not the array. The record's Appendix B `P <- lapply(...)` block is not the joint model
 of 4.7 and must not be used as a reference for the simulator.
 
+`[Rev 2026-09-18]` Lessons from P4, for P5 and for anyone re-running the gates:
+
+- **The identity gate cannot be `identical()` on the whole object.** The returned
+  `multigrain_graph_optimal` carries `trial_success`, whose `func` is compiled by
+  `Rcpp::sourceCpp()`; its environment holds an external pointer that differs between two R
+  processes. `dev/gsd_identity_check.R` therefore always takes its fallback path. The gate is
+  `identical()` on `.Random.seed` and on every component except `trial_success` (record 4.10
+  and 6 P4, both amended).
+- **cli plurals need a single quantity.** A message that uses a plural marker (`{?s}`,
+  `{?is/es}`) *and* interpolates more than one value fails to format with "Multiple quantities
+  for pluralization". Write both numbers out (`m = {a}` against `m = {b}`) or set the quantity
+  explicitly with `cli::qty()`. This is the same class of trap as the literal `<`.
+- **`control_prepare()` gets its dimensions from `dim()`**, so they are integers.
+  `control_prepare_dims()` coerces `nsim` and `m` with `as.integer()`, otherwise
+  `identical()` between the two paths fails on storage mode alone.
+- **`summary()` does not show the GSD-only power fields.** `summarise_power_object()` prints
+  the fields it knows; `local_power_by_analysis`, `mean_decision_look` and
+  `time_distribution` are on the object but invisible. Changing that means editing
+  `R/graph_optimal.R`, which is outside the new-files-only rule; it is a P5 decision.
+- **`man/trial_success.Rd` was stale on the branch** before P4 (the P3 documentation commit
+  edited the roxygen without re-running `devtools::document()`). Running `document()` in P4
+  regenerated it; the diff is documentation only.
+- **`.gsd_kernel_matrix()` also range-checks, which the record did not ask for.** Record 10
+  item 11 specifies an `anyNA()` assertion only. P4 adds `any(values < 0 | values > 1)` on the
+  same array walk, because the kernel reads a negative repeated p-value as a rejection at any
+  positive allocation and a value above 1 as "never", both silently. No extra pass over the
+  data and no extra check in the objective closure; it is one more `if` on the public path.
+- **Every compiled gain in `custom_power` is dimension-checked, not just the GSD ones.** The
+  fixed-sample `multigrain_trial_success` path is reachable from `calc_power_pvals_gsd()` by
+  design (record 4.7 `[Rev 2026-09-18]`), and its generated C++ indexes the rejection matrix by
+  hypothesis with no bounds check, so a `trial_success(r1 + r2 + r3)` gain on a two-hypothesis
+  object read past the row and returned garbage. `.gsd_check_gain_dims()` is now called for any
+  `is_trial_success()` entry; a fixed-sample object carries no `K`, so its `K` branch is skipped
+  naturally.
+
 The claims most likely to be quietly false, and which you must demonstrate by running code:
 
 1. K = 1 is bit-identical to the fixed-sample kernel, including rows with p below 1e-12.
@@ -172,9 +222,12 @@ yourself first.
 
 ## Git
 
-- Commit at gate boundaries, not in one lump at the end.
+- Commit at gate boundaries, not in one lump at the end. `[Rev 2026-09-18]` **Not in P4:**
+  the user commits after a human review. Do not run `git commit`, `git add` or `git stash`;
+  leave the working tree with the three change sets in place and list their files in the
+  report.
 - **Do not open the PR.** An adversarial review runs against this branch first. Push `gsd-build`
-  and stop there.
+  and stop there (`[Rev 2026-09-18]` not in P4; the user pushes).
 
 ## Report at the end
 
