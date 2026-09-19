@@ -10,27 +10,30 @@ trial_success_gsd(objective, ..., K = NULL, verbose = multigrain_verbosity())
 \item{objective}{An expression or string encoding the trial-success utility
 \eqn{\psi} over \verb{r1, r2, ...} and \verb{t1, t2, ...}. To inject values from
 your R session, use rlang's injection operator -
-\code{\link[rlang:injection-operator]{!!}} - (see Examples).}
+\code{\link[rlang:injection-operator]{!!}} - (see Examples). Use \verb{!!} only inside
+\code{objective}; it has a different meaning in ordinary arguments (see
+\strong{Common mistakes}).}
 
 \item{...}{Discount tables, each a named numeric vector of length \code{K} (one
-value per analysis). Every table must be named; the names are used as
-functions in \code{objective}.}
+value per analysis). Supply only the values for analyses 1 through \code{K};
+the value for "never rejected" (\code{ti = 0}) is always \code{0} and is supplied
+automatically — do not include it yourself (see \strong{Common mistakes}).
+Every table must be named; the names are used as functions in \code{objective}.}
 
 \item{K}{An optional whole number giving the number of analyses. When
 discount tables are supplied \code{K} is inferred from their common length and,
 if also given, must agree with it. When neither is given \code{K} is left
 \code{NULL} and checked against the p-values at first use.}
 
-\item{verbose}{An optional string controlling verbosity ("detail" >
-"info" > "silent"). Verbosity can also be set at package level with the
+\item{verbose}{An optional string controlling verbosity (\verb{”detail”} >
+\verb{”info”} > \verb{”silent”}). Verbosity can also be set at package level with the
 \code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
 \itemize{
-\item \code{"info"} (default): will inform about the successful compilation of the
+\item \verb{”info”} (default): informs about successful compilation of the
 trial success function.
-\item \code{"detail"}: no additional information available, will have the same
-effect as \code{"info"}.
-\item \code{"silent"}: silent, no information about the trial success function
-compilation. Errors and warnings are still thrown.
+\item \verb{”detail”}: same as \verb{”info”} (no additional detail available).
+\item \verb{”silent”}: no compilation messages. Errors and warnings are still
+thrown.
 }}
 }
 \value{
@@ -72,30 +75,118 @@ and parentheses;
 \item discount tables: any numeric vector of length \code{K} passed by name through
 \code{...} can be applied to a decision time as \code{name(ti)}. The result is the
 \code{ti}-th element of the table, or \code{0} when \code{ti} is \code{0} (never rejected).
+\subsection{Decision times}{
+
+Each \code{ti} records the analysis at which the graphical procedure \emph{declared}
+hypothesis \eqn{H_i} rejected. This may be later than the analysis at
+which the data for \eqn{H_i} matured or first crossed a boundary. For
+example, suppose PFS data are final at analysis 1 but PFS carries zero
+initial weight. PFS cannot reject until OS rejects at analysis 2 and
+recycles its alpha to PFS. The result is \code{t_PFS = 2}, even though the PFS
+p-value was available at analysis 1.
+
+The rejection indicator \code{ri} is derived from \code{ti > 0} inside the compiled
+function, so \code{ri} and \code{ti} can never disagree: if \code{ti = 0} then
+\code{ri = FALSE}, and if \code{ti >= 1} then \code{ri = TRUE}.
 }
 
-The utility \eqn{\psi} is evaluated on each simulated trial and
-averaged, yielding the \strong{expected gain} for a given graph and
-data-generating scenario. In a group sequential design the outcome of a
-trial is the vector of decision times, one per hypothesis; the compiled
-function takes only that matrix, and the rejection indicators are derived
-from it, so \code{ri} and \code{ti} can never disagree.
+\subsection{Discount tables}{
 
-Operator precedence is R's own: write \code{(t1 == 1 && t2 == 1)} rather than
-relying on \code{&&} binding tighter than \code{+}.
+A discount table maps each decision time to a value. You supply one value
+per analysis, for analyses 1 through \code{K}. The constructor automatically
+prepends \code{0.0} for \code{ti = 0} (never rejected), so you should \strong{not}
+include a leading zero yourself. For a two-analysis design where a
+rejection at the final analysis is worth 75\% of one at the interim, write
+\code{d = c(1, 0.75)}. Element names on the vector are ignored; only the
+argument name matters (the name you use to apply it in \code{objective}, e.g.
+\code{d(t1)}).
 }
+
+\subsection{Operator precedence}{
+
+Operator precedence follows R's own rules (unlike \code{\link[=trial_success]{trial_success()}},
+whose expression-input parser treats \code{&&} and \code{||} at a different
+precedence level). Always parenthesise to make intent explicit: write
+\code{(t1 == 1 && t2 == 1)} rather than relying on \code{&&} binding tighter
+than \code{+}.
+}
+}
+}
+\section{Common mistakes}{
+
+
+\strong{Including a leading zero in a discount table.} Writing
+\code{d = c(0, 1, 0.75)} does not give a two-analysis table — it gives a
+\emph{three}-analysis table with \code{K = 3}, where analysis 1 has value 0 and
+analysis 2 has value 1, so every claim is mispriced. The increase from
+\code{0} to \code{1} triggers a warning, but the table still compiles. For
+\code{K = 2}, write \code{d = c(1, 0.75)}.
+
+\strong{Using \verb{!!} inside a discount table argument.} The injection operator
+\code{\link[rlang:injection-operator]{!!}} is only meaningful inside \code{objective},
+where \code{rlang::enexpr()} captures the expression. In an ordinary argument
+like \code{d = c(1, !!delta)}, \verb{!!} is R's double negation: \code{!!0.75} evaluates
+to \code{TRUE} (i.e. \code{1}), so the table silently becomes \code{c(1, 1)} and the
+discount is lost. Write \code{d = c(1, delta)} instead.
+
+\strong{Passing a GSD object to the fixed-sample optimiser.} This is an error.
+\code{graph_optimise()} and \code{calc_power_pvals()} supply a logical rejection
+matrix, not a decision-time matrix, so they refuse a
+\code{multigrain_trial_success_gsd} object and point you at the group
+sequential consumers, \code{\link[=graph_optimise_gsd]{graph_optimise_gsd()}} and \code{\link[=calc_power_pvals_gsd]{calc_power_pvals_gsd()}}.
+}
+
+\section{Interpreting the gain}{
+
+
+The gain returned by \verb{$func()} is the mean of \eqn{\psi} over simulated
+trials and is \strong{not} a probability. Its scale depends entirely on how you
+define \code{objective}. For instance, \eqn{\psi = r_1 + r_2} at 60\% power
+per hypothesis returns roughly 1.2, not 0.6. Only relative values matter
+for optimisation (the argmax is invariant to positive affine
+transformations of \eqn{\psi}), but normalise for reporting if you want
+interpretable numbers.
+
+A discount table is expected to take values in \verb{[0, 1]} and to assign no
+more value to a later decision than to an earlier one. A table that
+breaks either expectation still compiles — the package does not forbid
+other value tables — but it warns once, naming the table and the
+offending values or analyses. Both the range and the ordering are judged
+with a tolerance of \code{sqrt(.Machine$double.eps)}, so a table computed
+rather than typed is not flagged for rounding: a value of \code{1 + 1e-12} is
+not reported as outside \verb{[0, 1]}. The first value need not be \code{1}.
+}
+
 \examples{
 # Manuscript Example 5: PFS (H1) and OS (H2), two analyses; a rejection at
-# the final analysis is worth 75\% of one at the interim
+# the final analysis is worth 75\% of one at the interim.
+# d = c(1, 0.75): full value at analysis 1, 75\% at analysis 2.
+# The zero for "never rejected" is supplied automatically.
 v_pfs <- 0.4
-v_os <- 1
+v_os  <- 0.6
 gain <- trial_success_gsd(
     !!v_pfs * d(t1) + !!v_os * d(t2),
     d = c(1, 0.75)
 )
 gain
 
+# The gain on every possible (t1, t2) pair for K = 2:
+#
+#   t1 \ t2 |    0      1      2
+#   --------+---------------------
+#      0    | 0.000  0.600  0.450
+#      1    | 0.400  1.000  0.850
+#      2    | 0.300  0.900  0.750
+
 \donttest{
+# Mixed r and t: OS value plus a bonus only if PFS was declared at
+# the interim
+trial_success_gsd(r2 + 0.5 * (r1 && t1 == 1), K = 2)
+
+# Hurdle gain with a time-discounted base value: both claims required,
+# and the package is worth less if the confirmatory claim is late
+trial_success_gsd((r1 && r2) * d(t2), d = c(1, 0.75))
+
 # Co-primary endpoints rejected at the same analysis
 trial_success_gsd((t1 == 1 && t2 == 1) + 0.5 * (t1 == 2 && t2 == 2))
 
@@ -104,5 +195,7 @@ trial_success_gsd(r1 + r2, K = 2)
 }
 }
 \seealso{
-\code{\link[=trial_success]{trial_success()}} for the fixed-sample version.
+\code{\link[=trial_success]{trial_success()}} for the fixed-sample version,
+\code{\link[=graph_optimise_gsd]{graph_optimise_gsd()}} and \code{\link[=calc_power_pvals_gsd]{calc_power_pvals_gsd()}} for the consumers of
+the resulting object.
 }
