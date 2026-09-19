@@ -113,7 +113,12 @@ test_that("supplement PFS and OS gain matches R", {
 # --- discount tables --------------------------------------------------------
 
 test_that("d(0) is 0 and table values round-trip exactly", {
-    ts <- trial_success_gsd(d(t1), d = c(1 / 3, 2 / 3), verbose = "silent")
+    # an increasing table on purpose, to check the round trip of the values;
+    # `.gsd_gain_tables()` warns about the ordering, which is not the point
+    # of this test
+    ts <- suppressWarnings(
+        trial_success_gsd(d(t1), d = c(1 / 3, 2 / 3), verbose = "silent")
+    )
 
     never <- matrix(0L, nrow = 3L, ncol = 1L)
     expect_identical(ts$func(never), 0)
@@ -126,11 +131,15 @@ test_that("d(0) is 0 and table values round-trip exactly", {
 })
 
 test_that("two tables of the same length are both usable", {
-    ts <- trial_success_gsd(
-        d(t1) + e(t2),
-        d = c(1, 0.5),
-        e = c(2, 1),
-        verbose = "silent"
+    # `e` is outside [0, 1] on purpose: a value table is allowed, it only
+    # warns
+    ts <- suppressWarnings(
+        trial_success_gsd(
+            d(t1) + e(t2),
+            d = c(1, 0.5),
+            e = c(2, 1),
+            verbose = "silent"
+        )
     )
     expect_identical(ts$K, 2L)
     expect_named(ts$tables, c("d", "e"))
@@ -527,4 +536,104 @@ test_that("verbose handling matches trial_success()", {
     expect_snapshot(error = TRUE, {
         trial_success_gsd(r1 + r2, verbose = 2)
     })
+})
+
+# --- discount table warnings (design record, section 6 P3 [Rev 2026-09-18]) --
+
+test_that("an increasing discount table warns naming the analyses", {
+    expect_warning(
+        trial_success_gsd(d(t1), d = c(0.5, 1), verbose = "silent"),
+        "increases from analysis 1 (0.5) to analysis 2 (1)",
+        fixed = TRUE
+    )
+})
+
+test_that("a discount table outside [0, 1] warns naming both values", {
+    w <- tryCatch(
+        trial_success_gsd(d(t1), d = c(1.2, -0.1), verbose = "silent"),
+        warning = function(cnd) conditionMessage(cnd)
+    )
+    expect_true(grepl("outside [0, 1]", w, fixed = TRUE))
+    expect_true(grepl("1.2", w, fixed = TRUE))
+    expect_true(grepl("-0.1", w, fixed = TRUE))
+})
+
+test_that("a leading zero gets the shifted-by-one hint", {
+    w <- tryCatch(
+        trial_success_gsd(d(t1), d = c(0, 1, 0.75), verbose = "silent"),
+        warning = function(cnd) conditionMessage(cnd)
+    )
+    expect_true(grepl("increases from analysis 1 (0) to analysis 2 (1)", w,
+        fixed = TRUE
+    ))
+    expect_true(grepl("shifts every value by one analysis", w, fixed = TRUE))
+})
+
+test_that("a well-behaved discount table does not warn", {
+    expect_no_warning(
+        trial_success_gsd(d(t1), d = c(1, 0.75), verbose = "silent")
+    )
+    expect_no_warning(
+        trial_success_gsd(d(t1), d = c(1, 1), verbose = "silent")
+    )
+})
+
+test_that("both checks tolerate rounding", {
+    # a table computed rather than typed must not be flagged
+    expect_no_warning(
+        trial_success_gsd(d(t1), d = c(1, 1 + 1e-12), verbose = "silent")
+    )
+    expect_no_warning(
+        trial_success_gsd(d(t1), d = c(0.5, -1e-12), verbose = "silent")
+    )
+
+    # `c(-1e-12, 0.5)` is inside the range to tolerance, but it does increase,
+    # so it warns about the ordering only
+    w <- tryCatch(
+        trial_success_gsd(d(t1), d = c(-1e-12, 0.5), verbose = "silent"),
+        warning = function(cnd) conditionMessage(cnd)
+    )
+    expect_false(grepl("outside [0, 1]", w, fixed = TRUE))
+    expect_true(grepl("increases from analysis 1", w, fixed = TRUE))
+
+    expect_warning(
+        trial_success_gsd(d(t1), d = c(1, 1 + 1e-6), verbose = "silent"),
+        "outside [0, 1]",
+        fixed = TRUE
+    )
+})
+
+test_that("one warning carries both messages", {
+    w <- tryCatch(
+        trial_success_gsd(d(t1), d = c(-0.5, 1.5), verbose = "silent"),
+        warning = function(cnd) conditionMessage(cnd)
+    )
+    expect_true(grepl("outside [0, 1]", w, fixed = TRUE))
+    expect_true(grepl("increases from analysis 1", w, fixed = TRUE))
+})
+
+test_that("only the offending table is named", {
+    w <- tryCatch(
+        trial_success_gsd(
+            d(t1) + e(t2),
+            d = c(1, 0.75),
+            e = c(0.5, 1),
+            verbose = "silent"
+        ),
+        warning = function(cnd) conditionMessage(cnd)
+    )
+    expect_true(grepl("`e`", w, fixed = TRUE))
+    expect_false(grepl("`d`", w, fixed = TRUE))
+})
+
+test_that("the compiled function still works after a warning", {
+    ts <- suppressWarnings(
+        trial_success_gsd(d(t1), d = c(0.5, 1), verbose = "silent")
+    )
+    tm <- gsd_time_grid()
+    dd <- c(0, 0.5, 1)
+    expect_identical(
+        ts$func(tm),
+        mean_double(lapply(seq_len(nrow(tm)), \(i) dd[[tm[i, 1L] + 1L]]))
+    )
 })
