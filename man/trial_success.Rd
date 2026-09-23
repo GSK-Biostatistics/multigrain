@@ -9,54 +9,123 @@ trial_success(objective, verbose = multigrain_verbosity())
 \arguments{
 \item{objective}{An expression or string encoding the trial-success utility
 \eqn{\psi}. The symbols \verb{r1, r2, ...} refer to rejection indicators for
-the corresponding hypotheses. To inject values from your R session, use
-rlang's injection operator - \code{\link[rlang:injection-operator]{!!}} - (see
-Examples). Arithmetic and logical operators are allowed.}
+the corresponding hypotheses. The number of hypotheses \eqn{m} is inferred
+as the largest index found (e.g., \code{r1 + r3} implies \eqn{m = 3} and warns
+about the gap at \code{r2}). To inject values from your R session, use rlang's
+injection operator \code{\link[rlang:injection-operator]{!!}} (see Examples).}
 
-\item{verbose}{An optional string controlling verbosity ("detail" >
-"info" > "silent"). Verbosity can also be set at package level with the
+\item{verbose}{An optional string controlling verbosity (\verb{”detail”} >
+\verb{”info”} > \verb{”silent”}). Verbosity can also be set at package level with the
 \code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
 \itemize{
-\item \code{"info"} (default): will inform about the successful compilation of the
+\item \verb{”info”} (default): informs about successful compilation of the
 trial success function.
-\item \code{"detail"}: no additional information available, will have the same
-effect as \code{"info"}.
-\item \code{"silent"}: silent, no information about the trial success function
-compilation. Errors and warnings are still thrown.
+\item \verb{”detail”}: same as \verb{”info”} (no additional detail available).
+\item \verb{”silent”}: no compilation messages. Errors and warnings are still
+thrown.
 }}
 }
 \value{
 A \code{multigrain_trial_success} object made up of:
 \itemize{
-\item \code{func}: compiled function that evaluates \eqn{\psi} row-wise on a matrix
-of rejection indicators and returns the mean utility (i.e., expected
-trial success under the simulated scenario).
-\item \code{m}: number of hypotheses implied by \verb{r1, ..., rm}.
+\item \code{func}: compiled function that evaluates \eqn{\psi} row-wise on a
+logical matrix of rejection indicators (\eqn{N \times m}) and returns
+the mean utility (a single scalar).
+\item \code{m}: number of hypotheses implied by the \verb{r1, ..., rm} symbols.
 \item \code{objective}: the original utility expression (as a string).
+\item \code{cpp_code}: the generated C++ source that was compiled.
 }
 }
 \description{
-Create a user-defined \strong{trial-success utility} \eqn{\psi} that assigns
-value to each rejection pattern from a graphical multiple testing procedure.
-The function compiles \eqn{\psi} to fast C++ for simulation/optimisation.
+Create a user-defined \strong{trial-success utility} (gain function) \eqn{\psi}
+that assigns a numerical value to each rejection pattern from a graphical
+multiple testing procedure. The function compiles \eqn{\psi} to C++ for
+fast evaluation during simulation and optimisation.
 }
 \details{
 In code, \eqn{\psi} is written using symbols \verb{r1, r2, ..., rm}, where each
 \code{ri} is the binary indicator that hypothesis \eqn{H_i} is rejected by the
 chosen graph. You can combine these indicators with arithmetic (\verb{+ - * /})
 and logical operators (\code{&&}, \code{||}, or the words \code{and}, \code{or}) to reflect
-your design priorities (e.g., “any success”, “all successes”, weighted
-composites).
+your design priorities (e.g., “any claim”, “all claims”, weighted
+composites, gated secondaries).
+\subsection{How it works}{
 
-The utility \eqn{\psi} is evaluated on each simulated rejection
-pattern and averaged, yielding the \strong{expected trial success} for a given
-graph and data-generating scenario. This lets you optimise graphs against
-the utility that captures your clinical/regulatory goals, rather than a
-single power summary.
+The expression is compiled to a C++ function that loops over the rows of an
+\eqn{N \times m} \code{LogicalMatrix} (one row per simulated trial, one column
+per hypothesis). For each row, \code{r1} is \code{1} if the hypothesis was rejected
+and \code{0} otherwise. The compiled function evaluates \eqn{\psi} on every row,
+sums the results, and divides by \eqn{N}: \verb{$func()} returns one scalar,
+never a vector.
 }
+
+\subsection{Injection with \verb{!!}}{
+
+Use rlang's \code{\link[rlang:injection-operator]{!!}} to splice a value from your
+environment into the expression at build time. The injected value becomes a
+compile-time literal in the C++ code:
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{w <- 0.6
+trial_success(!!w * r1 + (1 - !!w) * r2)
+}\if{html}{\out{</div>}}
+
+Without \verb{!!}, a bare symbol like \code{w} is treated as an unknown rejection
+indicator and produces an informative error.
+}
+}
+\note{
+\strong{Known limitations:}
+\itemize{
+\item Unary minus (e.g., \code{trial_success(-r1 + r2)}) errors with
+\verb{subscript out of bounds}. Use \code{trial_success(0 - r1 + r2)} or
+\code{trial_success(r2 - r1)} as a workaround.
+\item An index gap (e.g., \code{r1 + r3} with no \code{r2}) produces a \strong{warning} and
+sets \eqn{m = 3}, not an error. The compiled function expects a matrix
+with 3 columns; column 2 is present but never referenced.
+}
+}
+\section{Operators and precedence}{
+
+\strong{Expression input} accepts: \code{+}, \code{-}, \code{*}, \code{/}, \code{&&}, \code{||}, and
+parentheses. The words \code{and} and \code{or} (case-insensitive) are accepted in
+string input as aliases for \code{&&} and \code{||}.
+
+\strong{Precedence warning:} the internal parser rewrites \code{&&} and \code{||} to
+placeholder operators before R parses the expression. These placeholders
+bind tighter than \code{+}, \code{-}, \code{*}, and \code{/} — which differs from standard R
+precedence. For example, \code{trial_success(r1 + r2 && r3)} compiles to
+\code{r1 + (r2 && r3)}, not \code{(r1 + r2) && r3}. \strong{Always use parentheses}
+around logical sub-expressions to make the grouping explicit.
+}
+
+\section{String input}{
+
+When \code{objective} is a character string, it is passed to the C++ code
+generator \strong{without} the operator whitelist check that expression input
+receives. This means unsupported operators or functions (e.g., \code{^}, \code{min},
+\code{abs}) may compile but produce unexpected behaviour, or fail with a raw
+g++ diagnostic rather than an R-level error message.
+Prefer expression input unless you need to build the objective
+programmatically.
+}
+
+\section{Interpreting the gain}{
+
+The value returned by \verb{$func()} is the \strong{mean of \eqn{\psi}} across
+simulated trials. It is \strong{not} a probability and is not bounded by
+\eqn{[0, 1]}. For example, \code{trial_success(r1 + r2 + r3 + r4)} with
+\eqn{m = 4} hypotheses each at 60\\% power returns approximately 2.4, not
+0.6. This is \eqn{m} times average power.
+
+Only \strong{relative} values of the gain matter for optimisation: the graph that
+maximises \eqn{\psi} also maximises \eqn{100\psi} and
+\eqn{\psi + 5}. Normalise the scale when comparing or reporting results
+across different gain functions.
+}
+
 \examples{
 
-# Expected number of rejections (equals m × average power)
+# Expected number of rejections (equals m * average power)
 exp_rejs <- trial_success(r1 + r2 + r3 + r4)
 
 \donttest{
@@ -66,25 +135,40 @@ disj_power <- trial_success(r1 || r2 || r3 || r4)
 # Conjunctive success: all four must be rejected
 conj_power <- trial_success(r1 && r2 && r3 && r4)
 
+# FIBRONEER-style hurdle: dual-endpoint success for at least one dose.
+# H1,H2 = high dose (primary, secondary); H3,H4 = low dose.
+hurdle <- trial_success((r1 && r2) || (r3 && r4))
+
+# Gated secondary: H2 only earns value if H1 is also rejected
+gated <- trial_success(r1 * (1 + 0.5 * r2))
+
+# Hurdle plus weighted incremental claims
+composite <- trial_success((r1 && r2) * (1 + 0.3 * r3 + 0.2 * r4))
+
 # Composite utility: require H1 AND H2 rejection to get H3 and H4 value
-composite <- trial_success((r1 && r2) * (r3 + r4))
+gate_then_sum <- trial_success((r1 && r2) * (r3 + r4))
 
 # Weighted priorities (e.g., H1 gets weight 2 times H2 or H3)
-weighted <- trial_success(2*r1 + r2 + r3)
+weighted <- trial_success(2 * r1 + r2 + r3)
 
 # Inject values from your environment with !!
 w <- 2
 trial_success(!!w * r1 + r2 + r3)
 
 # Programmatic string input
-expr_str <- sprintf("\%s * r1 + r2", w)
+expr_str <- sprintf(“\%s * r1 + r2”, w)
 trial_success(!!expr_str)
 
 }
 }
+
 \references{
 Spiers, A. D. V., Grayling, M. J., Wheeler, G. M., and Mander, A. P.
 (2026). Gain-function optimisation of graphical multiple testing procedures
 for confirmatory clinical trials. \emph{arXiv:2609.19994v1}.
 \url{https://arxiv.org/abs/2609.19994}
+  
+\seealso{
+\code{\link[=trial_success_gsd]{trial_success_gsd()}} for the group sequential design version,
+which adds decision-time variables and discount tables.
 }
