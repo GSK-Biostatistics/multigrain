@@ -1,5 +1,12 @@
 # multigrain (development version)
 
+## Bug fixes
+
+* `graph_optimise()` and `calc_power_pvals()` now refuse a gain function created
+  with `trial_success_gsd()`, which needs decision times; previously the object
+  was accepted and every rejection was silently scored as an analysis-1
+  rejection. Use `graph_optimise_gsd()` and `calc_power_pvals_gsd()`.
+
 # multigrain 0.3.0
 
 ## New functionality
