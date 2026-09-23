@@ -111,6 +111,22 @@ graph_optimise <- function(
     check_double_matrix(pvals)
     check_graph_constraint(graph_constraint)
     check_trial_success(trial_success)
+    # A `multigrain_trial_success_gsd` object inherits from
+    # `multigrain_trial_success` and so passes the check above, but its
+    # compiled function expects the group sequential kernel's decision-time
+    # matrix. Handing it the logical rejection matrix scores every rejection
+    # as an analysis-1 rejection, silently (design record, section 4.10).
+    if (is_trial_success_gsd(trial_success)) {
+        cli::cli_abort(c(
+            "{.arg trial_success} was created with {.fn trial_success_gsd} \\
+            and needs the analysis at which each hypothesis was rejected.",
+            x = "{.fn graph_optimise} supplies only fixed-sample rejection \\
+            indicators, so every rejection would be scored as an analysis-1 \\
+            rejection.",
+            i = "Use {.fn graph_optimise_gsd} with p-values transformed by \\
+            {.fn transform_pvalues_gsd}."
+        ))
+    }
     rlang::check_dots_empty()
     rlang::check_number_decimal(alpha, min = 0, max = 1)
     rlang::check_number_whole(num_threads, min = 1)
