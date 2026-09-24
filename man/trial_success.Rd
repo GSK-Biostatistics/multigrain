@@ -161,6 +161,13 @@ trial_success(!!expr_str)
 
 }
 }
+
+\references{
+Spiers, A. D. V., Grayling, M. J., Wheeler, G. M., and Mander, A. P.
+(2026). Gain-function optimisation of graphical multiple testing procedures
+for confirmatory clinical trials. \emph{arXiv:2609.19994v1}.
+\url{https://arxiv.org/abs/2609.19994}
+  
 \seealso{
 \code{\link[=trial_success_gsd]{trial_success_gsd()}} for the group sequential design version,
 which adds decision-time variables and discount tables.

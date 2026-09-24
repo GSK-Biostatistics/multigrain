@@ -30,6 +30,12 @@ weights and transition weights to find the graph that maximises expected
 trial success. The result is a valid graphical test that strongly
 controls FWER.
 
+The fixed-sample gain-function optimisation workflow implemented by
+`trial_success()` and `graph_optimise()` is described in [Spiers et
+al. (2026), *Gain-function optimisation of graphical multiple testing
+procedures for confirmatory clinical trials*
+(arXiv:2609.19994v1)](https://arxiv.org/abs/2609.19994).
+
 ### Key features
 
 | Step | Function | Purpose |
