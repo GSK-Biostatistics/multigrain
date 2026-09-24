@@ -73,6 +73,11 @@ The **`multigrain`** function `graph_optimise()` is the tool that identifies
 these optimal parameters, enabling users to find the graph that gives that
 highest value for their chosen trial success measure.
 
+The fixed-sample gain-function optimisation framework implemented by
+`trial_success()` and `graph_optimise()` is described in [Spiers et al. (2026),
+*Gain-function optimisation of graphical multiple testing procedures for
+confirmatory clinical trials* (arXiv:2609.19994v1)](https://arxiv.org/abs/2609.19994).
+
 
 ## Motivating Example
 
@@ -223,8 +228,8 @@ head(pvals) # first few rows
 
 The **trial success measure** is the target quantity that `graph_optimise()` maximises.
 It encodes the success criteria for a trial by mapping the outcomes of the graphical
-test to a numerical score. (A dedicated vignette on trial success measures
-is planned for a future release.)
+test to a numerical score. See the [Trial success measures](trial_success.html)
+article for a detailed guide, including group sequential designs.
 
 After analysing the collected data from our trial, we obtain four raw p-values:
 $p_1, p_2, p_3, p_4$, each corresponding to one of our hypotheses
