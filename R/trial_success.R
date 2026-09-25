@@ -191,23 +191,18 @@ validate_expr_symbols <- function(expr) {
     invisible(NULL)
 }
 
-# Function to create new trial success objective function
-new_trial_success <- function(
-    expr_string,
-    verbose = c("info", "detail", "silent")
-) {
-    verbose <- rlang::arg_match(verbose)
-    local_env <- new.env()
 
-    # Check `objective` and find maximum index (check number of hypotheses)
-    m <- count_unique_indices(expr_string)
-
-    # Convert R indexing in the string to C++ indexing handling up to r99
+#' Generate the C++ source for a trial success objective
+#'
+#' @param expr_string A validated trial success expression string.
+#'
+#' @returns The complete C++ source passed to `Rcpp::sourceCpp()`.
+#' @noRd
+.trial_success_cpp_code <- function(expr_string) {
     cpp_body <- replace_r_indices(expr_string)
 
-    # Create the C++ function string
     # nolint start: quotes_linter
-    cpp_code <- sprintf(
+    sprintf(
         '
 #include <Rcpp.h>
 using namespace Rcpp;
@@ -229,6 +224,21 @@ double %s(LogicalMatrix x) {
         cpp_body
     )
     # nolint end
+}
+
+
+# Function to create new trial success objective function
+new_trial_success <- function(
+    expr_string,
+    verbose = c("info", "detail", "silent")
+) {
+    verbose <- rlang::arg_match(verbose)
+    local_env <- new.env()
+
+    # Check `objective` and find maximum index (check number of hypotheses)
+    m <- count_unique_indices(expr_string)
+
+    cpp_code <- .trial_success_cpp_code(expr_string)
 
     sourceCpp(code = cpp_code, env = local_env)
 
@@ -247,6 +257,291 @@ double %s(LogicalMatrix x) {
         ),
         class = "multigrain_trial_success"
     )
+}
+
+
+#' Can this trial success object's compiled function still be called?
+#'
+#' `trial_success()` compiles its measure with Rcpp, and the resulting function
+#' does not survive serialisation. A reloaded object carries a dead pointer
+#' that errors when first evaluated.
+#'
+#' @param trial_success A `multigrain_trial_success` object.
+#'
+#' @returns `TRUE` if the compiled function evaluates, `FALSE` otherwise.
+#' @noRd
+.trial_success_is_live <- function(trial_success) {
+    if (!is.function(trial_success$func)) {
+        return(FALSE)
+    }
+    probe <- matrix(TRUE, nrow = 1L, ncol = trial_success$m)
+    tryCatch(
+        {
+            value <- trial_success$func(probe)
+            is.numeric(value) && length(value) == 1L
+        },
+        error = function(e) FALSE
+    )
+}
+
+
+.trial_success_exhaustive_limit <- 12L
+
+
+#' Build deterministic patterns for trial success verification
+#'
+#' The complete Boolean domain is small for the graphs this package is normally
+#' used with. For larger dimensions, use boundary, singleton, complement and
+#' alternating patterns so verification remains bounded.
+#'
+#' @param m The number of hypotheses.
+#' @param exhaustive_limit The largest dimension to enumerate exhaustively.
+#'
+#' @returns A list containing the logical matrix `patterns` and a logical
+#'   `exhaustive`.
+#' @noRd
+.trial_success_verification_patterns <- function(
+    m,
+    exhaustive_limit = .trial_success_exhaustive_limit
+) {
+    if (m <= exhaustive_limit) {
+        return(list(
+            patterns = as.matrix(expand.grid(rep(list(c(FALSE, TRUE)), m))),
+            exhaustive = TRUE
+        ))
+    }
+
+    probe_indices <- unique(as.integer(round(seq(
+        from = 1,
+        to = m,
+        length.out = min(m, 32L)
+    ))))
+    singletons <- matrix(
+        FALSE,
+        nrow = length(probe_indices),
+        ncol = m
+    )
+    singletons[cbind(seq_along(probe_indices), probe_indices)] <- TRUE
+    alternating <- seq_len(m) %% 2L == 0L
+
+    list(
+        patterns = unique(rbind(
+            rep(FALSE, m),
+            rep(TRUE, m),
+            singletons,
+            !singletons,
+            alternating,
+            !alternating
+        )),
+        exhaustive = FALSE
+    )
+}
+
+
+#' Rebuild or verify a compiled trial success function
+#'
+#' The stored objective is the durable representation of a trial success
+#' measure. For small dimensions, a live function is compared with that
+#' expression over its complete Boolean input domain. Larger dimensions also
+#' require the stored generated source to match and use bounded deterministic
+#' behavior checks. A dead function is replaced by a rebuilt object.
+#'
+#' @param trial_success A `multigrain_trial_success` object.
+#' @inheritParams rlang::args_error_context
+#'
+#' @returns A live, verified `multigrain_trial_success` object.
+#' @noRd
+.restore_trial_success <- function(
+    trial_success,
+    call = rlang::caller_env()
+) {
+    check_trial_success(trial_success, call = call)
+
+    objective <- trial_success$objective
+    if (
+        !is.character(objective) ||
+            length(objective) != 1L ||
+            is.na(objective)
+    ) {
+        cli::cli_abort(
+            "The stored trial success objective is missing or invalid.",
+            call = call
+        )
+    }
+
+    objective_info <- tryCatch(
+        {
+            objective_expr <- objective |>
+                .normalise_trial_success_operators() |>
+                str2lang() |>
+                .restore_r_logical_operators()
+            validate_expr_symbols(objective_expr)
+            list(
+                expr = objective_expr,
+                m = suppressWarnings(count_unique_indices(objective)),
+                cpp_code = .trial_success_cpp_code(objective)
+            )
+        },
+        error = function(cnd) {
+            cli::cli_abort(
+                c(
+                    "The stored trial success objective cannot be rebuilt.",
+                    x = conditionMessage(cnd)
+                ),
+                call = call,
+                parent = cnd
+            )
+        }
+    )
+    objective_expr <- objective_info$expr
+    objective_m <- objective_info$m
+
+    if (!identical(trial_success$m, objective_m)) {
+        cli::cli_abort(c(
+            "The stored trial success dimension does not match its objective.",
+            i = "The objective {.code {objective}} requires {objective_m} \\
+            hypotheses, but the object stores {trial_success$m}."
+        ), call = call)
+    }
+
+    is_live <- .trial_success_is_live(trial_success)
+    if (!is_live) {
+        return(tryCatch(
+            suppressWarnings(new_trial_success(objective, verbose = "silent")),
+            error = function(cnd) {
+                cli::cli_abort(
+                    c(
+                        "The stored trial success objective cannot be rebuilt.",
+                        x = conditionMessage(cnd)
+                    ),
+                    call = call,
+                    parent = cnd
+                )
+            }
+        ))
+    }
+
+    verification <- .trial_success_verification_patterns(objective_m)
+    if (
+        !verification$exhaustive &&
+            (
+                !is.character(trial_success$cpp_code) ||
+                    length(trial_success$cpp_code) != 1L ||
+                    is.na(trial_success$cpp_code) ||
+                    !identical(
+                        trial_success$cpp_code,
+                        objective_info$cpp_code
+                    )
+            )
+    ) {
+        cli::cli_abort(c(
+            "The live trial success function could not be verified against \\
+            its stored objective.",
+            i = "For objectives with more than \\
+            {(.trial_success_exhaustive_limit)} hypotheses, the stored \\
+            compiled source must match the objective."
+        ), call = call)
+    }
+
+    patterns <- verification$patterns
+    current_values <- tryCatch(
+        vapply(
+            seq_len(nrow(patterns)),
+            function(i) {
+                trial_success$func(patterns[i, , drop = FALSE])
+            },
+            numeric(1)
+        ),
+        error = function(cnd) {
+            cli::cli_abort(
+                "The live trial success function could not be verified \\
+                against its stored objective.",
+                call = call,
+                parent = cnd
+            )
+        }
+    )
+    objective_values <- vapply(
+        seq_len(nrow(patterns)),
+        function(i) {
+            values <- as.list(patterns[i, ])
+            names(values) <- paste0("r", seq_len(objective_m))
+            value <- eval(objective_expr, envir = values)
+            if (
+                length(value) != 1L ||
+                    !(is.numeric(value) || is.logical(value))
+            ) {
+                cli::cli_abort(
+                    "The stored trial success objective did not evaluate to \\
+                    one numeric value.",
+                    call = call
+                )
+            }
+            as.numeric(value)
+        },
+        numeric(1)
+    )
+
+    if (!identical(current_values, objective_values)) {
+        cli::cli_abort(c(
+            "The compiled trial success function does not match its stored \\
+            objective.",
+            i = "Recreate the trial success object from {.code {objective}}."
+        ), call = call)
+    }
+
+    trial_success
+}
+
+
+#' Normalise trial success logical operators for parsing
+#'
+#' Replaces the documented word and R spellings of AND/OR with infix
+#' placeholders. The placeholders have the same parsing behavior used when
+#' compiling the objective.
+#'
+#' @param expr_string A trial success expression string.
+#'
+#' @returns The expression string with logical operators replaced.
+#' @noRd
+.normalise_trial_success_operators <- function(expr_string) {
+    expr_string <- gsub("\\b[Aa][Nn][Dd]\\b", "%AND%", expr_string)
+    expr_string <- gsub("\\b[Oo][Rr]\\b", "%OR%", expr_string)
+    gsub(
+        "||",
+        "%OR%",
+        gsub("&&", "%AND%", expr_string, fixed = TRUE),
+        fixed = TRUE
+    )
+}
+
+
+#' Restore R logical operators without reparsing
+#'
+#' Replaces the internal infix placeholders in a parsed expression tree. Doing
+#' this after parsing preserves the precedence used by the compiler path.
+#'
+#' @param expr A parsed trial success expression.
+#'
+#' @returns An R expression using `&&` and `||`.
+#' @noRd
+.restore_r_logical_operators <- function(expr) {
+    if (!is.call(expr)) {
+        return(expr)
+    }
+
+    parts <- as.list(expr)
+    fn <- parts[[1]]
+    if (identical(fn, quote(`%AND%`))) {
+        fn <- quote(`&&`)
+    } else if (identical(fn, quote(`%OR%`))) {
+        fn <- quote(`||`)
+    }
+
+    as.call(c(
+        list(fn),
+        lapply(parts[-1], .restore_r_logical_operators)
+    ))
 }
 
 
@@ -286,15 +581,7 @@ double %s(LogicalMatrix x) {
 #' @noRd
 replace_r_indices <- function(expr_string) {
     # Replace logical ops (AND, OR in any case, &&, ||) with placeholders
-    fixed_expr <- expr_string
-    fixed_expr <- gsub("\\b[Aa][Nn][Dd]\\b", "%AND%", fixed_expr)
-    fixed_expr <- gsub("\\b[Oo][Rr]\\b", "%OR%", fixed_expr)
-    fixed_expr <- gsub(
-        "||",
-        "%OR%",
-        gsub("&&", "%AND%", fixed_expr, fixed = TRUE),
-        fixed = TRUE
-    )
+    fixed_expr <- .normalise_trial_success_operators(expr_string)
 
     # Parse modified string
     ast <- str2lang(fixed_expr)

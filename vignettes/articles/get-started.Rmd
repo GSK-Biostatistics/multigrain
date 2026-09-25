@@ -600,6 +600,136 @@ and the assumed test statistic distribution,
 defined in the section on [trial success measures](#trial-success-measure).
 
 
+## Simplifying the graph
+
+An optimised graph often comes back with several small transition weights. Each
+contributes almost nothing to the trial success measure, but together they make
+the graph harder to present: a clinical reviewer has to reason about every
+arrow. `graph_simplify()` takes an optimised graph and looks for one with fewer
+edges, given a budget for how much trial success you are willing to give up.
+
+The budget is `gain_tolerance`, a fraction of the trial success measure of the
+graph you pass in. The returned graph is guaranteed to reach at least
+`1 - gain_tolerance` times that value on the same simulated trials, so the
+guarantee is exact rather than approximate.
+
+```{r simplify_call, echo=TRUE, eval=FALSE}
+simpler_graph <- graph_simplify(
+    graph_custom_trial_success,
+    pvals = pvals,
+    gain_tolerance = 5e-3 # give up at most 0.5% of trial success
+)
+```
+
+The graphs shown earlier on this page are read from a cache, and a compiled
+trial success measure does not survive being saved to disk and read back. So
+that this page has a live object to work with, we re-optimise quickly on a
+subsample of the p-value matrix and simplify that instead. In your own session
+you would pass the graph you just optimised, and the whole p-value matrix.
+
+```{r simplify_run, echo=TRUE, results='hide', message=FALSE}
+pvals_subsample <- pvals[seq_len(2e4), ]
+
+graph_to_simplify <- graph_optimise(
+    pvals = pvals_subsample,
+    graph_constraint = my_constraint,
+    alpha = 0.025,
+    trial_success = custom_trial_success,
+    global_search = FALSE,
+    verbose = "silent"
+)
+
+simpler_graph <- graph_simplify(
+    graph_to_simplify,
+    pvals = pvals_subsample,
+    gain_tolerance = 5e-3,
+    global_search = FALSE,
+    verbose = "silent"
+)
+```
+
+### How the optimiser reaches a sparser graph
+
+The mutation the genetic algorithm normally uses replaces a parameter with a
+draw from a Cauchy distribution centred on its current value. That moves weight
+around well, but it is a poor way to *remove* an edge: an edge counts as removed
+only once its weight falls below `1e-5`, and a Cauchy draw lands there about
+once in 100,000 tries. Crossover cannot help either, because a blend of two
+parents is zero only where both parents are already zero, and the local search
+is a continuous method that never aims for the threshold. Left alone, the search
+would *prefer* sparser graphs but would almost never produce one to compare.
+
+So during `graph_simplify()` each mutation first tosses a coin, and when it
+comes up performs a zeroing move instead: either it sets one transition
+parameter to exactly zero, or it rescales a row so that the row's *derived*
+entry — the one computed as one minus the others, which no parameter can reach
+directly — falls below the threshold. Without the second kind, one edge per row
+would be beyond the reach of the global search and could only be removed by the
+pruning step at the end. Setting `global_search = FALSE`, as we did above to
+keep this page quick to build, skips the genetic algorithm entirely: that is
+cheaper, but it leaves edge removal to pruning alone.
+
+### What it cost
+
+The `sparsity` element records both graphs on the same trials, so the price of
+the simplification is exact rather than estimated:
+
+```{r simplify_report, echo=TRUE}
+simpler_graph$sparsity[c(
+    "n_edges_reference",
+    "n_edges",
+    "gain_reference",
+    "gain",
+    "gain_loss_fraction",
+    "budget"
+)]
+```
+
+`print()` shows the same thing in two lines:
+
+```{r simplify_print, echo=TRUE}
+print(simpler_graph)
+```
+
+Edge costs are lumpy, so the fraction of the budget actually spent varies a
+great deal between problems: the cap is the guarantee, and the spend is whatever
+the graph happens to allow. Removing the cheapest edge might use a tenth of the
+budget while the next one costs more than everything that remains.
+
+The reference graph travels with the result, so the two can be plotted side by
+side:
+
+```{r simplify_plot, fig.width=8, fig.height=4.5, out.width='100%'}
+p_before <- plot(graph_to_simplify) +
+    ggtitle("Before simplification") +
+    theme(
+        plot.title = element_text(
+            hjust = 0.5,
+            size = 14,
+            margin = margin(0, 0, 30, 0)
+        )
+    )
+
+p_after <- plot(simpler_graph) +
+    ggtitle("After simplification") +
+    theme(
+        plot.title = element_text(
+            hjust = 0.5,
+            size = 14,
+            margin = margin(0, 0, 30, 0)
+        )
+    )
+
+gridExtra::grid.arrange(p_before, p_after, ncol = 2)
+```
+
+Family-wise error control is untouched by any of this. Zeroing a transition
+weight and renormalising its row leaves the weights summing to at most one and
+the transition matrix non-negative with row sums at most one, which is all a
+Bonferroni-based graphical procedure needs for strong control. Only the
+objective changes, never the class of procedures being searched.
+
+
 ## Further reading
 
 For more detail on constraining graph structure, see the [Graph Constraints](graph_constraint.html) vignette.
