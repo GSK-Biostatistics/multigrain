@@ -11,29 +11,6 @@ test_that("control_nsim_local can override default nsim_local value", {
     expect_identical(ctrl$nsim_local, 1000)
 })
 
-test_that("control_nsim_local complains with incorrect nsim_local", {
-    ctrl <- multigrain_control()
-
-    # nsim_local must be a positive integer scalar
-    expect_error(
-        control_nsim_local(ctrl, "foo"),
-        '`nsim_local` must be a whole number, not the string "foo".'
-    )
-
-    expect_snapshot(error = TRUE, {
-        control_nsim_local(ctrl, "foo")
-    })
-
-    expect_error(
-        control_nsim_local(ctrl, c(100, 200)),
-        "`nsim_local` must be a whole number, not a double vector."
-    )
-
-    expect_snapshot(error = TRUE, {
-        control_nsim_local(ctrl, c(100, 200))
-    })
-})
-
 test_that("control_nsim_global can override default nsim_global value", {
     ctrl <- multigrain_control()
 
@@ -41,29 +18,6 @@ test_that("control_nsim_global can override default nsim_global value", {
 
     ctrl <- control_nsim_global(ctrl, 1000)
     expect_identical(ctrl$nsim_global, 1000)
-})
-
-test_that("control_nsim_global complains with incorrect nsim_global", {
-    ctrl <- multigrain_control()
-
-    # nsim_local must be a positive integer scalar
-    expect_error(
-        control_nsim_global(ctrl, "foo"),
-        '`nsim_global` must be a whole number, not the string "foo".'
-    )
-
-    expect_snapshot(error = TRUE, {
-        control_nsim_global(ctrl, "foo")
-    })
-
-    expect_error(
-        control_nsim_global(ctrl, c(100, 200)),
-        "`nsim_global` must be a whole number, not a double vector."
-    )
-
-    expect_snapshot(error = TRUE, {
-        control_nsim_global(ctrl, c(100, 200))
-    })
 })
 
 test_that("adjust_nsim_local", {

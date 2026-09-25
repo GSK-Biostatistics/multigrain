@@ -10,8 +10,8 @@ trial_success(objective, verbose = multigrain_verbosity())
 \item{objective}{An expression or string encoding the trial-success utility
 \eqn{\psi}. The symbols \verb{r1, r2, ...} refer to rejection indicators for
 the corresponding hypotheses. To inject values from your R session, use
-rlang's unquote operator \verb{!!} (see Examples). Arithmetic and logical
-operators are allowed.}
+rlang's injection operator - \code{\link[rlang:injection-operator]{!!}} - (see
+Examples). Arithmetic and logical operators are allowed.}
 
 \item{verbose}{An optional string controlling verbosity ("detail" >
 "info" > "silent"). Verbosity can also be set at package level with the
