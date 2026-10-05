@@ -31,6 +31,7 @@ articles:
   navbar: Details
   contents:
   - articles/graph_constraint
+  - articles/trial_success
 
 reference:
   - title: Inputs
@@ -39,6 +40,7 @@ reference:
     contents:
     - simulate_pvalues
     - trial_success
+    - trial_success_gsd
     - graph_constraint
     - graph_constraint_free
 

@@ -1,0 +1,820 @@
+# Package architecture of the group sequential (GSD) extension of `multigrain`.
+#
+# Source of truth: dev/gsd_design_record.md (status of 2026-09-16). Every node and
+# edge below is named by that record; the section number is cited in a comment on
+# each node, as "S4.1" for a Part II section or "P0".."P5" for a step of the
+# section 6 implementation plan. Nothing is included that the record does not name.
+# Where the record names a thing but not its call site, the edge carries
+# `stated: false`.
+#
+# Conventions
+#   status:  new              created on branch `gsd-build` by this design
+#            reused_unchanged existing fixed-sample code, called as it is (S4.5, S4.10)
+#            external         another package, or a user-supplied function
+#   phase:   the implementation-plan step that creates the node (S6)
+#   built:   true where S6 records the phase as done on `gsd-build` (P0-P2), false
+#            where the phase is specified but not implemented (P3-P5)
+#   edges:   one entry per ordered (from, to) pair; multiple call sites collapse.
+#            kind is `call` unless marked `data` (an object handed on by the user or
+#            the driver) or `dispatch` (S3 methods on the returned object).
+#            Labelled only where the label carries information.
+
+meta:
+  title: "multigrain group sequential extension: package architecture"
+  record: dev/gsd_design_record.md
+  record_status: "P0-P2 implemented on branch gsd-build; P3-P5 specified only"
+  branch: gsd-build
+  date: 2026-09-16
+
+layers:
+  - id: api
+    label: "User-facing API (the `_gsd` family)"
+    note: >
+      S4.7: the family is additive. No existing export, internal helper or kernel is
+      edited, so the fixed-sample surface (simulate_pvalues(), trial_success(),
+      graph_optimise(), calc_power_pvals()) is unchanged and is deliberately not
+      drawn here; S4.10 makes that a gate rather than a claim.
+  - id: internal_r
+    label: "Internal R"
+  - id: cpp
+    label: "C++ kernels"
+  - id: deps
+    label: "External dependencies"
+
+# ---------------------------------------------------------------------------
+nodes:
+
+  # --- user-facing API -----------------------------------------------------
+
+  - id: simulate_pvalues_gsd
+    label: "simulate_pvalues_gsd()"
+    layer: api
+    status: new
+    phase: P1
+    built: true
+    note: >
+      Canonical joint normal model of supplement S2.3 over the distinct information
+      levels, with matured columns copied forward so the covariance is never
+      singular. Returns the raw N x m x K array with `info_frac` attached.
+    # S4.7 (signature and canonical model), P1
+
+  - id: transform_pvalues_gsd
+    label: "transform_pvalues_gsd()"
+    layer: api
+    status: new
+    phase: P0
+    built: true
+    emphasis: true
+    note: >
+      The only place spending functions and gsDesign appear. Converts nominal
+      p-values to repeated (or, per hypothesis, sequential) p-values once, before
+      the search; after this the fixed-sample rejection rule applies verbatim.
+      Exported so that users with their own simulator, and the test suite, can call
+      it directly.
+    # S4.1 (the transform), S4.2 (look_back semantics), S4.7 (signature), P0
+
+  - id: trial_success_gsd
+    label: "trial_success_gsd()"
+    layer: api
+    status: new
+    phase: P3
+    built: false
+    note: >
+      Compiles a gain over `r<i>`, `t<i>`, comparisons and discount tables such as
+      `d(t1)` into C++. Class c("multigrain_trial_success_gsd",
+      "multigrain_trial_success").
+    # S4.6 (language and codegen), S4.7, P3
+
+  - id: graph_optimise_gsd
+    label: "graph_optimise_gsd()"
+    layer: api
+    status: new
+    phase: P4
+    built: false
+    note: >
+      The same signature and flow as graph_optimise(), with `pvals` a
+      multigrain_pvals_gsd. The search itself is unchanged: only the objective
+      closure differs.
+    # S4.5 (search unchanged), S4.7, P4
+
+  - id: calc_power_pvals_gsd
+    label: "calc_power_pvals_gsd()"
+    layer: api
+    status: new
+    phase: P4
+    built: false
+    note: >
+      Returns local_power, local_power_by_analysis (m x K, cumulative by look),
+      exp_rejections, disj_power, conj_power, mean_decision_time (over rejected
+      trials), time_distribution (m x (K+1)) and one entry per custom_power measure.
+    # S4.7, P4
+
+  - id: methods_pvals_gsd
+    label: "print() / summary() (multigrain_pvals_gsd)"
+    layer: api
+    status: new
+    phase: P0
+    built: true
+    note: >
+      Print from the boundary tables B_i and their grids carried on the object.
+      S10 item 9(c): an unnamed list of spending functions prints deparsed code as
+      the summary label.
+    # S4.7 (methods), S4.1 (output object), P0
+
+  - id: methods_trial_success_gsd
+    label: "print() / summary() (multigrain_trial_success_gsd)"
+    layer: api
+    status: new
+    phase: P3
+    built: false
+    open_question: >
+      The record is two-voiced here. S4.6 says the inherited class means "the existing
+      constructor checks, print() and summary() apply", i.e. reused unchanged, while
+      S4.7 lists print() and summary() methods for the class among the new API.
+      Drawn as new; worth resolving before P3.
+    # S4.7 (methods), cf. S4.6 (class inheritance)
+
+  # --- internal R, new -----------------------------------------------------
+
+  - id: gsd_check_spending
+    label: ".gsd_check_spending(spending, alpha)"
+    layer: internal_r
+    status: new
+    phase: P0
+    built: true
+    note: >
+      Asserts phi_i(a, 1) = a within tolerance (1e-6 * alpha relative as
+      implemented); a spending function that does not spend everything by full
+      information would silently waste alpha. S10 item 9(b): a spending function
+      returning NA reports a misleading length message.
+    # S4.1 (spending function interface), P0
+
+  - id: gsd_boundary_table
+    label: ".gsd_boundary_table(t, spending, alpha, grid_size)"
+    layer: internal_r
+    status: new
+    phase: P0
+    built: true
+    note: >
+      Log-spaced grid of G levels from gamma_min = 1e-14 up to alpha; per-look spend
+      increments; one gsBound1() call per grid level yields every look. Then the
+      well-ordering check, condition (2) of Maurer and Bretz: every column of B must
+      be non-decreasing in the level, else the transform aborts naming the
+      hypothesis, because the sequentially rejective procedure is not valid there.
+    # S4.1 steps 2-3, P0
+
+  - id: gsd_invert
+    label: ".gsd_invert(table, grid, p, floor)"
+    layer: internal_r
+    status: new
+    phase: P0
+    built: true
+    note: >
+      Inverts the monotone boundary table by log-log linear interpolation, after
+      dropping duplicated and non-positive entries (the first-look LDOF boundary
+      underflows to a constant below gamma ~ 1e-6). p at or above the top table
+      entry gives p^r = 1 (never rejectable); p below the smallest positive entry is
+      floored at gamma_min = 1e-14, not 0, because a 0 floor would reject rows with
+      p < 1e-10 at the 2.5e-11 allocations the kernel's snaps can produce.
+    # S4.1 step 4, P0
+
+  - id: pvals_gsd_constructor
+    label: "multigrain_pvals_gsd constructor"
+    layer: internal_r
+    status: new
+    phase: P0
+    built: true
+    note: >
+      Holds the transformed array (numeric, dim N x m x K), m, K, alpha, info_frac,
+      look_back, a label per spending function, and the tables B_i with their grids
+      for printing and for reporting the boundaries of a final graph.
+    # S4.1 (output), P0
+
+  - id: create_obj_func_gsd
+    label: "create_obj_func_gsd()"
+    layer: internal_r
+    status: new
+    phase: P4
+    built: false
+    note: >
+      A copy of the fixed-sample decode-and-penalise block (S3): decode theta, return
+      a negative penalty for NA or out-of-range entries, zero hypothesis weights
+      below 1e-4 and transition entries below 1e-5, call the GSD kernel, hand the
+      `time` matrix to the compiled gain. S10 item 11 asks it to assert !anyNA() once
+      on the reshaped matrix, since the kernel treats NA as "never reject" silently.
+    # S4.7 (internals), S4.5, S3 (the block being copied), P4
+
+  - id: graph_optimise_ga_gsd
+    label: ".graph_optimise_ga_gsd()"
+    layer: internal_r
+    status: new
+    phase: P4
+    built: false
+    note: >
+      GA with intermittent Nelder-Mead on a row subsample, then re-evaluation of the
+      winner on the full array with the GSD kernel. Subsamples the first array
+      dimension with drop = FALSE; S8 check 12 notes that a drop = TRUE slip
+      silently turns an N x m x 1 array into a matrix.
+    # S4.7 (internals), S4.5, P4
+
+  - id: graph_optimise_local_gsd
+    label: ".graph_optimise_local_gsd()"
+    layer: internal_r
+    status: new
+    phase: P4
+    built: false
+    note: "COBYLA refinement on a subsample; re-evaluation with the GSD kernel."
+    # S4.7 (internals), S4.5, P4
+
+  - id: control_prepare_dims
+    label: "control_prepare_dims()"
+    layer: internal_r
+    status: new
+    phase: P4
+    built: false
+    note: >
+      Exists because control calibration must read N and m from the pvals object
+      rather than from a double matrix: check_double_matrix() (S3) rejects arrays and
+      S3 objects. The record does not say whether it wraps or replaces the existing
+      control_prepare(), so no edge between the two is drawn.
+    # S4.7 (control calibration), P4
+
+  - id: prune_graph_gsd
+    label: "prune_graph_gsd()"
+    layer: internal_r
+    status: new
+    phase: P4
+    built: false
+    note: >
+      The two greedy loops of prune_graph() with an acceptance test that evaluates
+      calc_power_pvals_gsd(). S4.7 lists it under the API surface but never says it
+      is exported, so it is drawn internal. S10 item 8: per-hypothesis power
+      constraints only, per-look constraints deferred.
+    # S4.7, P4
+
+  - id: try_prune_gsd
+    label: ".try_prune_gsd()"
+    layer: internal_r
+    status: new
+    phase: P4
+    built: false
+    # S4.7 (acceptance test), P4
+
+  - id: eval_custom_power_gsd
+    label: ".eval_custom_power_gsd()"
+    layer: internal_r
+    status: new
+    phase: P4
+    built: false
+    note: >
+      Two paths: a multigrain_trial_success_gsd measure runs its compiled function on
+      the time matrix; a plain R function receives the integer time row and is
+      evaluated per row in R, the slow path retained from today.
+    # S4.7 (custom_power), S4.6 (alternatives), P4
+
+  - id: gsd_gain_parser
+    label: "gain parser copies: validator, index counter, transformer"
+    layer: internal_r
+    status: new
+    phase: P3
+    built: false
+    note: >
+      Copies of the R/trial_success.R validator, index counter and
+      parse_and_transform(), with the changes enumerated in P3: the operator list
+      gains == != < <= > >= and the names of supplied tables; the symbol rule becomes
+      ^[rt]\d+$; new branches for comparisons, for `t<i>` and for table calls; `r<i>`
+      becomes double(t(i, idx) > 0); unary minus handled by length(parts) == 2. The
+      record names these only as copies and gives them no names of their own, so they
+      are one node.
+    # S4.6, P3 (site-by-site changes), S3 (the originals)
+
+  # --- internal R, reused unchanged ---------------------------------------
+
+  - id: split_theta
+    label: "split_theta()"
+    layer: internal_r
+    status: reused_unchanged
+    # S3 (decode chain), S4.7 / P4 reuse list
+
+  - id: recover_full_weights
+    label: "recover_full_weights()"
+    layer: internal_r
+    status: reused_unchanged
+    # S3, P4 reuse list
+
+  - id: recover_full_trans_matrix
+    label: "recover_full_trans_matrix()"
+    layer: internal_r
+    status: reused_unchanged
+    # S3, P4 reuse list
+
+  - id: param_to_solution
+    label: "param_to_solution()"
+    layer: internal_r
+    status: reused_unchanged
+    # P4 reuse list
+
+  - id: repair_graph
+    label: "repair_graph()"
+    layer: internal_r
+    status: reused_unchanged
+    # P4 reuse list
+
+  - id: create_start_params
+    label: "create_start_params()"
+    layer: internal_r
+    status: reused_unchanged
+    # P4 reuse list
+
+  - id: build_start_matrix
+    label: ".build_start_matrix()"
+    layer: internal_r
+    status: reused_unchanged
+    # P4 reuse list
+
+  - id: choose_graph
+    label: "choose_graph()"
+    layer: internal_r
+    status: reused_unchanged
+    note: >
+      Explicitly unchanged in the GSD flow (S4.5, S4.7), though branch
+      plan-for-sparsity rewrites it (S3).
+    # S4.5, S4.7, P4 reuse list
+
+  - id: graph_optimal
+    label: "graph_optimal()"
+    layer: internal_r
+    status: reused_unchanged
+    note: "Constructs the same multigrain_graph_optimal class as the fixed-sample path."
+    # S4.7 (same result class), P4 reuse list
+
+  - id: methods_graph_optimal
+    label: "plot() / print() / summary() / graph_optimal_get_control()"
+    layer: internal_r
+    status: reused_unchanged
+    note: >
+      Work unchanged because the GSD path returns the same class. S4.7 expects
+      summary() to print the by-look power matrix acceptably; S3 records that
+      summary.multigrain_graph_optimal() prints local_power as a vector.
+    # S4.7, S3
+
+  # --- C++ ------------------------------------------------------------------
+
+  - id: graph_shortcut_gsd
+    label: "graph_shortcut_gsd(pvals, alpha, w, G, K)"
+    layer: cpp
+    status: new
+    phase: P2
+    built: true
+    emphasis: true
+    note: >
+      The fixed-sample cascade verbatim inside an outer loop over looks. Per trial:
+      cur_a = w * alpha, cur_G = G, a rejected flag per hypothesis, sumrej = 0; then
+      for k = 0..K-1 load cur_p[i] = pvals(set, k*m + i) and cascade (scan in index
+      order, reject the first unrejected i with cur_p[i] < cur_a[i], propagate,
+      Bretz update, zero the rejected row and column, cur_a[rej] = 0, repeat),
+      recording time(set, i) = k + 1; stop early when sumrej == m. Returns
+      list(rejected = N x m logical, time = N x m integer with 0 for never). It takes
+      no spending function, information fraction or data mask: every convention of
+      S4.1 is already encoded in the array. Strict `<` is kept from the fixed kernel
+      because it stops a zero-weight hypothesis rejecting a floored p^r and makes the
+      K = 1 case identical rather than merely equal. Index arithmetic is int, so
+      N*m*K < 2^31 (S10 item 11).
+    # S4.3 (kernel), S4.4 (decision time), P2
+
+  - id: graph_shortcut_gsd_parallel
+    label: "graph_shortcut_gsd_parallel(..., num_threads, grain_size)"
+    layer: cpp
+    status: new
+    phase: P2
+    built: true
+    note: >
+      The same code per chunk of trials, a duplicate of the serial body rather than a
+      call into it; the auto-tuned grain size uses K * m^3 operations per row in
+      place of m^3.
+    # S4.3, P2
+
+  - id: compiled_gain_gsd
+    label: "compiled gain: double f(IntegerMatrix t)"
+    layer: cpp
+    status: new
+    phase: P3
+    built: false
+    note: >
+      Generated by trial_success_gsd(). One compiled signature, with the time matrix
+      as the sole input, so `r<i>` is a derived quantity (t > 0) and the two symbols
+      can never disagree. Each discount table becomes
+      static const double name_tab[] = {0.0, v1, ..., vK} indexed by t(i, idx), so
+      d(0) is always 0.
+    # S4.6 (codegen), P3
+
+  - id: graph_shortcut
+    label: "graph_shortcut()"
+    layer: cpp
+    status: reused_unchanged
+    called_by_gsd_path: false
+    note: >
+      Drawn for contrast, not as a dependency: S4.3 copies its cascade rather than
+      calling it, and the P2 gate requires the GSD kernel's `rejected` to be
+      identical() to this function's output at K = 1 (S8 check 2). Unedited (S4.10).
+    # S3 (src/graph_shortcut.cpp:62-166), S4.3, P2 gate
+
+  - id: graph_shortcut_parallel
+    label: "graph_shortcut_parallel()"
+    layer: cpp
+    status: reused_unchanged
+    called_by_gsd_path: false
+    note: "The fixed-sample parallel worker; unedited (S4.10)."
+    # S3, S4.10
+
+  # --- external dependencies ----------------------------------------------
+
+  - id: gsDesign_gsBound1
+    label: "gsDesign::gsBound1()"
+    layer: deps
+    status: external
+    dependency: Imports
+    note: >
+      Deterministic quadrature, 2.5 to 5 ms per call; one call returns the boundary
+      at every look because look l depends only on looks <= l. Chosen over
+      graphicalMCP::gs_boundaries() (randomised Genz-Bretz pmvnorm plus a per-value
+      uniroot, infeasible at N*m*K values) and over in-house mvtnorm boundaries,
+      which would not be bit-reproducible above three looks. Never called with a
+      repeated information fraction of 1: the zero spend increment returns an
+      unrejectable boundary.
+    # S4.1 step 2, S4.8 (dependencies), S2 (why not graphicalMCP)
+
+  - id: spending_function
+    label: "spending function phi_i(a, t)"
+    layer: deps
+    status: external
+    note: >
+      Any function(alpha, t) returning cumulative spend as a numeric vector, or an
+      object with a $spend element; one function recycled or a list of m. gsDesign's
+      families work directly (sfLDOF, sfLDPocock, sfHSD at +/-4, sfPower at 0.5 and
+      3, sfLinear all pass the well-ordering check) and so do graphicalMCP's, whose
+      spending_of() returns a plain numeric. The converse does not hold, which is an
+      oracle-test trap recorded in S4.1 and S4.9(i).
+    # S4.1 (spending function interface), S4.8
+
+  - id: stats_approx
+    label: "stats::approx()"
+    layer: deps
+    status: external
+    note: >
+      Carries the inverse map: p^r = exp(approx(log B[, l], log gamma, log p)).
+      Relative error about 1.5e-6 at the default grid_size = 1024, against Monte
+      Carlo noise in U of order 1e-3 at N = 1e5; S10 item 2 records that 512 would
+      suffice.
+    # S4.1 step 4
+
+  - id: mvtnorm
+    label: "mvtnorm"
+    layer: deps
+    status: external
+    dependency: Imports
+    note: "Already imported before this work; used by the GSD simulator."
+    # S4.8
+
+  - id: graphicalMCP
+    label: "graphicalMCP (>= 0.3.0)"
+    layer: deps
+    status: external
+    dependency: Suggests
+    called_by_package: false
+    note: >
+      Test oracle only, never called by package code: repeated_p(), sequential_p(),
+      graph_test_shortcut_gsd(). Its conventions differ from ours and S4.9 lists six:
+      spending_fn must return a plain numeric; the p matrix must carry no dimnames;
+      decision_at is written for tested-but-unrejected hypotheses, so it is
+      comparable only on the rejected set; it rejects with <= where the kernel uses
+      <; repeated_p() roots to 1e-6 absolute and is not reproducible at K >= 3; and
+      our p^r is capped at 1 above alpha where the oracle reports the true value.
+    # S4.8, S4.9 (oracle conventions), S7 (test plan)
+
+  - id: rcpp_compile_attributes
+    label: "Rcpp::compileAttributes()"
+    layer: deps
+    status: external
+    role: build_time
+    called_by_package: false
+    note: >
+      Regenerates R/RcppExports.R and src/RcppExports.cpp, the only pre-existing R/
+      and src/ files this design touches, and it touches them mechanically. Drawn
+      without edges: a build step, not a call in the pipeline.
+    # S4.10 (what does not change), P2
+
+# ---------------------------------------------------------------------------
+edges:
+
+  # --- the user-level pipeline spine (Part I, "The pipeline") -------------
+  # Objects, not calls: the user hands each result to the next function.
+
+  - from: simulate_pvalues_gsd
+    to: transform_pvalues_gsd
+    kind: data
+    label: "raw p-values, N x m x K, with the info_frac attribute"
+    # Part I pipeline, S4.7
+
+  - from: transform_pvalues_gsd
+    to: graph_optimise_gsd
+    kind: data
+    label: "multigrain_pvals_gsd"
+    # Part I pipeline, S4.7
+
+  - from: trial_success_gsd
+    to: graph_optimise_gsd
+    kind: data
+    label: "objective"
+    # S4.7 (signature)
+
+  - from: graph_optimise_gsd
+    to: calc_power_pvals_gsd
+    kind: call
+    label: "reports on the pruned graph"
+    # S4.7, S3 (fixed-sample analogue)
+
+  - from: transform_pvalues_gsd
+    to: methods_pvals_gsd
+    kind: dispatch
+    # S4.7
+
+  - from: trial_success_gsd
+    to: methods_trial_success_gsd
+    kind: dispatch
+    # S4.7
+
+  - from: graph_optimal
+    to: methods_graph_optimal
+    kind: dispatch
+    label: "same class as the fixed-sample path"
+    # S4.7
+
+  # --- the transform ------------------------------------------------------
+
+  - from: transform_pvalues_gsd
+    to: gsd_check_spending
+    kind: call
+    # S4.1, P0
+
+  - from: transform_pvalues_gsd
+    to: gsd_boundary_table
+    kind: call
+    label: "once per hypothesis; skipped by the single-look short-circuit"
+    # S4.1 steps 1-2, P0
+
+  - from: transform_pvalues_gsd
+    to: gsd_invert
+    kind: call
+    # S4.1 step 4, P0
+
+  - from: transform_pvalues_gsd
+    to: pvals_gsd_constructor
+    kind: call
+    # S4.1 (output), P0
+
+  - from: gsd_check_spending
+    to: spending_function
+    kind: call
+    label: "phi(a, 1) = a"
+    # S4.1
+
+  - from: gsd_boundary_table
+    to: spending_function
+    kind: call
+    label: "increments phi(gamma_g, t_l) - phi(gamma_g, t_(l-1))"
+    # S4.1 step 2
+
+  - from: gsd_boundary_table
+    to: gsDesign_gsBound1
+    kind: call
+    label: "G calls per hypothesis, each returning every look"
+    # S4.1 step 2
+
+  - from: gsd_invert
+    to: stats_approx
+    kind: call
+    label: "log-log linear"
+    # S4.1 step 4
+
+  # --- the simulator ------------------------------------------------------
+
+  - from: simulate_pvalues_gsd
+    to: mvtnorm
+    kind: call
+    label: "canonical joint normal over the distinct information levels"
+    # S4.7, S4.8
+
+  # --- the gain -----------------------------------------------------------
+
+  - from: trial_success_gsd
+    to: gsd_gain_parser
+    kind: call
+    # S4.6, P3
+
+  - from: gsd_gain_parser
+    to: compiled_gain_gsd
+    kind: call
+    label: "emits and compiles double f(IntegerMatrix t)"
+    # S4.6, P3
+
+  # --- the search ---------------------------------------------------------
+
+  - from: graph_optimise_gsd
+    to: control_prepare_dims
+    kind: call
+    label: "N and m from the object, not from a matrix"
+    # S4.7
+
+  - from: graph_optimise_gsd
+    to: create_obj_func_gsd
+    kind: call
+    # S4.7
+
+  - from: graph_optimise_gsd
+    to: graph_optimise_ga_gsd
+    kind: call
+    # S4.7
+
+  - from: graph_optimise_gsd
+    to: graph_optimise_local_gsd
+    kind: call
+    # S4.7
+
+  - from: graph_optimise_gsd
+    to: choose_graph
+    kind: call
+    # S4.5, S4.7
+
+  - from: graph_optimise_gsd
+    to: prune_graph_gsd
+    kind: call
+    # S4.7
+
+  - from: graph_optimise_gsd
+    to: graph_optimal
+    kind: call
+    label: "returns multigrain_graph_optimal"
+    # S4.7
+
+  - from: graph_optimise_gsd
+    to: create_start_params
+    kind: call
+    stated: false
+    note: "P4 lists this among the reused helpers but does not name its call site."
+    # P4 reuse list, cf. S3
+
+  - from: create_start_params
+    to: build_start_matrix
+    kind: call
+    stated: false
+    note: "Reuse list only; the pairing is inferred from the names, not stated."
+    # P4 reuse list
+
+  - from: graph_optimise_ga_gsd
+    to: create_obj_func_gsd
+    kind: data
+    label: "objective closure"
+    # S4.5 ("only the objective closure changes"), S4.7
+
+  - from: graph_optimise_ga_gsd
+    to: param_to_solution
+    kind: call
+    stated: false
+    note: "Reuse list only; call site not named."
+    # P4 reuse list
+
+  - from: graph_optimise_ga_gsd
+    to: repair_graph
+    kind: call
+    stated: false
+    note: "Reuse list only; call site not named."
+    # P4 reuse list
+
+  - from: graph_optimise_ga_gsd
+    to: graph_shortcut_gsd
+    kind: call
+    label: "re-evaluate the winner on the full array"
+    # S4.7, S3 (R/optimisation.R:332)
+
+  - from: graph_optimise_local_gsd
+    to: create_obj_func_gsd
+    kind: data
+    label: "objective closure"
+    # S4.5, S4.7
+
+  - from: graph_optimise_local_gsd
+    to: graph_shortcut_gsd
+    kind: call
+    label: "re-evaluate the winner on the full array"
+    # S4.7, S3 (R/optimisation.R:452)
+
+  # --- the objective closure ---------------------------------------------
+
+  - from: create_obj_func_gsd
+    to: split_theta
+    kind: call
+    # S3 (decode chain), S4.7
+
+  - from: create_obj_func_gsd
+    to: recover_full_weights
+    kind: call
+    # S3, S4.7
+
+  - from: create_obj_func_gsd
+    to: recover_full_trans_matrix
+    kind: call
+    # S3, S4.7
+
+  - from: create_obj_func_gsd
+    to: graph_shortcut_gsd
+    kind: call
+    label: "dim <- c(N, m*K); column (k-1)m+i is hypothesis i at look k, column-major, no copy"
+    # S4.1 (output, the reshape), S4.3 (kernel input), S4.7
+
+  - from: create_obj_func_gsd
+    to: graph_shortcut_gsd_parallel
+    kind: call
+    label: "same reshape, num_threads > 1"
+    # S4.3, S3 (the serial/parallel branch being copied)
+
+  - from: create_obj_func_gsd
+    to: compiled_gain_gsd
+    kind: call
+    label: "time matrix, N x m integer, 0 = never"
+    # S4.5 ("hands the time matrix to the compiled gain"), S4.3, S4.6
+
+  # --- pruning and reporting ---------------------------------------------
+
+  - from: prune_graph_gsd
+    to: try_prune_gsd
+    kind: call
+    label: "two greedy loops"
+    # S4.7, S3 (fixed-sample analogue)
+
+  - from: try_prune_gsd
+    to: calc_power_pvals_gsd
+    kind: call
+    label: "acceptance test"
+    # S4.7
+
+  - from: calc_power_pvals_gsd
+    to: graph_shortcut_gsd
+    kind: call
+    # S4.7, S3 (R/calc_power.R:147)
+
+  - from: calc_power_pvals_gsd
+    to: eval_custom_power_gsd
+    kind: call
+    # S4.7, P4
+
+  - from: eval_custom_power_gsd
+    to: compiled_gain_gsd
+    kind: call
+    label: "compiled path; a plain R function is the slow path"
+    # S4.7, S4.6
+
+# ---------------------------------------------------------------------------
+notes:
+  - id: reshape
+    text: >
+      The reshape is the architectural trick and earns the one long edge label: the
+      transform writes an N x m x K numeric array and the kernel reads the same
+      memory as an N x mK matrix, because R is column-major. No boundary, spending
+      function, information fraction or data mask crosses into C++ (S4.1, S4.3).
+  - id: not_drawn
+    text: >
+      Deliberately absent although the record names them: the fixed-sample exports
+      simulate_pvalues(), trial_success(), graph_optimise() and calc_power_pvals(),
+      and the helpers create_obj_func(), power_criterion(), prune_graph(),
+      .try_prune(), control_prepare(), parse_and_transform() and
+      check_double_matrix() (all S3). They are the unchanged counterparts of the
+      `_gsd` family, not dependencies of it (S4.7, S4.10), so drawing them would
+      double the diagram for no information. S3 records them instead as constraints
+      on the design: check_double_matrix() rejects arrays and S3 objects, which is
+      why control_prepare_dims() exists.
+  - id: rcpp_exports
+    text: >
+      R to C++ calls run through R/RcppExports.R and src/RcppExports.cpp, both
+      regenerated by Rcpp::compileAttributes() (S4.10). Edges to the kernels are
+      drawn direct rather than routed through that binding layer.
+  - id: test_scaffolding
+    text: >
+      Not nodes, being test code rather than package architecture, but named by the
+      record: tests/testthat/helper-gsd_reference.R with gsd_reference_direct() and
+      gsd_pvals_matrix(), the Appendix B boundary-on-the-fly reference and the dim<-
+      reshape (P2), and dev/gsd_identity_check.R, the S4.10 no-change gate run
+      against installed main and branch builds (P4).
+  - id: build_state
+    text: >
+      Built and on the branch: the transform (P0, e4ec646), the simulator
+      (P1, 96dba9f), the kernel (P2, d0b6556). Specified only: the gain (P3), the
+      optimiser, pruning and power reporting (P4), documentation (P5). A rendering
+      should distinguish the two, since about half the graph is not yet code.
+  - id: merge_followup
+    text: >
+      S10 item 4: once branch plan-for-sparsity has landed, create_obj_func_gsd(),
+      the two optimiser drivers and .try_prune_gsd() are to be folded back into their
+      fixed-sample versions behind a kernel-dispatch argument, making the
+      fixed-sample case K = 1 of one implementation. The duplicated plumbing in the
+      internal_r layer is therefore deliberate and temporary.

@@ -1,0 +1,310 @@
+---
+title: "Trial success measures"
+format:
+  html:
+    theme: none
+    minimal: true
+    embed-resources: true
+    toc: true
+    html-math-method: mathjax
+    fig_width: 7
+    fig_height: 6
+vignette: >
+  %\VignetteIndexEntry{Trial success measures}
+  %\VignetteEngine{quarto::format}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| include: false
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r}
+#| label: setup
+#| echo: false
+library(multigrain)
+```
+
+# Gain functions
+
+A graphical test (see [Getting started](get-started.html)) applies a graph
+$(\mathbf{w}, \mathbf{G})$ to simulated p-values and produces a rejection
+pattern $\mathbf{r} = (r_1, \ldots, r_m)$ for each trial, where $r_i = 1$ if
+$H_i$ is rejected. A **gain function** $\psi(\mathbf{r})$ assigns a numerical
+score to each pattern — average power, disjunctive power, a regulatory hurdle,
+or any composite you design. `graph_optimise()` searches for the graph that
+maximises $\mathrm{E}[\psi(\mathbf{r})]$.
+
+Because FWER control holds for every valid graph, the choice among them is free
+to be made on value grounds. The gain is a score on whatever scale you choose;
+it does not need to be a probability.
+
+## Fixed-sample designs
+
+`trial_success()` takes an expression in `r1, r2, ..., rm` and compiles it to
+C++ so it can be evaluated quickly over thousands of simulated trials.
+
+```{r}
+#| label: fixed-sample-examples
+set.seed(1)
+rej <- matrix(runif(4000) < 0.6, ncol = 4)   # 1000 trials, m = 4
+
+# Expected number of rejections (= m × average power)
+trial_success(r1 + r2 + r3 + r4)$func(rej)
+
+# Disjunctive power: at least one rejection
+trial_success(r1 || r2 || r3 || r4)$func(rej)
+
+# Conjunctive power: all four rejected
+trial_success(r1 && r2 && r3 && r4)$func(rej)
+
+# Dual-endpoint hurdle: success for at least one dose
+# H1, H2 = high dose (primary, secondary); H3, H4 = low dose
+trial_success((r1 && r2) || (r3 && r4))$func(rej)
+
+# Gated secondary with incremental value
+trial_success(r1 * (1 + 0.5 * r2))$func(rej)
+
+# Hurdle plus weighted incremental claims
+trial_success((r1 && r2) * (1 + 0.3 * r3 + 0.2 * r4))$func(rej)
+```
+
+The first example returns approximately 2.4, not 0.6. That is correct — it
+counts the expected *number* of rejections across four hypotheses, not a
+probability. Divide by $m$ to get average power. The gain function is on
+whatever scale you define; it does not need to lie in $[0, 1]$.
+
+To inject values from your R session into the expression, use rlang's
+[`!!`][rlang::injection-operator] operator:
+
+```{r}
+#| label: injection-example
+w <- 2
+trial_success(!!w * r1 + r2 + r3)
+```
+
+::: {.callout-tip}
+## Always parenthesise around `&&` and `||`
+
+The internal parser does not follow R's standard operator precedence for `&&`
+and `||`. Write `(r1 && r2) || (r3 && r4)` rather than `r1 && r2 || r3 && r4`
+to ensure the expression is interpreted as you intend.
+:::
+
+## Group sequential designs
+
+In a group sequential design you test each hypothesis at $K$ planned analyses
+(e.g., one interim and one final). The outcome of a simulated trial is not just
+*which* hypotheses were rejected but *when* each rejection was declared. An
+early rejection — allowing a programme to proceed sooner — is typically worth
+more than a late one. `trial_success_gsd()` lets you express this.
+
+### Decision times
+
+`trial_success_gsd()` uses two families of symbols:
+
+- `t1, t2, ..., tm`: the **decision time** for each hypothesis — the analysis
+  (an integer from `1` to `K`) at which the procedure declared the rejection,
+  or **`0` if the hypothesis was never rejected**.
+- `r1, r2, ..., rm`: the usual rejection indicators. These are derived as
+  `ri = (ti > 0)` inside the compiled function, so `r` and `t` are always
+  consistent. You can mix both in one expression.
+
+Decision time is the analysis at which the *procedure declared* the rejection.
+This is not necessarily the analysis at which the data first crossed a boundary.
+Alpha recycling can delay the declaration. For example, suppose PFS data are
+fully mature at analysis 1 but PFS carries zero initial weight
+($w_{\text{PFS}} = 0$). PFS cannot reject at analysis 1 because it has no
+$\alpha$ to spend. At analysis 2, OS rejects and recycles its entire level to
+PFS. PFS then rejects — on its analysis-1 data — but the decision time is
+$\tau_{\text{PFS}} = 2$, not 1.
+
+### Discount tables
+
+You assign a value to each analysis time by passing a named numeric vector
+through `...`. For $K = 2$ analyses:
+
+```{r}
+#| label: discount-table-concept
+#| eval: false
+d = c(1, 0.75)   # full value at analysis 1, 75% at analysis 2
+```
+
+You supply only the $K$ values for analyses 1 through $K$. The value for
+"never rejected" ($t_i = 0$) is **added automatically** as zero — you do not
+include it yourself.
+
+In the `objective` expression, apply a table to a decision time as `d(t1)`.
+When $t_1 = 0$ the result is 0; when $t_1 = 1$ the result is `d[1]`; when
+$t_1 = 2$ the result is `d[2]`.
+
+### Worked example: PFS and OS with two analyses
+
+Consider a trial with two hypotheses — PFS ($H_1$) and OS ($H_2$) — and
+$K = 2$ analyses. You value PFS at 0.4 and OS at 0.6, and a rejection at the
+final analysis is worth 75% of one at the interim:
+
+```{r}
+#| label: gsd-example5
+#| eval: false
+v_pfs <- 0.4
+v_os  <- 0.6
+gain <- trial_success_gsd(
+    !!v_pfs * d(t1) + !!v_os * d(t2),
+    d = c(1, 0.75)
+)
+gain
+#> <multigrain_trial_success_gsd/multigrain_trial_success>
+#> 0.4 * d(t1) + 0.6 * d(t2)
+#> Analyses (K): 2
+#> Discount table d(t): 1.00, 0.75
+```
+
+The gain for every possible combination of decision times is:
+
+| | $t_2 = 0$ (OS never) | $t_2 = 1$ (OS interim) | $t_2 = 2$ (OS final) |
+|---|---|---|---|
+| **$t_1 = 0$ (PFS never)** | 0.000 | 0.600 | 0.450 |
+| **$t_1 = 1$ (PFS interim)** | 0.400 | 1.000 | 0.850 |
+| **$t_1 = 2$ (PFS final)** | 0.300 | 0.900 | 0.750 |
+
+Reading the table: $(t_1 = 0, t_2 = 1)$ means PFS was not rejected and OS was
+rejected at the interim. The gain is $0.4 \times d(0) + 0.6 \times d(1) =
+0 + 0.6 \times 1 = 0.6$. The entry $(t_1 = 2, t_2 = 2)$ — both rejected at
+the final — gives $0.4 \times 0.75 + 0.6 \times 0.75 = 0.75$.
+
+### More expressions
+
+You can combine rejection indicators and decision times freely:
+
+```{r}
+#| label: gsd-more-examples
+#| eval: false
+# OS value plus a bonus only if PFS was declared at the interim
+trial_success_gsd(r2 + 0.5 * (r1 && t1 == 1), K = 2)
+
+# Hurdle gain with a time-discounted base value
+trial_success_gsd((r1 && r2) * d(t2), d = c(1, 0.75))
+
+# Co-primary endpoints declared at the same analysis
+trial_success_gsd(
+    (t1 == 1 && t2 == 1) + 0.5 * (t1 == 2 && t2 == 2)
+)
+```
+
+### End-to-end evaluation
+
+To evaluate the gain on simulated GSD data, you simulate p-values, transform
+them to repeated p-values, and pass the results through the testing kernel.
+
+::: {.callout-warning}
+## Internal API
+
+The public consumer `calc_power_pvals_gsd()` does not exist yet. The code below
+uses the internal kernel `multigrain:::graph_shortcut_gsd()`, which is not part
+of the public API and may change without notice.
+:::
+
+```{r}
+#| label: end-to-end
+#| eval: false
+alpha <- 0.025
+info_frac <- rbind(PFS = c(1, 1), OS = c(0.7, 1))
+corr      <- rbind(c(1, 0.5), c(0.5, 1))
+pow_nom   <- c(PFS = 1 - pnorm(qnorm(1 - alpha) - 4.01),
+               OS  = 1 - pnorm(qnorm(1 - alpha) - 3.44))
+
+set.seed(20260918)
+sim <- simulate_pvalues_gsd(
+    power_nominal = pow_nom, alpha = alpha,
+    corr_matrix = corr, info_frac = info_frac,
+    nsim = 20000L
+)
+
+ldof <- function(a, t) gsDesign::sfLDOF(a, t)$spend
+pv <- transform_pvalues_gsd(
+    sim, info_frac = info_frac,
+    spending = list(function(a, t) a * (t >= 1), ldof),
+    alpha = alpha, grid_size = 1024L
+)
+
+# Reshape the 3-D p-value array to the 2-D layout the kernel expects
+gsd_pvals_matrix <- function(x) {
+    v <- x$pvals
+    d <- dim(v)
+    dim(v) <- c(d[1], d[2] * d[3])
+    v
+}
+
+G <- rbind(c(0, 1), c(1, 0))   # full recycling between PFS and OS
+out <- multigrain:::graph_shortcut_gsd(
+    gsd_pvals_matrix(pv), alpha,
+    w = c(0.5, 0.5), G, K = 2L
+)
+
+gain$func(out$time)
+#> [1] 0.5833
+```
+
+# Things that go wrong quietly
+
+The gain-function constructors validate your expression, but some mistakes
+compile without error and produce silently wrong results.
+
+::: {.callout-warning}
+## Do not include the zero in your discount table
+
+The constructor adds a leading zero (for "never rejected") automatically. If you
+include it yourself, `K` is inferred as one more than you intended and every
+claim is mispriced — with **no warning**.
+
+```r
+# WRONG — K is inferred as 3; d(1) = 0, d(2) = 1
+trial_success_gsd(d(t1), d = c(0, 1, 0.75))
+
+# RIGHT — K = 2; d(1) = 1, d(2) = 0.75
+trial_success_gsd(d(t1), d = c(1, 0.75))
+```
+:::
+
+::: {.callout-warning}
+## Do not use `!!` in discount table arguments
+
+rlang's `!!` operator is for the `objective` expression only. In ordinary
+arguments, `!!` is double negation: `!!0.75` evaluates to `TRUE`, which R
+coerces to `1`. The discount is silently lost.
+
+```r
+delta <- 0.75
+
+# WRONG — !!delta becomes TRUE, so d = c(1, 1)
+trial_success_gsd(d(t1), d = c(1, !!delta))
+
+# RIGHT — just use the variable directly
+trial_success_gsd(d(t1), d = c(1, delta))
+```
+:::
+
+::: {.callout-warning}
+## Do not pass a GSD gain to the fixed-sample optimiser
+
+`trial_success_gsd()` objects inherit from `multigrain_trial_success`, so
+`graph_optimise(trial_success = <gsd_object>)` passes validation. But the
+fixed-sample optimiser supplies a *logical* rejection matrix, not decision
+times. Rcpp coerces `TRUE`/`FALSE` to 1/0, so every rejection is scored as
+though it happened at analysis 1 — a silently wrong answer.
+:::
+
+::: {.callout-tip}
+## Two rules of thumb
+
+1. **Always parenthesise** expressions around `&&` and `||` to avoid
+   precedence surprises.
+2. **The gain is on your own scale**, not $[0, 1]$. Normalise it yourself for
+   reporting; only relative values affect the optimiser.
+:::
+
