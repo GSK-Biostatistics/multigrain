@@ -13,7 +13,11 @@
 
 # ---- spending functions written out by hand --------------------------------
 ref_sf_ldof <- function(a, t) {
-    2 * stats::pnorm(stats::qnorm(1 - a / 2) / sqrt(pmin(t, 1)), lower.tail = FALSE)
+    2 *
+        stats::pnorm(
+            stats::qnorm(1 - a / 2) / sqrt(pmin(t, 1)),
+            lower.tail = FALSE
+        )
 }
 ref_sf_pocock <- function(a, t) a * log(1 + (exp(1) - 1) * pmin(t, 1))
 
@@ -23,17 +27,17 @@ ref_sf_pocock <- function(a, t) a * log(1 + (exp(1) - 1) * pmin(t, 1))
 # with e_{.,1}, e_{.,2} independent N(0, corr). This gives the canonical joint
 # distribution for a common interim information fraction t1 and final 1.
 ref_simulate <- function(power_nom, corr, t1, nsim, alpha = 0.025) {
-    m     <- length(power_nom)
+    m <- length(power_nom)
     delta <- stats::qnorm(1 - alpha) + stats::qnorm(power_nom)
-    L     <- chol(corr)
-    e1    <- matrix(stats::rnorm(nsim * m), nsim, m) %*% L
-    e2    <- matrix(stats::rnorm(nsim * m), nsim, m) %*% L
-    mu    <- matrix(delta, nsim, m, byrow = TRUE)
-    z1    <- sqrt(t1) * mu + e1
-    z2    <- sqrt(t1) * z1 + sqrt(1 - t1) * (sqrt(1 - t1) * mu + e2)
-    out   <- array(NA_real_, dim = c(nsim, m, 2L))
-    out[, , 1] <- stats::pnorm(z1, lower.tail = FALSE)
-    out[, , 2] <- stats::pnorm(z2, lower.tail = FALSE)
+    L <- chol(corr)
+    e1 <- matrix(stats::rnorm(nsim * m), nsim, m) %*% L
+    e2 <- matrix(stats::rnorm(nsim * m), nsim, m) %*% L
+    mu <- matrix(delta, nsim, m, byrow = TRUE)
+    z1 <- sqrt(t1) * mu + e1
+    z2 <- sqrt(t1) * z1 + sqrt(1 - t1) * (sqrt(1 - t1) * mu + e2)
+    out <- array(NA_real_, dim = c(nsim, m, 2L))
+    out[,, 1] <- stats::pnorm(z1, lower.tail = FALSE)
+    out[,, 2] <- stats::pnorm(z2, lower.tail = FALSE)
     out
 }
 
@@ -47,24 +51,40 @@ ref_simulate <- function(power_nom, corr, t1, nsim, alpha = 0.025) {
 # level, at the final analysis. An endpoint that is complete at the interim
 # (t1 >= 1) is tested at its full level at both analyses on the same p-value.
 ref_bounds <- function(a, t1, sf) {
-    if (a <= 0) return(c(0, 0))
-    if (is.na(t1)) return(c(0, a))
-    if (t1 >= 1) return(c(a, a))
+    if (a <= 0) {
+        return(c(0, 0))
+    }
+    if (is.na(t1)) {
+        return(c(0, a))
+    }
+    if (t1 >= 1) {
+        return(c(a, a))
+    }
     cum <- sf(a, c(t1, 1))
-    c1  <- stats::qnorm(cum[1], lower.tail = FALSE)
+    c1 <- stats::qnorm(cum[1], lower.tail = FALSE)
     rho <- sqrt(t1)
     cross2 <- function(c2) {
         stats::integrate(
             function(z) {
                 stats::dnorm(z) *
-                    stats::pnorm((c2 - rho * z) / sqrt(1 - rho^2), lower.tail = FALSE)
+                    stats::pnorm(
+                        (c2 - rho * z) / sqrt(1 - rho^2),
+                        lower.tail = FALSE
+                    )
             },
-            lower = -Inf, upper = c1, rel.tol = 1e-12, abs.tol = 0,
+            lower = -Inf,
+            upper = c1,
+            rel.tol = 1e-12,
+            abs.tol = 0,
             subdivisions = 500L
         )$value
     }
     target <- cum[2] - cum[1]
-    c2 <- stats::uniroot(function(x) cross2(x) - target, c(0, 10), tol = 1e-13)$root
+    c2 <- stats::uniroot(
+        function(x) cross2(x) - target,
+        c(0, 10),
+        tol = 1e-13
+    )$root
     stats::pnorm(c(c1, c2), lower.tail = FALSE)
 }
 
@@ -84,16 +104,30 @@ ref_bounds <- function(a, t1, sf) {
 # stop_after_1, if given, is a logical vector with one entry per trial: TRUE
 # stops that trial after the interim whatever was rejected (a futility rule
 # evaluated on the raw data beforehand).
-ref_test <- function(raw, w, G, t1, sf, alpha = 0.025, strict = TRUE,
-                     stop_fun = NULL, stop_after_1 = NULL) {
-    nsim <- dim(raw)[1]; m <- dim(raw)[2]
-    if (is.function(sf)) sf <- rep(list(sf), m)
+ref_test <- function(
+    raw,
+    w,
+    G,
+    t1,
+    sf,
+    alpha = 0.025,
+    strict = TRUE,
+    stop_fun = NULL,
+    stop_after_1 = NULL
+) {
+    nsim <- dim(raw)[1]
+    m <- dim(raw)[2]
+    if (is.function(sf)) {
+        sf <- rep(list(sf), m)
+    }
     t1 <- rep_len(t1, m)
     cache <- vector("list", m)
-    for (i in seq_len(m)) cache[[i]] <- new.env(parent = emptyenv())
+    for (i in seq_len(m)) {
+        cache[[i]] <- new.env(parent = emptyenv())
+    }
     bound <- function(i, a) {
         key <- format(a, digits = 17)
-        b   <- cache[[i]][[key]]
+        b <- cache[[i]][[key]]
         if (is.null(b)) {
             b <- ref_bounds(a, t1[i], sf[[i]])
             assign(key, b, envir = cache[[i]])
@@ -103,32 +137,47 @@ ref_test <- function(raw, w, G, t1, sf, alpha = 0.025, strict = TRUE,
     below <- if (strict) `<` else `<=`
     tau <- matrix(0L, nsim, m)
     for (s in seq_len(nsim)) {
-        a <- w * alpha; g <- G; live <- rep(TRUE, m)
+        a <- w * alpha
+        g <- G
+        live <- rep(TRUE, m)
         for (k in 1:2) {
             repeat {
                 j <- 0L
                 for (i in which(live)) {
-                    if (a[i] > 0 && !is.na(raw[s, i, k]) &&
-                        below(raw[s, i, k], bound(i, a[i])[k])) {
+                    if (
+                        a[i] > 0 &&
+                            !is.na(raw[s, i, k]) &&
+                            below(raw[s, i, k], bound(i, a[i])[k])
+                    ) {
                         j <- i
                         break
                     }
                 }
-                if (j == 0L) break
+                if (j == 0L) {
+                    break
+                }
                 tau[s, j] <- k
-                live[j]   <- FALSE
+                live[j] <- FALSE
                 a_new <- a + a[j] * g[j, ]
                 a_new[j] <- 0
                 g_new <- matrix(0, m, m)
-                for (l in which(live)) for (q in which(live)) {
-                    if (l != q) {
-                        den <- 1 - g[l, j] * g[j, l]
-                        if (den > 0) g_new[l, q] <- (g[l, q] + g[l, j] * g[j, q]) / den
+                for (l in which(live)) {
+                    for (q in which(live)) {
+                        if (l != q) {
+                            den <- 1 - g[l, j] * g[j, l]
+                            if (den > 0) {
+                                g_new[l, q] <- (g[l, q] + g[l, j] * g[j, q]) /
+                                    den
+                            }
+                        }
                     }
                 }
-                a <- a_new; g <- g_new
+                a <- a_new
+                g <- g_new
             }
-            if (!is.null(stop_fun) && stop_fun(tau[s, ])) break
+            if (!is.null(stop_fun) && stop_fun(tau[s, ])) {
+                break
+            }
             if (k == 1L && !is.null(stop_after_1) && stop_after_1[s]) break
         }
     }
@@ -139,5 +188,7 @@ ref_test <- function(raw, w, G, t1, sf, alpha = 0.025, strict = TRUE,
 # value: length m; d: length 2 discount table; additive gain sum_i v_i d(t_i).
 ref_gain_additive <- function(tau, value, d) {
     dd <- c(0, d)
-    mean(rowSums(sapply(seq_along(value), function(i) value[i] * dd[tau[, i] + 1L])))
+    mean(rowSums(sapply(seq_along(value), function(i) {
+        value[i] * dd[tau[, i] + 1L]
+    })))
 }

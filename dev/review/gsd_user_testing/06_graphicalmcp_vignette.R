@@ -28,16 +28,23 @@ suppressPackageStartupMessages({
 })
 
 here <- "dev/review/gsd_user_testing"
-if (!dir.exists(here)) here <- "."
+if (!dir.exists(here)) {
+    here <- "."
+}
 
 alpha <- 0.025
-ldof  <- graphicalMCP::spending_of     # plain numeric cumulative spend
+ldof <- graphicalMCP::spending_of # plain numeric cumulative spend
 
 # One observed trial through multigrain: p is m x K (NA allowed).
 run_multigrain <- function(p, info_frac, w, G, look_back) {
-    m <- nrow(p); K <- ncol(p)
+    m <- nrow(p)
+    K <- ncol(p)
     raw <- array(p, dim = c(1L, m, K))
-    info <- if (is.matrix(info_frac)) info_frac else matrix(info_frac, m, K, byrow = TRUE)
+    info <- if (is.matrix(info_frac)) {
+        info_frac
+    } else {
+        matrix(info_frac, m, K, byrow = TRUE)
+    }
     # multigrain wants the information fraction of a finished endpoint carried
     # forward (it is still "at full information"), where graphicalMCP has NA
     for (i in seq_len(m)) {
@@ -50,13 +57,21 @@ run_multigrain <- function(p, info_frac, w, G, look_back) {
             }
         }
     }
-    pv <- transform_pvalues_gsd(raw, info_frac = info, spending = ldof,
-                                alpha = alpha, look_back = look_back)
+    pv <- transform_pvalues_gsd(
+        raw,
+        info_frac = info,
+        spending = ldof,
+        alpha = alpha,
+        look_back = look_back
+    )
     x <- pv$pvals
     dim(x) <- c(1L, m * K)
     out <- multigrain:::graph_shortcut_gsd(x, alpha, w, G, K)
-    list(rejected = as.vector(out$rejected), time = as.vector(out$time),
-         repeated = matrix(pv$pvals, m, K))
+    list(
+        rejected = as.vector(out$rejected),
+        time = as.vector(out$time),
+        repeated = matrix(pv$pvals, m, K)
+    )
 }
 
 run_oracle <- function(p, info_frac, w, G, look_back) {
@@ -64,14 +79,22 @@ run_oracle <- function(p, info_frac, w, G, look_back) {
     pm <- p
     dimnames(pm) <- list(names(g$hypotheses), NULL)
     inf <- info_frac
-    if (is.matrix(inf)) dimnames(inf) <- list(names(g$hypotheses), NULL)
+    if (is.matrix(inf)) {
+        dimnames(inf) <- list(names(g$hypotheses), NULL)
+    }
     o <- graphicalMCP::graph_test_shortcut_gsd(
-        graph = g, p = pm, alpha = alpha, info_frac = inf,
-        spending_fn = ldof, look_back = look_back
+        graph = g,
+        p = pm,
+        alpha = alpha,
+        info_frac = inf,
+        spending_fn = ldof,
+        look_back = look_back
     )
-    list(rejected = unname(o$outputs$rejected),
-         decision_at = as.integer(unname(o$outputs$decision_at)),
-         first_rejected_at = as.integer(unname(o$outputs$first_rejected_at)))
+    list(
+        rejected = unname(o$outputs$rejected),
+        decision_at = as.integer(unname(o$outputs$decision_at)),
+        first_rejected_at = as.integer(unname(o$outputs$first_rejected_at))
+    )
 }
 
 compare <- function(label, p, info_frac, w, G, look_back, hyp) {
@@ -83,41 +106,82 @@ compare <- function(label, p, info_frac, w, G, look_back, hyp) {
         graphicalMCP_rejected = or$rejected,
         multigrain_time = mg$time,
         graphicalMCP_decision_at = ifelse(or$rejected, or$decision_at, 0L),
-        graphicalMCP_first_rejected_at = ifelse(is.na(or$first_rejected_at), 0L,
-                                                or$first_rejected_at)
+        graphicalMCP_first_rejected_at = ifelse(
+            is.na(or$first_rejected_at),
+            0L,
+            or$first_rejected_at
+        )
     )
     cat("\n== ", label, "\n", sep = "")
     print(tab, row.names = FALSE)
-    same_rej  <- identical(mg$rejected, or$rejected)
-    same_time <- identical(mg$time[or$rejected & mg$rejected],
-                           or$decision_at[or$rejected & mg$rejected])
-    cat(sprintf("rejections agree: %s; decision times agree on jointly rejected hypotheses: %s\n",
-                same_rej, same_time))
-    invisible(list(table = tab, same_rejections = same_rej, same_times = same_time,
-                   repeated = mg$repeated))
+    same_rej <- identical(mg$rejected, or$rejected)
+    same_time <- identical(
+        mg$time[or$rejected & mg$rejected],
+        or$decision_at[or$rejected & mg$rejected]
+    )
+    cat(sprintf(
+        "rejections agree: %s; decision times agree on jointly rejected hypotheses: %s\n",
+        same_rej,
+        same_time
+    ))
+    invisible(list(
+        table = tab,
+        same_rejections = same_rej,
+        same_times = same_time,
+        repeated = mg$repeated
+    ))
 }
 
 # ---- A. Maurer and Bretz diabetes case study --------------------------------
 w_a <- c(0.5, 0.5, 0, 0)
 G_a <- rbind(c(0, 0.5, 0.5, 0), c(0.5, 0, 0, 0.5), c(0, 1, 0, 0), c(1, 0, 0, 0))
-p_a <- rbind(c(0.0062, 0.0002), c(0.017, 0.0035), c(0.009, 0.002), c(0.13, 0.06))
-res_a <- compare("A. Diabetes trial (Maurer and Bretz 2013), analyses at 1/3 and 2/3, no look-back",
-                 p_a, c(1 / 3, 2 / 3), w_a, G_a, FALSE, paste0("H", 1:4))
+p_a <- rbind(
+    c(0.0062, 0.0002),
+    c(0.017, 0.0035),
+    c(0.009, 0.002),
+    c(0.13, 0.06)
+)
+res_a <- compare(
+    "A. Diabetes trial (Maurer and Bretz 2013), analyses at 1/3 and 2/3, no look-back",
+    p_a,
+    c(1 / 3, 2 / 3),
+    w_a,
+    G_a,
+    FALSE,
+    paste0("H", 1:4)
+)
 cat("vignette: H1, H2 and H3 rejected at analysis 2, H4 retained\n")
 
 # Repeated p-values against the paper's Table 2. multigrain reports 1 above
 # alpha, so the table is rebuilt up to 0.5 for this comparison only.
 raw_a <- array(p_a, dim = c(1L, 4L, 2L))
-wide  <- transform_pvalues_gsd(raw_a, info_frac = c(1 / 3, 2 / 3), spending = ldof,
-                               alpha = 0.5)$pvals
-paper <- cbind(c(0.1141, 0.1683, 0.1316, 0.382), c(0.0024, 0.0172, 0.0117, 0.1285))
-cat("\nRepeated p-values, multigrain (table built to 0.5) against Maurer and Bretz Table 2:\n")
-print(data.frame(hypothesis = paste0("H", 1:4),
-                 look1 = signif(wide[1, , 1], 4), paper1 = paper[, 1],
-                 look2 = signif(wide[1, , 2], 4), paper2 = paper[, 2]),
-      row.names = FALSE)
-cat(sprintf("largest absolute difference from the paper: %.1e\n",
-            max(abs(matrix(wide, 4, 2) - paper))))
+wide <- transform_pvalues_gsd(
+    raw_a,
+    info_frac = c(1 / 3, 2 / 3),
+    spending = ldof,
+    alpha = 0.5
+)$pvals
+paper <- cbind(
+    c(0.1141, 0.1683, 0.1316, 0.382),
+    c(0.0024, 0.0172, 0.0117, 0.1285)
+)
+cat(
+    "\nRepeated p-values, multigrain (table built to 0.5) against Maurer and Bretz Table 2:\n"
+)
+print(
+    data.frame(
+        hypothesis = paste0("H", 1:4),
+        look1 = signif(wide[1, , 1], 4),
+        paper1 = paper[, 1],
+        look2 = signif(wide[1, , 2], 4),
+        paper2 = paper[, 2]
+    ),
+    row.names = FALSE
+)
+cat(sprintf(
+    "largest absolute difference from the paper: %.1e\n",
+    max(abs(matrix(wide, 4, 2) - paper))
+))
 
 # ---- B. Oncology case study ---------------------------------------------------
 hyp_b <- c("H1_OS_S", "H2_OS_A", "H3_PFS_S", "H4_PFS_A", "H5_ORR_S", "H6_ORR_A")
@@ -146,21 +210,48 @@ info_b <- rbind(
     c(1, NA, NA),
     c(1, NA, NA)
 )
-res_b1 <- compare("B1. Oncology trial, vignette p-values, look-back on",
-                  p_b, info_b, w_b, G_b, TRUE, hyp_b)
-cat("vignette: H5 rejected at analysis 1; H1 and H3 at analysis 2; H2, H4 and H6 retained\n")
+res_b1 <- compare(
+    "B1. Oncology trial, vignette p-values, look-back on",
+    p_b,
+    info_b,
+    w_b,
+    G_b,
+    TRUE,
+    hyp_b
+)
+cat(
+    "vignette: H5 rejected at analysis 1; H1 and H3 at analysis 2; H2, H4 and H6 retained\n"
+)
 
 p_b2 <- p_b
 p_b2[2, ] <- c(0.003, 0.005, 0.1)
 p_b2[4, ] <- c(0.0001, 0.02, NA)
 p_b2[5, ] <- c(0.0008, NA, NA)
-res_b2 <- compare("B2. Oncology trial, 'look-back makes a difference' p-values, look-back on",
-                  p_b2, info_b, w_b, G_b, TRUE, hyp_b)
+res_b2 <- compare(
+    "B2. Oncology trial, 'look-back makes a difference' p-values, look-back on",
+    p_b2,
+    info_b,
+    w_b,
+    G_b,
+    TRUE,
+    hyp_b
+)
 cat("vignette: with look-back H2, H4 and H5 are rejected as well\n")
 
-res_b3 <- compare("B3. The same p-values, look-back off (conventions differ for finished endpoints)",
-                  p_b2, info_b, w_b, G_b, FALSE, hyp_b)
-cat("vignette: without look-back H4 and H5 are not rejected, H2 is rejected at analysis 2\n")
+res_b3 <- compare(
+    "B3. The same p-values, look-back off (conventions differ for finished endpoints)",
+    p_b2,
+    info_b,
+    w_b,
+    G_b,
+    FALSE,
+    hyp_b
+)
+cat(
+    "vignette: without look-back H4 and H5 are not rejected, H2 is rejected at analysis 2\n"
+)
 
-saveRDS(list(A = res_a, B1 = res_b1, B2 = res_b2, B3 = res_b3),
-        file.path(here, "06_graphicalmcp_vignette_results.rds"))
+saveRDS(
+    list(A = res_a, B1 = res_b1, B2 = res_b2, B3 = res_b3),
+    file.path(here, "06_graphicalmcp_vignette_results.rds")
+)
