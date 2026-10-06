@@ -2,7 +2,7 @@
 % Please edit documentation in R/trial_success.R
 \name{trial_success}
 \alias{trial_success}
-\title{Create a trial success function}
+\title{Create a \emph{trial success} function}
 \usage{
 trial_success(objective, verbose = multigrain_verbosity())
 }

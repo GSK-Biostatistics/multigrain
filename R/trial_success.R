@@ -1,4 +1,4 @@
-#' Create a trial success function
+#' Create a _trial success_ function
 #'
 #' Create a user-defined **trial-success utility** \eqn{\psi} that assigns
 #' value to each rejection pattern from a graphical multiple testing procedure.
