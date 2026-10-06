@@ -15,6 +15,10 @@ template:
 development:
   mode: auto
 
+navbar:
+  type: light
+  bg: none
+
 home:
   navbar:
     structure:
