@@ -76,8 +76,7 @@ new_graph_constraint <- function(
 #'   i.e. `sqrt(.Machine$double.eps)` (the standard R definition of
 #'   "practically equal", as used by [base::all.equal()]).
 #'
-#' @returns A multigrain _graph constraint_ object (an S3 list with class
-#'   `multigrain_graph_constraint`) containing:
+#' @returns A `multigrain_graph constraint` object containing:
 #'   * `hyp_constraint`: a numeric vector representing the constraints on the
 #'   hypothesis weight vector.
 #'   * `trans_constraint`: a numeric matrix representing the constraints on the

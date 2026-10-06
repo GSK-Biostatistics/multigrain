@@ -38,8 +38,7 @@ i.e. \code{sqrt(.Machine$double.eps)} (the standard R definition of
 "practically equal", as used by \code{\link[base:all.equal]{base::all.equal()}}).}
 }
 \value{
-A multigrain \emph{graph constraint} object (an S3 list with class
-\code{multigrain_graph_constraint}) containing:
+A \verb{multigrain_graph constraint} object containing:
 \itemize{
 \item \code{hyp_constraint}: a numeric vector representing the constraints on the
 hypothesis weight vector.
