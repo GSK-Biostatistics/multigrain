@@ -18,6 +18,8 @@
 #'
 #' @returns A [ggraph::ggraph()] object.
 #'
+#' @rdname graph_optimal_plot
+#'
 #' @export
 #' @examples
 #' library(ggplot2)
@@ -325,7 +327,7 @@ estimate_root <- function(nodes, edges) {
     which(node_names %in% root)
 }
 
-#' @rdname autoplot.multigrain_graph_optimal
+#' @rdname graph_optimal_plot
 #' @param x A `multigrain_graph_optimal` object.
 #' @export
 plot.multigrain_graph_optimal <- function(
