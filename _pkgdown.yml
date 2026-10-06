@@ -57,7 +57,8 @@ reference:
       Control more advanced aspects of the global and local optimisation
     contents:
     - multigrain_control
-    - control_nsim
+    - control_nsim_local
+    - control_nsim_global
     - control_local
     - control_global
 
