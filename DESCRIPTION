@@ -36,8 +36,8 @@ Imports:
     vctrs,
     withr
 Suggests:
-    spelling,
     gMCPLite,
+    spelling,
     svglite,
     testthat (>= 3.0.0),
     vdiffr
