@@ -1,6 +1,13 @@
 # Package index
 
-## Inputs
+## Optimisation
+
+### Optimisation functions
+
+- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+  : Optimise graph-based multiple testing procedures
+
+### Optimisation inputs
 
 Create the optimisation inputs
 
@@ -20,7 +27,7 @@ Create the optimisation inputs
 
   Create an unconstrained *graph constraint*
 
-## Advanced control
+### Optimisation control
 
 Control more advanced aspects of the global and local optimisation
 
@@ -34,14 +41,7 @@ Control more advanced aspects of the global and local optimisation
 - [`control_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_global.md)
   : Modify global optimisation options
 
-## Optimisation
-
-Optimisation functions
-
-- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
-  : Optimise graph-based multiple testing procedures
-
-## Post-processing
+### Post-processing
 
 Work with an optimised graph
 
