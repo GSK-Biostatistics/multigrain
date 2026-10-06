@@ -4,7 +4,7 @@
 
 ### Optimisation functions
 
-- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
   : Optimise graph-based multiple testing procedures
 
 ### Inputs
@@ -37,8 +37,8 @@ Control more advanced aspects of the global and local optimisation
   : Modify global optimisation options
 - [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md)
   : Modify local optimisation options
-- [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
-  [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
+- [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
+  [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
   : Modify the number of simulations
 
 ### Post-processing

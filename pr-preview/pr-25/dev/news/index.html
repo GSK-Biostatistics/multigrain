@@ -49,7 +49,7 @@
 <ul><li>
 <code><a href="../reference/graph_optimal_get_control.html">graph_optimal_get_control()</a></code> can be used to extract the optimisation settings (i.e. the <code>multigrain_control</code> object) from the optimised graph.</li>
 <li>
-<code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> (named changed - see “Changes” below) now accepts a <code>num_threads</code> argument for parallel execution of the shortcut algorithm. This replaces the previous <code>control_parallel()</code> workflow. Default is <code>1L</code> (serial).</li>
+<code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> (named changed - see “Changes” below) now accepts a <code>num_threads</code> argument for parallel execution of the shortcut algorithm. This replaces the previous <code>control_parallel()</code> workflow. Default is <code>1L</code> (serial).</li>
 <li>Users can supply names to <code><a href="../reference/graph_random.html">graph_random()</a></code>.</li>
 <li>Users can supply titles when plotting <code>multigrain_graph_constraint</code> or <code>multigrain_graph_optimal</code> objects.</li>
 </ul></div>
@@ -62,9 +62,9 @@
 <div class="section level3">
 <h3 id="changes-0-3-0">Changes<a class="anchor" aria-label="anchor" href="#changes-0-3-0"></a></h3>
 <ul><li>
-<code>optimise_graph()</code> and <code>optimize_graph()</code> have been renamed to <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> and <code><a href="../reference/graph_optimise.html">graph_optimize()</a></code>
+<code>optimise_graph()</code> and <code>optimize_graph()</code> have been renamed to <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> and <code><a href="../reference/graph_optimisation.html">graph_optimize()</a></code>
 </li>
-<li>the <code>verbose</code> argument to <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> and <code><a href="../reference/trial_success.html">trial_success()</a></code> is no longer a logical, but a character with the user being able to choose one of three verbosity levels:
+<li>the <code>verbose</code> argument to <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> and <code><a href="../reference/trial_success.html">trial_success()</a></code> is no longer a logical, but a character with the user being able to choose one of three verbosity levels:
 <ul><li>
 <code>"info"</code>: will only show milestones / informational messages highlighting the progress of the optimisation at coarse-grained level. This corresponds to what was previously <code>TRUE</code>.</li>
 <li>
@@ -73,9 +73,9 @@
 <code>"silent"</code>: no information about the progress of the optimisation is printed to the console. This corresponds to what was previously <code>FALSE</code>.</li>
 <li>verbosity can be control both at <em>function-</em> and <em>package-</em> level. At <em>package-level</em> this is done with the <code>multigrain_verbosity</code> option which should be set to one of the three possible values (“detail” &gt; “info” &gt; “silent”).</li>
 </ul></li>
-<li>in calls to the following functions all optional arguments must be named (they can no longer be passed by position): <code><a href="../reference/calc_power_pvals.html">calc_power_pvals()</a></code>, <code><a href="../reference/graph_constraint.html">graph_constraint()</a></code>, <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code>, <code><a href="../reference/simulate_pvalues.html">simulate_pvalues()</a></code>, and <code><a href="../reference/normalise_sum.html">normalise_sum()</a></code>. These functions also gain an <code>...</code> (also know as the “ellipsis”) argument to allow for future extensions.</li>
+<li>in calls to the following functions all optional arguments must be named (they can no longer be passed by position): <code><a href="../reference/calc_power_pvals.html">calc_power_pvals()</a></code>, <code><a href="../reference/graph_constraint.html">graph_constraint()</a></code>, <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code>, <code><a href="../reference/simulate_pvalues.html">simulate_pvalues()</a></code>, and <code><a href="../reference/normalise_sum.html">normalise_sum()</a></code>. These functions also gain an <code>...</code> (also know as the “ellipsis”) argument to allow for future extensions.</li>
 <li>
-<code>random_graph()</code> has been renamed to <code><a href="../reference/graph_random.html">graph_random()</a></code> (for consistency with <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> and to avoid a conflict with <code><a href="https://openpharma.github.io/graphicalMCP/reference/example_graphs.html" class="external-link">graphicalMCP::random_graph()</a></code>).</li>
+<code>random_graph()</code> has been renamed to <code><a href="../reference/graph_random.html">graph_random()</a></code> (for consistency with <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> and to avoid a conflict with <code><a href="https://openpharma.github.io/graphicalMCP/reference/example_graphs.html" class="external-link">graphicalMCP::random_graph()</a></code>).</li>
 <li>Updates to the <code>multigrain_control</code> object’s print method:
 <ul><li>
 <code>optimArgs</code> settings for the global optimisation are now printed, not just the top level class.</li>
@@ -88,7 +88,7 @@
 <li>Changes to parallelisation:
 <ul><li>
 <code>optimise_graph_parallel()</code> has been removed.</li>
-<li>use <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> with <code>num_threads</code> instead.</li>
+<li>use <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> with <code>num_threads</code> instead.</li>
 <li>
 <code>control_parallel()</code> and the <code>parallel_opt</code> slot on <code>multigrain_control</code> are removed.</li>
 <li>
@@ -97,10 +97,10 @@
 <li>
 <code>global_output</code> and <code>local_output</code> now store the raw global (<code>GA</code>) / local (<code>nloptr</code>) objects directly.</li>
 <li>
-<code>control_global_search()</code> has been removed. Reverted to <code>global_search</code> being a direct argument to <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code>.</li>
+<code>control_global_search()</code> has been removed. Reverted to <code>global_search</code> being a direct argument to <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code>.</li>
 <li>the names of the multigrain S3 classes are now prefixed with <code>"multigrain_":     *</code>graph_constraint<code>-&gt;</code>multigrain_graph_constraint<code>.     *</code>graph_optimal<code>-&gt;</code>multigrain_graph_optimal<code>.     *</code>trial_success<code>-&gt;</code>multigrain_trial_success<code>.     * no change for _control_, which has always been</code>multigrain_control<code>.     * the</code>summary()<code>and</code>print()` methods for these objects have been updated.</li>
 <li>
-<code><a href="../reference/graph_optimise.html">graph_optimise()</a></code>’s renormalises hypothesis-weight vectors and transition-matrix rows via <code><a href="../reference/normalise_sum.html">normalise_sum()</a></code>. Now each call will use a <code>tolerance</code> passed from <code>graph_constraint</code>. If not supplied, it will fall back to <code>tolerance = sqrt(.Machine$double.eps)</code>
+<code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code>’s renormalises hypothesis-weight vectors and transition-matrix rows via <code><a href="../reference/normalise_sum.html">normalise_sum()</a></code>. Now each call will use a <code>tolerance</code> passed from <code>graph_constraint</code>. If not supplied, it will fall back to <code>tolerance = sqrt(.Machine$double.eps)</code>
 </li>
 </ul></div>
 </div>

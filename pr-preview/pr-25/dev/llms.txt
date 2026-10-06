@@ -24,7 +24,7 @@ controls FWER.
 The fixed-sample gain-function optimisation workflow implemented by
 [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
 and
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 is described in [Spiers et al. (2026), *Gain-function optimisation of
 graphical multiple testing procedures for confirmatory clinical trials*
 (arXiv:2609.19994v1)](https://arxiv.org/abs/2609.19994).
@@ -36,7 +36,7 @@ graphical multiple testing procedures for confirmatory clinical trials*
 | Simulate p-values   | [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md) | Draw p-values from a multivariate normal test-statistic model          |
 | Define success      | [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)       | Specify what “trial success” means (compiled to C++ for speed)         |
 | Constrain the graph | [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md) | Fix weights, edges, or testing hierarchies                             |
-| Optimise            | [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)     | Find the graph that maximises expected trial success                   |
+| Optimise            | [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md) | Find the graph that maximises expected trial success                   |
 | Evaluate            | [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md) | Compute local power, disjunctive/conjunctive power, and custom metrics |
 
 ## Installation
@@ -198,7 +198,7 @@ license. Copyright © GlaxoSmithKline Research & Development Limited.
 
 ### Optimisation functions
 
-- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
   : Optimise graph-based multiple testing procedures
 
 ### Inputs
@@ -231,8 +231,8 @@ Control more advanced aspects of the global and local optimisation
   : Modify global optimisation options
 - [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md)
   : Modify local optimisation options
-- [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
-  [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
+- [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
+  [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
   : Modify the number of simulations
 
 ### Post-processing

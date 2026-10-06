@@ -28,7 +28,7 @@ control_nsim_global(ctrl, nsim_global)
   function in local optimisation.
 
   - If set and lower than the number of rows in the `pvals` matrix,
-    [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+    [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
     will use a random sample of `nsim_local` rows from `pvals` for local
     optimisation.
 
@@ -58,4 +58,11 @@ multigrain_control() |>
     control_nsim_global(10000)
 #> <multigrain_control>
 #> global simulations: 10000
+
+multigrain_control() |>
+    control_nsim_local(10000) |>
+    control_nsim_global(5000)
+#> <multigrain_control>
+#> local simulations: 10000
+#> global simulations: 5000
 ```

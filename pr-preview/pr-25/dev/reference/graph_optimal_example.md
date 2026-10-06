@@ -14,4 +14,4 @@ graph_optimal_example
 ### `graph_optimal_example`
 
 A `multigrain_graph_optimal` object. For more details see
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)

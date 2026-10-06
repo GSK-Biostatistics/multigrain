@@ -156,19 +156,19 @@ This text is not a task.
       →
       [`calc_ncp()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_ncp.md),
       [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md),
-      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
     - [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
       →
-      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md),
+      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md),
       [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md)
     - [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md)
       →
       [`graph_constraint_free()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_free.md),
-      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
     - [`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
       →
-      [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md),
-      [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md),
+      [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md),
+      [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md),
       [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md),
       [`control_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_global.md)
 - check data object documentation, might have to switch to Rd (markdown
@@ -191,14 +191,14 @@ This text is not a task.
 
 - add package-level verbosity control
 - make the `verbose` argument to
-  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md),
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md),
   [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
   *et al.* an enumeration - `c("info", "detail", "silent")`
 - introduce `...` to separate required from optional arguments to
   relevant functions:
   - [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md)
   - [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md)
-  - [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+  - [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
   - [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md)
   - [`normalise_sum()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/normalise_sum.md)
 - move the following functions and their tests to `R/graph_optimal` and
@@ -217,9 +217,9 @@ This text is not a task.
     - added a description for
       [`graph_optimal_get_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimal_get_control.md)
     - merged the documentation for
-      [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
+      [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
       and
-      [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
+      [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
       using the same title and adding descriptions
     - added a description for
       [`graph_constraint_free()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_free.md)
@@ -229,7 +229,7 @@ This text is not a task.
       [`autoplot.multigrain_graph_optimal()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_optimal.md)
   - arguments:
     - `global_search` in
-      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md):
+      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md):
       “A logical indicate whether” → “A logical indicating whether”.
     - `.ctrl` in
       [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md)
@@ -244,14 +244,14 @@ This text is not a task.
       style.
   - use @inheritParams more (document important arguments only once).
     - `alpha`: documented in
-      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
       and inherited in
       [`calc_ncp()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_ncp.md),
       [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md),
       and
       [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md).
     - aligned `verbose` in
-      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
       with `verbose` in
       [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md).
     - [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md)
@@ -261,9 +261,9 @@ This text is not a task.
     - `pvals`: the
       [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md)
       arg inherits the documentation from
-      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md).
+      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md).
     - ~~`graph_constraint`: descriptions have different focus across
-      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+      [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
       and
       [`graph_random()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_random.md).
       Consolidate with `@inheritParams`.~~
@@ -283,7 +283,7 @@ This text is not a task.
       /
       [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md):
       `@return` is lowercased (“a modified…”);
-      [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
+      [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
       uses a capital. Align.
     - `autoplot` methods: “`ggraph` / `ggplot` object” — ggraph inherits
       from ggplot, so “`ggraph` object” is sufficient and more precise.

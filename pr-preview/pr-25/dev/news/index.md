@@ -9,7 +9,7 @@
 - [`graph_optimal_get_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimal_get_control.md)
   can be used to extract the optimisation settings (i.e. the
   `multigrain_control` object) from the optimised graph.
-- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
   (named changed - see “Changes” below) now accepts a `num_threads`
   argument for parallel execution of the shortcut algorithm. This
   replaces the previous `control_parallel()` workflow. Default is `1L`
@@ -31,11 +31,11 @@
 ### Changes
 
 - `optimise_graph()` and `optimize_graph()` have been renamed to
-  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
   and
-  [`graph_optimize()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+  [`graph_optimize()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 - the `verbose` argument to
-  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
   and
   [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
   is no longer a logical, but a character with the user being able to
@@ -57,7 +57,7 @@
   named (they can no longer be passed by position):
   [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md),
   [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md),
-  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md),
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md),
   [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md),
   and
   [`normalise_sum()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/normalise_sum.md).
@@ -66,7 +66,7 @@
 - `random_graph()` has been renamed to
   [`graph_random()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_random.md)
   (for consistency with
-  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
   and to avoid a conflict with
   [`graphicalMCP::random_graph()`](https://openpharma.github.io/graphicalMCP/reference/example_graphs.html)).
 - Updates to the `multigrain_control` object’s print method:
@@ -80,7 +80,7 @@
 - Changes to parallelisation:
   - `optimise_graph_parallel()` has been removed.
   - use
-    [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+    [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
     with `num_threads` instead.
   - `control_parallel()` and the `parallel_opt` slot on
     `multigrain_control` are removed.
@@ -90,11 +90,11 @@
   local (`nloptr`) objects directly.
 - `control_global_search()` has been removed. Reverted to
   `global_search` being a direct argument to
-  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md).
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md).
 - the names of the multigrain S3 classes are now prefixed with
   `"multigrain_": *`graph_constraint`->`multigrain_graph_constraint`. *`graph_optimal`->`multigrain_graph_optimal`. *`trial_success`->`multigrain_trial_success`. * no change for _control_, which has always been`multigrain_control`. * the`summary()`and`print()\`
   methods for these objects have been updated.
-- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)’s
+- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)’s
   renormalises hypothesis-weight vectors and transition-matrix rows via
   [`normalise_sum()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/normalise_sum.md).
   Now each call will use a `tolerance` passed from `graph_constraint`.

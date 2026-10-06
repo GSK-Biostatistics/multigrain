@@ -109,7 +109,7 @@ hypothesis weight vector.</p></li>
 <li><p><code>trans_constraint</code>: a numeric matrix representing the constraints on the
 transition matrix.
 If an element is <code>NA</code>, it is a free parameter to be optimised by
-<code><a href="graph_optimise.html">graph_optimise()</a></code>.</p></li>
+<code><a href="graph_optimisation.html">graph_optimise()</a></code>.</p></li>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -117,12 +117,12 @@ If an element is <code>NA</code>, it is a free parameter to be optimised by
 constraint on the transition matrix (<code>trans_constraint</code>).</p>
 <p>The <em>graph constraint</em> object is used to define constraints on both the
 hypothesis weight vector and the transition matrix in graph-based
-optimisation procedures. The <code><a href="graph_optimise.html">graph_optimise()</a></code> function will read the graph
+optimisation procedures. The <code><a href="graph_optimisation.html">graph_optimise()</a></code> function will read the graph
 constraints and only optimise free parameters (specified by <code>NA</code> in
 <code>hyp_constraint</code> and <code>trans_constraint</code>).</p>
 <p>Either <code>hyp_constraint</code> or <code>trans_constraint</code> must be provided (they can't
 both be <code>NULL</code> at the same time). If only one is provided, the
-<em>graph constraint</em> object will allow <code><a href="graph_optimise.html">graph_optimise()</a></code> to optimise any
+<em>graph constraint</em> object will allow <code><a href="graph_optimisation.html">graph_optimise()</a></code> to optimise any
 parameter (i.e., no constraints will be specified) in the other one.</p>
 <p><code>hyp_constraint</code> and <code>trans_constraint</code> must refer to the same number of
 hypotheses.</p>

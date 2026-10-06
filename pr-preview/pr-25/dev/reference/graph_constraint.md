@@ -65,7 +65,7 @@ A multigrain *graph constraint* object (an S3 list with class
 - `trans_constraint`: a numeric matrix representing the constraints on
   the transition matrix. If an element is `NA`, it is a free parameter
   to be optimised by
-  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md).
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md).
 
 ## Details
 
@@ -75,7 +75,7 @@ constraint on the transition matrix (`trans_constraint`).
 The *graph constraint* object is used to define constraints on both the
 hypothesis weight vector and the transition matrix in graph-based
 optimisation procedures. The
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 function will read the graph constraints and only optimise free
 parameters (specified by `NA` in `hyp_constraint` and
 `trans_constraint`).
@@ -83,7 +83,7 @@ parameters (specified by `NA` in `hyp_constraint` and
 Either `hyp_constraint` or `trans_constraint` must be provided (they
 can't both be `NULL` at the same time). If only one is provided, the
 *graph constraint* object will allow
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 to optimise any parameter (i.e., no constraints will be specified) in
 the other one.
 
