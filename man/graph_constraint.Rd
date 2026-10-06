@@ -79,5 +79,5 @@ graph_constraint(hyp_constraint = c(NA, 0.4, NA))
 \references{
 Xi, D. and Chen, Y. (2024). Optimal weighted Bonferroni tests and
 their graphical extensions. \emph{Statistics in Medicine}, 43(3),
-475--500. \doi{doi:10.1002/sim.9958}.
+475--500. \doi{doi:10.1002/sim.9958}
 }
