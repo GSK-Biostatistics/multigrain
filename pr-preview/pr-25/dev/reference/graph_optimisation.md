@@ -121,7 +121,7 @@ A `multigrain_graph_optimal` object containing:
 - `global_search`: `TRUE` or `FALSE` indicating whether a global
   optimisation was performed.
 
-- `control`: The
+- `control`: The modified
   [multigrain_control](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
   object used. Values passed on by the user are complemented with
   contextual defaults.
@@ -169,19 +169,19 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [26.9s]
+#> ✔ Running global optimization [27.5s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [15ms]
+#> ✔ Evaluating trial success of globally optimised graph [16ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [92ms]
+#> ✔ Running local optimization [89ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
 #> ✔ Evaluating trial success of locally optimised graph [15ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [19ms]
+#> ✔ Pruning redundant weights and edges [20ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
 #> ✔ Evaluating trial success of pruned graph [7ms]
