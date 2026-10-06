@@ -2,7 +2,7 @@
 % Please edit documentation in R/graph_constraint.R
 \name{graph_constraint}
 \alias{graph_constraint}
-\title{Create a \emph{graph constraint} object for optimisation procedures}
+\title{Create a \emph{graph constraint} for optimisation procedures}
 \usage{
 graph_constraint(
   hyp_constraint = NULL,

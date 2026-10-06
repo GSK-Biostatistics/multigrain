@@ -34,7 +34,7 @@ new_graph_constraint <- function(
 
 ## user-facing constructor ------------------------------------------------
 
-#' Create a _graph constraint_ object for optimisation procedures
+#' Create a _graph constraint_ for optimisation procedures
 #'
 #' A _graph constraint_ object defines constraints on the hypothesis weight
 #' vector and transition matrix for optimisation of graph-based multiple testing
