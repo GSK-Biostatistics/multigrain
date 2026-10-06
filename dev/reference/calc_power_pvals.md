@@ -63,9 +63,9 @@ calc_power_pvals(
     named) list:
     `f = list( power1and3 = function(x) {x[1] && x[3]}, power1and2 = function(x) {x[1] && x[2]} )`.
     If the list has no names, the functions will be referenced as
-    `"func1"`, `"func2"`, etc. in the output. The user can also provide
-    a `multigrain_trial_success` object instead (resulting in a faster
-    calculation).
+    `"func1"`, `"func2"`, and so on, in the output. The user can also
+    provide a `multigrain_trial_success` object instead (resulting in a
+    faster calculation).
 
   - Instead of anonymous functions, one can pass a
     `multigrain_trial_success` object (or within a list as with the

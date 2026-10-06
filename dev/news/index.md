@@ -2,6 +2,8 @@
 
 ## multigrain (development version)
 
+## multigrain 0.3.0
+
 ### New functionality
 
 - [`graph_optimal_get_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimal_get_control.md)
@@ -19,6 +21,8 @@
 
 ### Bug fixes
 
+- Global and local graph optimiser stages now independently sample from
+  the full p-value simulation matrix when a subset is requested.
 - [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
   now accepts expressions/strings containing only `r<digit>` symbols,
   numeric literals, and operators; this fixes failures when an object
@@ -64,7 +68,7 @@
   (for consistency with
   [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
   and to avoid a conflict with
-  [`graphicalMCP::random_graph()`](https://rdrr.io/pkg/graphicalMCP/man/example_graphs.html)).
+  [`graphicalMCP::random_graph()`](https://openpharma.github.io/graphicalMCP/reference/example_graphs.html)).
 - Updates to the `multigrain_control` object’s print method:
   - `optimArgs` settings for the global optimisation are now printed,
     not just the top level class.
@@ -133,9 +137,9 @@
 ### Bug fixes
 
 - `$power$trial_success` from `graph_optimal` object did not match the
-  graph the user sees (eg when plotting), due to power being calculated
-  before pruning. `multigrain` now stores pre-pruned powers as
-  `$global_opt_power` / `$local_opt_power`, and set `$power` to the
+  graph the user sees (e.g. when plotting), due to power being
+  calculated before pruning. `multigrain` now stores pre-pruned powers
+  as `$global_opt_power` / `$local_opt_power`, and set `$power` to the
   post-pruned evaluation.
 - Improved argument checking and error messages for optimisation
   parameters.
@@ -186,7 +190,7 @@
   - users can get and set `graph_constraint` elements with `[` and `$`.
     A modified `graph_constraint` is then automatically (re-)validated.
   - `graph_constraint` validation happens with tolerance
-- pkgwdown site and vignette
+- {pkgwdown} site and vignette
 - [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md)
   function simulates raw p-values from under the alternative hypotheses
   and the assumption that the distribution of test statistics is a
@@ -216,8 +220,8 @@
     snake-case convention, e.g.,
     - `graphOpt()` function is now `optimise_graph()`
     - `graphConstraint()` function is now
-      [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md),
-      etc.
+      [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md)
+      and so on.
   - Checks of `pvals`/`graph_constraint`/`start_graph` dimensions and
     arguments have been introduced for `optimise_graph()` to prevent
     downstream crashing.
@@ -242,7 +246,7 @@
 
 ### Changes
 
-- Confirmed R package dependencies (GA, nloptr, gMCPLite, etc.)
+- Confirmed R package dependencies (GA, nloptr, gMCPLite, and so on)
 - Updated the version in the DESCRIPTION file from 0.0.1 to 0.0.2
 - Removed inequality constraints from NLOPT routine
 

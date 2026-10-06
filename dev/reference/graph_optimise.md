@@ -97,30 +97,54 @@ graph_optimise(
 
 ## Value
 
-A `multigrain_graph_optimal` object containing: \* `hyp_weight`:
-Optimised hypothesis weights (numeric vector). \* `trans_matrix`:
-Optimised transition matrix (numeric matrix). \* `constraints`: List of
-constraints used in the optimisation for weights and transition matrix.
-\* `trial_success`: The trial success function used in the optimisation.
-\* `power`: Power metrics for the optimised graph. \* `solution`: A list
-containing: \* `opt_source`: Source of the optimal solution (`local` or
-`global`). \* `graph_valid`: Named logical vector indicating validity of
-the local and global solutions
-(`c("local" = TRUE/FALSE, "global" = TRUE/FALSE)`). \* `global_search`:
-`TRUE` or `FALSE` indicating whether a global optimisation was
-performed. \* `control`: A modified
-[`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
-object used. The values passed on by the user are complemented with
-contextual defaults. \* `global_output`: Output from the genetic
-algorithm if global optimisation was performed. \* `local_output`:
-Output from the NLOPT optimisation. \* `start_graph`: Initial starting
-values used in the optimisation.
+A `multigrain_graph_optimal` object containing:
+
+- `hyp_weight`: Optimised hypothesis weights (numeric vector).
+
+- `trans_matrix`: Optimised transition matrix (numeric matrix).
+
+- `constraints`: List of constraints used in the optimisation for
+  weights and transition matrix.
+
+- `trial_success`: The trial success function used in the optimisation.
+
+- `power`: Power metrics for the optimised graph.
+
+- `solution`: A list containing:
+
+  - `opt_source`: Source of the optimal solution (`local` or `global`).
+
+  - `graph_valid`: Named logical vector indicating validity of the local
+    and global solutions
+    (`c("local" = TRUE/FALSE, "global" = TRUE/FALSE)`).
+
+- `global_search`: `TRUE` or `FALSE` indicating whether a global
+  optimisation was performed.
+
+- `control`: A modified
+  [`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
+  object used. The values passed on by the user are complemented with
+  contextual defaults.
+
+- `global_output`: Output from the genetic algorithm if global
+  optimisation was performed.
+
+- `local_output`: Output from the NLOPT optimisation.
+
+- `start_graph`: Initial starting values used in the optimisation.
 
 ## Details
 
 The output is a graph where a specified objective function - the *trial
 success measure* - is maximised under given constraints on the graph
 structure, conditional on a p-value distribution supplied.
+
+## References
+
+Spiers, A. D. V., Grayling, M. J., Wheeler, G. M., and Mander, A. P.
+(2026). Gain-function optimisation of graphical multiple testing
+procedures for confirmatory clinical trials. *arXiv:2609.19994v1*.
+<https://arxiv.org/abs/2609.19994>
 
 ## Examples
 
@@ -146,22 +170,22 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [31.5s]
+#> ✔ Running global optimization [16s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [13ms]
+#> ✔ Evaluating trial success of globally optimised graph [10ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [111ms]
+#> ✔ Running local optimization [52ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [12ms]
+#> ✔ Evaluating trial success of locally optimised graph [10ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [15ms]
+#> ✔ Pruning redundant weights and edges [13ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [6ms]
+#> ✔ Evaluating trial success of pruned graph [8ms]
 #> 
 # }
 ```

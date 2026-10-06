@@ -40,7 +40,7 @@ graph_constraint(
 
   An optional character vector containing hypotheses' names. If not
   provided it defaults to `"auto"` meaning the hypotheses will be
-  automatically named `"H1"`, `"H2"`, etc.
+  automatically named `"H1"`, `"H2"`, and so on.
 
 - diagnose:
 
@@ -94,7 +94,7 @@ hypotheses.
 
 Xi, D. and Chen, Y. (2024). Optimal weighted Bonferroni tests and their
 graphical extensions. *Statistics in Medicine*, 43(3), 475–500.
-<https://doi.org/10.1002/sim.9958>
+[doi:10.1002/sim.9958](https://doi.org/10.1002/sim.9958) .
 
 ## Examples
 

@@ -30,6 +30,14 @@ is the tool that identifies these optimal parameters, enabling users to
 find the graph that gives that highest value for their chosen trial
 success measure.
 
+The fixed-sample gain-function optimisation framework implemented by
+[`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
+and
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+is described in [Spiers et al. (2026), *Gain-function optimisation of
+graphical multiple testing procedures for confirmatory clinical trials*
+(arXiv:2609.19994v1)](https://arxiv.org/abs/2609.19994).
+
 ## Motivating Example
 
 Consider a two-arm parallel confirmatory clinical trial to compare a
@@ -154,7 +162,7 @@ alpha level. This is distinct from the **local power**, which is the
 actual probability of rejecting a hypothesis *after* the graphical
 procedure is applied.
 
-#### Asthsma example: simulating the p-value matrix using `simulate_pvalues()`
+#### Asthma example: simulating the p-value matrix using `simulate_pvalues()`
 
 with working correlation matrix for $`(H_1,\dots,H_4)`$:
 
@@ -207,7 +215,7 @@ maximises. It encodes the success criteria for a trial by mapping the
 outcomes of the graphical test to a numerical score. (A dedicated
 vignette on trial success measures is planned for a future release.)
 
-After analyzing the collected data from our trial, we obtain four raw
+After analysing the collected data from our trial, we obtain four raw
 p-values: $`p_1, p_2, p_3, p_4`$, each corresponding to one of our
 hypotheses $`H_1, H_2, H_3, H_4`$.
 
