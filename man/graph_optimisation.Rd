@@ -80,8 +80,8 @@ and global solutions (\code{c("local" = TRUE/FALSE, "global" = TRUE/FALSE)}).
 }
 \item \code{global_search}: \code{TRUE} or \code{FALSE} indicating whether a global
 optimisation was performed.
-\item \code{control}: The \link{multigrain_control} object used. Values passed on by the
-user are complemented with contextual defaults.
+\item \code{control}: The modified \link{multigrain_control} object used. Values passed on
+by the user are complemented with contextual defaults.
 \item \code{global_output}: Output from the genetic algorithm if global
 optimisation was performed.
 \item \code{local_output}: Output from the NLOPT optimisation.

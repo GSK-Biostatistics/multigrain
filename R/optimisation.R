@@ -56,8 +56,8 @@
 #'     "global" = TRUE/FALSE)`).
 #' * `global_search`: `TRUE` or `FALSE` indicating whether a global
 #'   optimisation was performed.
-#' * `control`: The [multigrain_control] object used. Values passed on by the
-#'   user are complemented with contextual defaults.
+#' * `control`: The modified [multigrain_control] object used. Values passed on
+#'   by the user are complemented with contextual defaults.
 #' * `global_output`: Output from the genetic algorithm if global
 #'   optimisation was performed.
 #' * `local_output`: Output from the NLOPT optimisation.
