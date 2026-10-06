@@ -1,9 +1,7 @@
 Autoplot
 Bonferroni
-Bretz
 CMD
 COBYLA
-CTP
 FEV
 FWER
 GlaxoSmithKline
@@ -17,9 +15,7 @@ Mul
 NCPs
 NLOPT
 ORCID
-RcppParallel
 Secondaries
-Simes
 ULP
 aphical
 bmatrix
@@ -28,7 +24,6 @@ covr
 esting
 frac
 gMCP
-gMCPLite
 geq
 ggplot
 ggraph
@@ -37,13 +32,11 @@ investigational
 mathbb
 mathbf
 mathrm
+md
 mprove
 multigrain's
-nloptr
 operatorname
-pkgwdown
 pproaches
-regex
 reprex
 rlang's
 secondaries
