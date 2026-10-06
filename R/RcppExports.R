@@ -25,14 +25,12 @@
 #' @references
 #' Bretz, F., Maurer, W., Brannath, W., and Posch, M. (2009). A graphical
 #' approach to sequentially rejective multiple test procedures.
-#' Statistics in Medicine, 28(4), 586--604.
-#' <https://doi.org/10.1002/sim.3495>
+#' Statistics in Medicine, 28(4), 586--604. \doi{doi:10.1002/sim.3495}
 #'
 #' Bretz, F., Posch, M., Glimm, E., Klinglmueller, F., Maurer, W., and
 #' Rohmeyer, K. (2011). Graphical approaches for multiple comparison
 #' procedures using weighted Bonferroni, Simes, or parametric tests.
-#' Biometrical Journal, 53(6), 894--913.
-#' <https://doi.org/10.1002/bimj.201000239>
+#' Biometrical Journal, 53(6), 894--913. \doi{doi:10.1002/bimj.201000239}
 #'
 #' @noRd
 calc_local_weights <- function(w, G) {
