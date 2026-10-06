@@ -14,9 +14,6 @@ Create the optimisation inputs
 - [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md)
   : Simulate raw p-values
 
-- [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
-  : Create a trial success function
-
 - [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md)
   :
 
@@ -27,19 +24,22 @@ Create the optimisation inputs
 
   Create an unconstrained *graph constraint*
 
+- [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
+  : Create a trial success function
+
 ### Advanced control
 
 Control more advanced aspects of the global and local optimisation
 
 - [`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
   : Set parameters for graph optimisation
-- [`control_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_global.md)
-  : Modify global optimisation options
-- [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md)
-  : Modify local optimisation options
 - [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
   [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
   : Modify the number of simulations
+- [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md)
+  : Modify local optimisation options
+- [`control_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_global.md)
+  : Modify global optimisation options
 
 ### Post-processing
 
