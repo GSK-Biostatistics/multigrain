@@ -69,6 +69,7 @@
 #' for confirmatory clinical trials. *arXiv:2609.19994v1*.
 #' <https://arxiv.org/abs/2609.19994>
 #'
+#' @rdname graph_optimisation
 #' @export
 #' @examples
 #'
@@ -243,12 +244,6 @@ graph_optimise <- function(
         start_graph = start_graph
     )
 }
-
-#' @export
-#' @rdname graph_optimise
-#' @usage NULL
-graph_optimize <- graph_optimise
-
 
 .sample_pvals_rows <- function(pvals, nsim) {
     pvals[
@@ -483,3 +478,10 @@ graph_optimize <- graph_optimise
         local_output = nlopt_result
     )
 }
+
+# British to American spelling -------------------------------------------
+
+#' @export
+#' @rdname graph_optimisation
+#' @usage NULL
+graph_optimize <- graph_optimise
