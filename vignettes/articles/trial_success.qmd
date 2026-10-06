@@ -231,10 +231,15 @@ trial_success_gsd(
 ### End-to-end evaluation
 
 To evaluate the gain on simulated GSD data, you simulate p-values, transform
-them to repeated p-values, and evaluate a graph on them with
-`calc_power_pvals_gsd()`. Pass the gain through `custom_power`; the result also
-carries the power of each hypothesis by analysis and the distribution of its
-decision time.
+them to repeated p-values, and pass the results through the testing kernel.
+
+::: {.callout-warning}
+## Internal API
+
+The public consumer `calc_power_pvals_gsd()` does not exist yet. The code below
+uses the internal kernel `multigrain:::graph_shortcut_gsd()`, which is not part
+of the public API and may change without notice.
+:::
 
 ```{r}
 #| label: end-to-end
@@ -259,26 +264,23 @@ pv <- transform_pvalues_gsd(
     alpha = alpha, grid_size = 1024L
 )
 
+# Reshape the 3-D p-value array to the 2-D layout the kernel expects
+gsd_pvals_matrix <- function(x) {
+    v <- x$pvals
+    d <- dim(v)
+    dim(v) <- c(d[1], d[2] * d[3])
+    v
+}
+
 G <- rbind(c(0, 1), c(1, 0))   # full recycling between PFS and OS
-power <- calc_power_pvals_gsd(
-    pv,
-    hyp_weight = c(0.5, 0.5),
-    trans_matrix = G,
-    custom_power = list(gain = gain)
+out <- multigrain:::graph_shortcut_gsd(
+    gsd_pvals_matrix(pv), alpha,
+    w = c(0.5, 0.5), G, K = 2L
 )
 
-round(power$gain, 3)
-#> [1] 0.903
-
-round(power$time_distribution, 3)
-#>    never analysis 1 analysis 2
-#> H1 0.028      0.966      0.006
-#> H2 0.078      0.667      0.255
+gain$func(out$time)
+#> [1] 0.5833
 ```
-
-The gain can be checked by hand from the decision-time distribution:
-$0.4 \times (0.966 + 0.50 \times 0.006) + 0.6 \times (0.667 + 0.75 \times 0.255)
-\approx 0.903$.
 
 # Things that go wrong quietly
 
@@ -290,8 +292,7 @@ compile without error and produce silently wrong results.
 
 The constructor adds a leading zero (for "never rejected") automatically. If you
 include it yourself, `K` is inferred as one more than you intended and every
-claim is mispriced. The increase from `0` to the next value triggers a warning
-that names the table, but the table still compiles.
+claim is mispriced — with **no warning**.
 
 ```r
 # WRONG — K is inferred as 3; d(1) = 0, d(2) = 1
@@ -323,11 +324,11 @@ trial_success_gsd(d(t1), d = c(1, delta))
 ::: {.callout-warning}
 ## Do not pass a GSD gain to the fixed-sample optimiser
 
-`graph_optimise()` and `calc_power_pvals()` supply a *logical* rejection
-matrix, not decision times, so a gain created with `trial_success_gsd()` would
-score every rejection as though it happened at analysis 1. Both functions
-refuse such an object with an error that points to `graph_optimise_gsd()` and
-`calc_power_pvals_gsd()`.
+`trial_success_gsd()` objects inherit from `multigrain_trial_success`, so
+`graph_optimise(trial_success = <gsd_object>)` passes validation. But the
+fixed-sample optimiser supplies a *logical* rejection matrix, not decision
+times. Rcpp coerces `TRUE`/`FALSE` to 1/0, so every rejection is scored as
+though it happened at analysis 1 — a silently wrong answer.
 :::
 
 ::: {.callout-tip}
