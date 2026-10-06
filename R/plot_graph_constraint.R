@@ -11,6 +11,8 @@
 #'
 #' @returns A [ggraph::ggraph()] object.
 #'
+#' @rdname graph_constraint_plot
+#'
 #' @export
 #' @examples
 #' library(ggplot2)
@@ -106,7 +108,7 @@ autoplot.multigrain_graph_constraint <- function(
     output
 }
 
-#' @rdname autoplot.multigrain_graph_constraint
+#' @rdname graph_constraint_plot
 #' @param x A `multigrain_graph_constraint` object.
 #'
 #' @export

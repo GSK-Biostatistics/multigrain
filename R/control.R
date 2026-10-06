@@ -15,7 +15,7 @@
 #' optimisation. There are predefined defaults, but they are calibrated based on
 #' the `pvals` dimensions.
 #'
-#' @returns A multigrain _control_ object.
+#' @returns A `multigrain_control` object.
 #'
 #' @export
 #' @examples

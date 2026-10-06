@@ -15,6 +15,10 @@ template:
 development:
   mode: auto
 
+navbar:
+  type: light
+  bg: none
+
 home:
   navbar:
     structure:
@@ -33,18 +37,24 @@ articles:
   - articles/graph_constraint
 
 reference:
-  - title: Inputs
+  - title: Optimisation
+  - subtitle: Optimisation functions
+    contents:
+    - graph_optimise
+    - graph_optimize
+
+  - subtitle: Inputs
     desc: >
       Create the optimisation inputs
     contents:
     - simulate_pvalues
-    - trial_success
     - graph_constraint
     - graph_constraint_free
+    - trial_success
 
-  - title: Advanced control
+  - subtitle: Advanced control
     desc: >
-      Control more advanced aspects of the global and local optimisation
+      Control advanced aspects of the global and local optimisation
     contents:
     - multigrain_control
     - control_nsim_local
@@ -52,14 +62,7 @@ reference:
     - control_local
     - control_global
 
-  - title: Optimisation
-    desc: >
-      Optimisation functions
-    contents:
-    - graph_optimise
-    - graph_optimize
-
-  - title: Post-processing
+  - subtitle: Post-processing
     desc: >
       Work with an optimised graph
     contents:
@@ -71,8 +74,7 @@ reference:
     desc: >
       Plotting functions
     contents:
-    - autoplot.multigrain_graph_constraint
-    - autoplot.multigrain_graph_optimal
+    - starts_with("autoplot")
 
   - title: Helper functions
     desc: >

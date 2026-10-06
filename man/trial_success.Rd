@@ -2,7 +2,7 @@
 % Please edit documentation in R/trial_success.R
 \name{trial_success}
 \alias{trial_success}
-\title{Create a trial success function}
+\title{Create a \emph{trial success} function}
 \usage{
 trial_success(objective, verbose = multigrain_verbosity())
 }
@@ -13,8 +13,8 @@ the corresponding hypotheses. To inject values from your R session, use
 rlang's injection operator - \code{\link[rlang:injection-operator]{!!}} - (see
 Examples). Arithmetic and logical operators are allowed.}
 
-\item{verbose}{An optional string controlling verbosity ("detail" >
-"info" > "silent"). Verbosity can also be set at package level with the
+\item{verbose}{An optional string controlling verbosity (\code{"detail"} >
+\code{"info"} > \code{"silent"}). Verbosity can also be set at package level with the
 \code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
 \itemize{
 \item \code{"info"} (default): will inform about the successful compilation of the

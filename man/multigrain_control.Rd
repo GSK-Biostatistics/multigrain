@@ -7,7 +7,7 @@
 multigrain_control()
 }
 \value{
-A multigrain \emph{control} object.
+A \code{multigrain_control} object.
 }
 \description{
 There are two steps needed to fine tune the graph optimisation with

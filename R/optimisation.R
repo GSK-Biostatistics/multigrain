@@ -56,8 +56,8 @@
 #'     "global" = TRUE/FALSE)`).
 #' * `global_search`: `TRUE` or `FALSE` indicating whether a global
 #'   optimisation was performed.
-#' * `control`: A modified [multigrain_control()] object used. The values
-#'   passed on by the user are complemented with contextual defaults.
+#' * `control`: The modified [multigrain_control] object used. Values passed on
+#'   by the user are complemented with contextual defaults.
 #' * `global_output`: Output from the genetic algorithm if global
 #'   optimisation was performed.
 #' * `local_output`: Output from the NLOPT optimisation.
@@ -69,6 +69,7 @@
 #' for confirmatory clinical trials. *arXiv:2609.19994v1*.
 #' <https://arxiv.org/abs/2609.19994>
 #'
+#' @rdname graph_optimisation
 #' @export
 #' @examples
 #'
@@ -243,12 +244,6 @@ graph_optimise <- function(
         start_graph = start_graph
     )
 }
-
-#' @export
-#' @rdname graph_optimise
-#' @usage NULL
-graph_optimize <- graph_optimise
-
 
 .sample_pvals_rows <- function(pvals, nsim) {
     pvals[
@@ -483,3 +478,10 @@ graph_optimize <- graph_optimise
         local_output = nlopt_result
     )
 }
+
+# British to American spelling -------------------------------------------
+
+#' @export
+#' @rdname graph_optimisation
+#' @usage NULL
+graph_optimize <- graph_optimise

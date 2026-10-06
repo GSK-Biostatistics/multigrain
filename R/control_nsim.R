@@ -19,6 +19,8 @@
 #'
 #' @returns A modified [multigrain_control].
 #'
+#' @rdname control_nsim
+#'
 #' @export
 #' @examples
 #' multigrain_control() |>
@@ -26,6 +28,10 @@
 #'
 #' multigrain_control() |>
 #'     control_nsim_global(10000)
+#'
+#' multigrain_control() |>
+#'     control_nsim_local(10000) |>
+#'     control_nsim_global(5000)
 control_nsim_local <- function(ctrl, nsim_local) {
     check_control(ctrl)
     rlang::check_number_whole(nsim_local, min = 1)
@@ -58,7 +64,7 @@ adjust_nsim_local <- function(ctrl, nrow_pvals, call = rlang::caller_env()) {
 }
 
 #' @export
-#' @rdname control_nsim_local
+#' @rdname control_nsim
 control_nsim_global <- function(ctrl, nsim_global) {
     check_control(ctrl)
     rlang::check_number_whole(nsim_global, min = 1)
