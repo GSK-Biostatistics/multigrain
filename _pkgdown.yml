@@ -48,9 +48,9 @@ reference:
       Create the optimisation inputs
     contents:
     - simulate_pvalues
-    - trial_success
     - graph_constraint
     - graph_constraint_free
+    - trial_success
 
   - subtitle: Advanced control
     desc: >
