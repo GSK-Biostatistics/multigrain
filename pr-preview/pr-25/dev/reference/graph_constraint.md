@@ -56,8 +56,7 @@ graph_constraint(
 
 ## Value
 
-A multigrain *graph constraint* object (an S3 list with class
-`multigrain_graph_constraint`) containing:
+A `multigrain_graph constraint` object containing:
 
 - `hyp_constraint`: a numeric vector representing the constraints on the
   hypothesis weight vector.
