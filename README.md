@@ -163,7 +163,7 @@ calc_power_pvals(
         AvgPower      = avg_power,
         Disjunctive   = disjunctive,
         CustomSuccess = custom_success
-  )
+    )
 )
 ```
 
@@ -182,8 +182,7 @@ calc_power_pvals(
 
 Found a bug, or want to request a feature? Please [open an
 issue](https://github.com/GSK-Biostatistics/multigrain/issues),
-including a [reprex](https://www.tidyverse.org/help/#reprex) where
-relevant.
+including a [reprex](https://tidyverse.org/help/#reprex) where relevant.
 
 ## Contributing
 
