@@ -7,7 +7,7 @@
 - [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
   : Optimise graph-based multiple testing procedures
 
-### Optimisation inputs
+### Inputs
 
 Create the optimisation inputs
 
@@ -27,19 +27,19 @@ Create the optimisation inputs
 
   Create an unconstrained *graph constraint*
 
-### Optimisation control
+### Advanced control
 
 Control more advanced aspects of the global and local optimisation
 
 - [`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
   : Set parameters for graph optimisation
+- [`control_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_global.md)
+  : Modify global optimisation options
+- [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md)
+  : Modify local optimisation options
 - [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
   [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
   : Modify the number of simulations
-- [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md)
-  : Modify local optimisation options
-- [`control_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_global.md)
-  : Modify global optimisation options
 
 ### Post-processing
 
