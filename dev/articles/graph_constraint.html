@@ -23,7 +23,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-none" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">multigrain</a>
 
@@ -161,7 +161,7 @@
 </section><section class="level2"><h3 id="from-hyp_constraint-only">From <code>hyp_constraint</code> only<a class="anchor" aria-label="anchor" href="#from-hyp_constraint-only"></a>
 </h3>
 <p>A <code>multigrain_graph_constraint</code> object can also be build by supplying only the <code>hyp_constraint</code>.</p>
-<p>When a <code>trans_constraint</code> is not present, its dimensions will be derived from the <code>hyp_constraint</code>. In this case <code>hyp_constraint</code> has 4 elements, therefore <code>trans_matrix</code> will be a 4-by-4 square matrix with all 0 on the diagonal and all other values being <code>NA</code>. This translates in <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> later being allowed to optimise any parameter.</p>
+<p>When a <code>trans_constraint</code> is not present, its dimensions will be derived from the <code>hyp_constraint</code>. In this case <code>hyp_constraint</code> has 4 elements, therefore <code>trans_matrix</code> will be a 4-by-4 square matrix with all 0 on the diagonal and all other values being <code>NA</code>. This translates in <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> later being allowed to optimise any parameter.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">gc_hyp_cnstr_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_constraint.html">graph_constraint</a></span><span class="op">(</span></span>

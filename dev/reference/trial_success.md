@@ -1,4 +1,4 @@
-# Create a trial success function
+# Create a *trial success* function
 
 Create a user-defined **trial-success utility** \\\psi\\ that assigns
 value to each rejection pattern from a graphical multiple testing
@@ -24,8 +24,8 @@ trial_success(objective, verbose = multigrain_verbosity())
 
 - verbose:
 
-  An optional string controlling verbosity ("detail" \> "info" \>
-  "silent"). Verbosity can also be set at package level with the
+  An optional string controlling verbosity (`"detail"` \> `"info"` \>
+  `"silent"`). Verbosity can also be set at package level with the
   `multigrain_verbosity` option (see
   [`multigrain_verbosity()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_verbosity.md)):
 

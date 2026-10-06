@@ -1,47 +1,49 @@
 # Package index
 
-## Inputs
+## Optimisation
+
+### Optimisation functions
+
+- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
+  : Optimise graph-based multiple testing procedures
+
+### Inputs
 
 Create the optimisation inputs
 
 - [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md)
   : Simulate raw p-values
 
-- [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
-  : Create a trial success function
-
 - [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md)
   :
 
-  Create a *graph constraint* object for optimisation procedures
+  Create a *graph constraint* for optimisation procedures
 
 - [`graph_constraint_free()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_free.md)
   :
 
   Create an unconstrained *graph constraint*
 
-## Advanced control
+- [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
+  :
 
-Control more advanced aspects of the global and local optimisation
+  Create a *trial success* function
+
+### Advanced control
+
+Control advanced aspects of the global and local optimisation
 
 - [`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
   : Set parameters for graph optimisation
-- [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
-  [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
+- [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
+  [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
   : Modify the number of simulations
 - [`control_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_local.md)
   : Modify local optimisation options
 - [`control_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_global.md)
   : Modify global optimisation options
 
-## Optimisation
-
-Optimisation functions
-
-- [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
-  : Optimise graph-based multiple testing procedures
-
-## Post-processing
+### Post-processing
 
 Work with an optimised graph
 
@@ -57,14 +59,14 @@ Work with an optimised graph
 
 Plotting functions
 
-- [`autoplot(`*`<multigrain_graph_constraint>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_constraint.md)
-  [`plot(`*`<multigrain_graph_constraint>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_constraint.md)
+- [`autoplot(`*`<multigrain_graph_constraint>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_plot.md)
+  [`plot(`*`<multigrain_graph_constraint>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_plot.md)
   :
 
   Autoplot method for `multigrain_graph_constraint` objects
 
-- [`autoplot(`*`<multigrain_graph_optimal>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_optimal.md)
-  [`plot(`*`<multigrain_graph_optimal>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_optimal.md)
+- [`autoplot(`*`<multigrain_graph_optimal>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimal_plot.md)
+  [`plot(`*`<multigrain_graph_optimal>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimal_plot.md)
   :
 
   Autoplot method for `multigrain_graph_optimal` objects

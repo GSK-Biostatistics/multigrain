@@ -25,7 +25,7 @@ matrices ($`\mathbf{G}`$).
 Each trial success measure has its own optimal configuration of these
 parameters that maximizes the desired success criterion. The
 **`multigrain`** function
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 is the tool that identifies these optimal parameters, enabling users to
 find the graph that gives that highest value for their chosen trial
 success measure.
@@ -33,7 +33,7 @@ success measure.
 The fixed-sample gain-function optimisation framework implemented by
 [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
 and
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 is described in [Spiers et al. (2026), *Gain-function optimisation of
 graphical multiple testing procedures for confirmatory clinical trials*
 (arXiv:2609.19994v1)](https://arxiv.org/abs/2609.19994).
@@ -67,7 +67,7 @@ dose.
 ## Inputs for optimisation by **`multigrain`**
 
 Optimisation of graphical tests is conducted using the function
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 from the **`multigrain`** package.
 
 In order to optimise a graph-based multiple testing procedure, we
@@ -79,7 +79,7 @@ require three things:
 
 ### P-value matrix approximating the joint distribution of p-values
 
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 expects a matrix $`\mathbf{P}`$ of **raw p-values** with dimension
 $`n_{\text{sim}}\times m`$.
 
@@ -210,7 +210,7 @@ head(pvals) # first few rows
 ### Trial Success Measure
 
 The **trial success measure** is the target quantity that
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 maximises. It encodes the success criteria for a trial by mapping the
 outcomes of the graphical test to a numerical score. (A dedicated
 vignette on trial success measures is planned for a future release.)
@@ -382,7 +382,7 @@ Now we have our inputs (assumed test statistic distribution, a
 `trial_success` object containing our function to quickly calculate the
 trial success measure, and optional constraints on the graph), we are
 ready to optimise using
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md).
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md).
 We will optimise for our two objective functions, `average_power` and
 `custom_trial_success` separately.
 
@@ -411,7 +411,7 @@ reveal)
 ##### **Tuning the Optimiser for Precision vs. Speed**
 
 The back-end of
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 executes two searches in sequence:
 
 1.  a **global** search of the solution space using a genetic algorithm;
@@ -421,14 +421,14 @@ executes two searches in sequence:
 All tuning is done through a
 [`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
 object, which is passed to
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
 via the `control` argument.
 
 **Number of simulations**
 
-[`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
+[`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
 and
-[`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim_local.md)
+[`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/control_nsim.md)
 set the number of p-value rows used to evaluate trial success during the
 global and local phases respectively:
 
@@ -443,7 +443,7 @@ ctrl <- multigrain_control() |>
   the graph will be used in a protocol/SAP.
 - The local search should use **as many simulations as possible** (at
   least 500,000). By default
-  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md)
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
   uses all rows of the `pvals` matrix you provide.
 
 **Stopping the global search**
@@ -469,7 +469,7 @@ ctrl <- ctrl |>
 
 For large problems with many hypotheses (m ≥ 6), enable parallel
 execution via the `num_threads` argument of
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md):
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md):
 
 ``` r
 
@@ -522,7 +522,7 @@ g_opt <- graph_optimise(
 
 Once optimised, we can retrieve a summary from the `optimal_graph`
 objects produced by
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise.md):
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md):
 
 ``` r
 

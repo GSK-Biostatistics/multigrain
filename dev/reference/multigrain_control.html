@@ -29,7 +29,7 @@ the pvals dimensions."><meta name="robots" content="noindex"><link rel="styleshe
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-none" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">multigrain</a>
 
@@ -69,8 +69,8 @@ the pvals dimensions."><meta name="robots" content="noindex"><link rel="styleshe
     <div class="ref-description section level2">
     <p>There are two steps needed to fine tune the graph optimisation with
 multigrain:</p><ol><li><p>Create a control object with <code>multigrain_control()</code>.</p></li>
-<li><p>Define its behaviour with <code>control_</code> functions:</p><ul><li><p><code><a href="control_nsim_local.html">control_nsim_local()</a></code> to set the number of local simulations.</p></li>
-<li><p><code><a href="control_nsim_local.html">control_nsim_global()</a></code> to set the number of global simulations.</p></li>
+<li><p>Define its behaviour with <code>control_</code> functions:</p><ul><li><p><code><a href="control_nsim.html">control_nsim_local()</a></code> to set the number of local simulations.</p></li>
+<li><p><code><a href="control_nsim.html">control_nsim_global()</a></code> to set the number of global simulations.</p></li>
 <li><p><code><a href="control_local.html">control_local()</a></code> to modify the local optimisation options.</p></li>
 <li><p><code><a href="control_global.html">control_global()</a></code> to modify the global optimisation options.</p></li>
 </ul></li>
@@ -86,7 +86,7 @@ the <code>pvals</code> dimensions.</p>
 
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A multigrain <em>control</em> object.</p>
+    <p>A <code>multigrain_control</code> object.</p>
     </div>
 
     <div class="section level2">
