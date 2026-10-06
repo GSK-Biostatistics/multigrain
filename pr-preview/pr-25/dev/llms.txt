@@ -211,7 +211,7 @@ Create the optimisation inputs
 - [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md)
   :
 
-  Create a *graph constraint* object for optimisation procedures
+  Create a *graph constraint* for optimisation procedures
 
 - [`graph_constraint_free()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_free.md)
   :
@@ -219,11 +219,13 @@ Create the optimisation inputs
   Create an unconstrained *graph constraint*
 
 - [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)
-  : Create a trial success function
+  :
+
+  Create a *trial success* function
 
 ### Advanced control
 
-Control more advanced aspects of the global and local optimisation
+Control advanced aspects of the global and local optimisation
 
 - [`multigrain_control()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_control.md)
   : Set parameters for graph optimisation

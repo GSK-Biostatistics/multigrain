@@ -1,4 +1,4 @@
-# Create a *graph constraint* object for optimisation procedures
+# Create a *graph constraint* for optimisation procedures
 
 A *graph constraint* object defines constraints on the hypothesis weight
 vector and transition matrix for optimisation of graph-based multiple
