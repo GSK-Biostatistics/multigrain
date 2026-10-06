@@ -139,6 +139,13 @@ The output is a graph where a specified objective function - the *trial
 success measure* - is maximised under given constraints on the graph
 structure, conditional on a p-value distribution supplied.
 
+## References
+
+Spiers, A. D. V., Grayling, M. J., Wheeler, G. M., and Mander, A. P.
+(2026). Gain-function optimisation of graphical multiple testing
+procedures for confirmatory clinical trials. *arXiv:2609.19994v1*.
+<https://arxiv.org/abs/2609.19994>
+
 ## Examples
 
 ``` r
@@ -163,22 +170,22 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [27s]
+#> ✔ Running global optimization [25.5s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [15ms]
+#> ✔ Evaluating trial success of globally optimised graph [14ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [88ms]
+#> ✔ Running local optimization [82ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [15ms]
+#> ✔ Evaluating trial success of locally optimised graph [14ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [19ms]
+#> ✔ Pruning redundant weights and edges [20ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [7ms]
+#> ✔ Evaluating trial success of pruned graph [6ms]
 #> 
 # }
 ```

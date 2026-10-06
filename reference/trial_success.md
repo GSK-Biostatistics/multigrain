@@ -65,6 +65,13 @@ and data-generating scenario. This lets you optimise graphs against the
 utility that captures your clinical/regulatory goals, rather than a
 single power summary.
 
+## References
+
+Spiers, A. D. V., Grayling, M. J., Wheeler, G. M., and Mander, A. P.
+(2026). Gain-function optimisation of graphical multiple testing
+procedures for confirmatory clinical trials. *arXiv:2609.19994v1*.
+<https://arxiv.org/abs/2609.19994>
+
 ## Examples
 
 ``` r

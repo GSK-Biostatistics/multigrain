@@ -30,6 +30,14 @@ is the tool that identifies these optimal parameters, enabling users to
 find the graph that gives that highest value for their chosen trial
 success measure.
 
+The fixed-sample gain-function optimisation framework implemented by
+[`trial_success()`](https://gsk-biostatistics.github.io/multigrain/reference/trial_success.md)
+and
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimise.md)
+is described in [Spiers et al. (2026), *Gain-function optimisation of
+graphical multiple testing procedures for confirmatory clinical trials*
+(arXiv:2609.19994v1)](https://arxiv.org/abs/2609.19994).
+
 ## Motivating Example
 
 Consider a two-arm parallel confirmatory clinical trial to compare a
