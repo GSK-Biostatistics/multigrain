@@ -40,6 +40,12 @@
 #'   the utility that captures your clinical/regulatory goals, rather than a
 #'   single power summary.
 #'
+#' @references
+#' Spiers, A. D. V., Grayling, M. J., Wheeler, G. M., and Mander, A. P.
+#' (2026). Gain-function optimisation of graphical multiple testing procedures
+#' for confirmatory clinical trials. *arXiv:2609.19994v1*.
+#' <https://arxiv.org/abs/2609.19994>
+#'
 #' @export
 #' @examples
 #'
