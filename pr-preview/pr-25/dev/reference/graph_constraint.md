@@ -93,7 +93,7 @@ hypotheses.
 
 Xi, D. and Chen, Y. (2024). Optimal weighted Bonferroni tests and their
 graphical extensions. *Statistics in Medicine*, 43(3), 475–500.
-[doi:10.1002/sim.9958](https://doi.org/10.1002/sim.9958) .
+[doi:10.1002/sim.9958](https://doi.org/10.1002/sim.9958)
 
 ## Examples
 
