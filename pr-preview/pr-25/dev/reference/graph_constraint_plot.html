@@ -3,7 +3,7 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-none" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">multigrain</a>
 
@@ -37,7 +37,7 @@
 
       <h1>Autoplot method for <code>multigrain_graph_constraint</code> objects</h1>
       <small class="dont-index">Source: <a href="https://github.com/GSK-Biostatistics/multigrain/blob/dmg-pkgdown-polish/R/plot_graph_constraint.R" class="external-link"><code>R/plot_graph_constraint.R</code></a></small>
-      <div class="d-none name"><code>autoplot.multigrain_graph_constraint.Rd</code></div>
+      <div class="d-none name"><code>graph_constraint_plot.Rd</code></div>
     </div>
 
     <div class="ref-description section level2">
@@ -116,21 +116,21 @@ crowded the graph plot will be:</p><ul><li><p>a single digit if more than 8 hypo
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">gc1</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="autoplot.multigrain_graph_constraint-1.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="graph_constraint_plot-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># If you want to control which nodes are treated as root, you can pass them</span></span></span>
 <span class="r-in"><span><span class="co"># as a numeric vector via the `root` argument. For example, we want nodes 1</span></span></span>
 <span class="r-in"><span><span class="co"># and 3 to be plotted as root:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">gc1</span>, root <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="autoplot.multigrain_graph_constraint-2.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="graph_constraint_plot-2.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># You can control the number of decimal places to round to</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">gc1</span>, digits <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="autoplot.multigrain_graph_constraint-3.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="graph_constraint_plot-3.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># You can supply a title</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://ggplot2.tidyverse.org/reference/autoplot.html" class="external-link">autoplot</a></span><span class="op">(</span><span class="va">gc1</span>, title <span class="op">=</span> <span class="st">"My graph constraint"</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="autoplot.multigrain_graph_constraint-4.png" alt="" width="700" height="433"></span>
+<span class="r-plt img"><img src="graph_constraint_plot-4.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

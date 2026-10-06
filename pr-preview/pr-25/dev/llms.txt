@@ -251,14 +251,14 @@ Work with an optimised graph
 
 Plotting functions
 
-- [`autoplot(`*`<multigrain_graph_constraint>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_constraint.md)
-  [`plot(`*`<multigrain_graph_constraint>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_constraint.md)
+- [`autoplot(`*`<multigrain_graph_constraint>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_plot.md)
+  [`plot(`*`<multigrain_graph_constraint>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_plot.md)
   :
 
   Autoplot method for `multigrain_graph_constraint` objects
 
-- [`autoplot(`*`<multigrain_graph_optimal>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_optimal.md)
-  [`plot(`*`<multigrain_graph_optimal>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_optimal.md)
+- [`autoplot(`*`<multigrain_graph_optimal>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimal_plot.md)
+  [`plot(`*`<multigrain_graph_optimal>`*`)`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimal_plot.md)
   :
 
   Autoplot method for `multigrain_graph_optimal` objects

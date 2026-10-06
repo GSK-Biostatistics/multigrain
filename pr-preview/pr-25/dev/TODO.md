@@ -224,9 +224,9 @@ This text is not a task.
     - added a description for
       [`graph_constraint_free()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_free.md)
     - added a description for
-      [`autoplot.multigrain_graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_constraint.md)
+      [`autoplot.multigrain_graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint_plot.md)
     - added a description for
-      [`autoplot.multigrain_graph_optimal()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/autoplot.multigrain_graph_optimal.md)
+      [`autoplot.multigrain_graph_optimal()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimal_plot.md)
   - arguments:
     - `global_search` in
       [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md):
