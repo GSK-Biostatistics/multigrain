@@ -194,5 +194,7 @@ changes before submitting a pull request.
 ## License
 
 **multigrain** is released under the [LGPL (\>=
-3)](https://gsk-biostatistics.github.io/multigrain/dev/LICENSE.md)
-license. Copyright © GlaxoSmithKline Research & Development Limited.
+3)](https://gsk-biostatistics.github.io/multigrain/LICENSE.html)
+license.
+
+Copyright © GlaxoSmithKline Research & Development Limited.
