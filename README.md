@@ -48,8 +48,13 @@ procedures for confirmatory clinical trials*
 
 ## Installation
 
-**multigrain** is not on CRAN yet. Install the development version from
-GitHub with:
+Install the released version of {multigrain} from CRAN:
+
+``` r
+install.packages("multigrain")
+```
+
+Or install the development version from GitHub with:
 
 ``` r
 # install.packages("pak")

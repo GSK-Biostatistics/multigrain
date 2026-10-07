@@ -43,9 +43,15 @@ The fixed-sample gain-function optimisation workflow implemented by `trial_succe
 
 ## Installation
 
-**multigrain** is not on CRAN yet. Install the development version from GitHub with:
+Install the released version of {multigrain} from CRAN:
 
-``` r
+```r
+install.packages("multigrain")
+```
+
+Or install the development version from GitHub with:
+
+```r
 # install.packages("pak")
 pak::pak("GSK-Biostatistics/multigrain")
 ```
