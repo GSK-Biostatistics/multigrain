@@ -19,11 +19,11 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-none" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">multigrain</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -129,11 +129,11 @@ and the transition matrices
 <p>Each trial success measure has its own optimal configuration of these
 parameters that maximizes the desired success criterion. The
 <strong><code>multigrain</code></strong> function
-<code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> is the tool that identifies these optimal
+<code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> is the tool that identifies these optimal
 parameters, enabling users to find the graph that gives that highest
 value for their chosen trial success measure.</p>
 <p>The fixed-sample gain-function optimisation framework implemented by
-<code><a href="../reference/trial_success.html">trial_success()</a></code> and <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> is
+<code><a href="../reference/trial_success.html">trial_success()</a></code> and <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> is
 described in <a href="https://arxiv.org/abs/2609.19994" class="external-link">Spiers et
 al. (2026), <em>Gain-function optimisation of graphical multiple testing
 procedures for confirmatory clinical trials</em>
@@ -174,7 +174,7 @@ same dose.</p>
 <strong><code>multigrain</code></strong><a class="anchor" aria-label="anchor" href="#inputs-for-optimisation-by-multigrain"></a>
 </h2>
 <p>Optimisation of graphical tests is conducted using the function
-<code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> from the
+<code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> from the
 <strong><code>multigrain</code></strong> package.</p>
 <p>In order to optimise a graph-based multiple testing procedure, we
 require three things:</p>
@@ -186,7 +186,7 @@ require three things:</p>
 <div class="section level3">
 <h3 id="p-value-matrix-approximating-the-joint-distribution-of-p-values">P-value matrix approximating the joint distribution of p-values<a class="anchor" aria-label="anchor" href="#p-value-matrix-approximating-the-joint-distribution-of-p-values"></a>
 </h3>
-<p><code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> expects a matrix
+<p><code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> expects a matrix
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝐏</mi><annotation encoding="application/x-tex">\mathbf{P}</annotation></semantics></math>
 of <strong>raw p-values</strong> with dimension
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mtext mathvariant="normal">sim</mtext></msub><mo>×</mo><mi>m</mi></mrow><annotation encoding="application/x-tex">n_{\text{sim}}\times m</annotation></semantics></math>.</p>
@@ -340,7 +340,7 @@ hypothesis <em>after</em> the graphical procedure is applied.</p>
 <h3 id="trial-success-measure">Trial Success Measure<a class="anchor" aria-label="anchor" href="#trial-success-measure"></a>
 </h3>
 <p>The <strong>trial success measure</strong> is the target quantity
-that <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> maximises. It encodes the success
+that <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> maximises. It encodes the success
 criteria for a trial by mapping the outcomes of the graphical test to a
 numerical score. (A dedicated vignette on trial success measures is
 planned for a future release.)</p>
@@ -524,13 +524,13 @@ graph constraints.</p>
 <p>Now we have our inputs (assumed test statistic distribution, a
 <code>trial_success</code> object containing our function to quickly
 calculate the trial success measure, and optional constraints on the
-graph), we are ready to optimise using <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code>. We
+graph), we are ready to optimise using <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code>. We
 will optimise for our two objective functions,
 <code>average_power</code> and <code>custom_trial_success</code>
 separately.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Find optimal graph based on average power objective function</span></span>
-<span><span class="va">graph_average_power</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimise.html">graph_optimise</a></span><span class="op">(</span></span>
+<span><span class="va">graph_average_power</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimisation.html">graph_optimise</a></span><span class="op">(</span></span>
 <span>    pvals <span class="op">=</span> <span class="va">pvals</span>,</span>
 <span>    graph_constraint <span class="op">=</span> <span class="va">my_constraint</span>,</span>
 <span>    alpha <span class="op">=</span> <span class="fl">0.025</span>, <span class="co"># one-sided</span></span>
@@ -538,7 +538,7 @@ separately.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Find optimal graph based on custom power objective function (defined earlier)</span></span>
-<span><span class="va">graph_custom_trial_success</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimise.html">graph_optimise</a></span><span class="op">(</span></span>
+<span><span class="va">graph_custom_trial_success</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimisation.html">graph_optimise</a></span><span class="op">(</span></span>
 <span>    pvals <span class="op">=</span> <span class="va">pvals</span>,</span>
 <span>    graph_constraint <span class="op">=</span> <span class="va">my_constraint</span>,</span>
 <span>    alpha <span class="op">=</span> <span class="fl">0.025</span>, <span class="co"># one-sided</span></span>
@@ -551,7 +551,7 @@ reveal)
 <h5 id="tuning-the-optimiser-for-precision-vs--speed">
 <strong>Tuning the Optimiser for Precision vs. Speed</strong><a class="anchor" aria-label="anchor" href="#tuning-the-optimiser-for-precision-vs--speed"></a>
 </h5>
-<p>The back-end of <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> executes two searches
+<p>The back-end of <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> executes two searches
 in sequence:</p>
 <ol style="list-style-type: decimal">
 <li>a <strong>global</strong> search of the solution space using a
@@ -560,23 +560,23 @@ genetic algorithm;</li>
 refines the best region found by the global search.</li>
 </ol>
 <p>All tuning is done through a <code><a href="../reference/multigrain_control.html">multigrain_control()</a></code>
-object, which is passed to <code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> via the
+object, which is passed to <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> via the
 <code>control</code> argument.</p>
 <p><strong>Number of simulations</strong></p>
-<p><code><a href="../reference/control_nsim_local.html">control_nsim_global()</a></code> and
-<code><a href="../reference/control_nsim_local.html">control_nsim_local()</a></code> set the number of p-value rows used to
+<p><code><a href="../reference/control_nsim.html">control_nsim_global()</a></code> and
+<code><a href="../reference/control_nsim.html">control_nsim_local()</a></code> set the number of p-value rows used to
 evaluate trial success during the global and local phases
 respectively:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctrl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/multigrain_control.html">multigrain_control</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/control_nsim_local.html">control_nsim_global</a></span><span class="op">(</span><span class="fl">50000</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/control_nsim_local.html">control_nsim_local</a></span><span class="op">(</span><span class="fl">500000</span><span class="op">)</span></span></code></pre></div>
+<span>  <span class="fu"><a href="../reference/control_nsim.html">control_nsim_global</a></span><span class="op">(</span><span class="fl">50000</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/control_nsim.html">control_nsim_local</a></span><span class="op">(</span><span class="fl">500000</span><span class="op">)</span></span></code></pre></div>
 <ul>
 <li>We recommend <strong>at least 50,000</strong> simulations for the
 global search if the graph will be used in a protocol/SAP.</li>
 <li>The local search should use <strong>as many simulations as
 possible</strong> (at least 500,000). By default
-<code><a href="../reference/graph_optimise.html">graph_optimise()</a></code> uses all rows of the <code>pvals</code>
+<code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code> uses all rows of the <code>pvals</code>
 matrix you provide.</li>
 </ul>
 <p><strong>Stopping the global search</strong></p>
@@ -598,9 +598,9 @@ search.</li>
 <p><strong>Parallel execution</strong></p>
 <p>For large problems with many hypotheses (m ≥ 6), enable parallel
 execution via the <code>num_threads</code> argument of
-<code><a href="../reference/graph_optimise.html">graph_optimise()</a></code>:</p>
+<code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code>:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">g_opt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimise.html">graph_optimise</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">g_opt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimisation.html">graph_optimise</a></span><span class="op">(</span></span>
 <span>  pvals <span class="op">=</span> <span class="va">pvals</span>,</span>
 <span>  graph_constraint <span class="op">=</span> <span class="va">my_constraint</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
@@ -612,7 +612,7 @@ execution via the <code>num_threads</code> argument of
 the global search entirely by setting <code>global_search</code> to
 <code>FALSE</code>:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">g_opt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimise.html">graph_optimise</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="va">g_opt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimisation.html">graph_optimise</a></span><span class="op">(</span></span>
 <span>  pvals <span class="op">=</span> <span class="va">pvals</span>,</span>
 <span>  graph_constraint <span class="op">=</span> <span class="va">my_constraint</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
@@ -623,11 +623,11 @@ the global search entirely by setting <code>global_search</code> to
 <p><strong>Putting it together</strong></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ctrl</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/multigrain_control.html">multigrain_control</a></span><span class="op">(</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/control_nsim_local.html">control_nsim_global</a></span><span class="op">(</span><span class="fl">50000</span><span class="op">)</span> <span class="op">|&gt;</span></span>
-<span>  <span class="fu"><a href="../reference/control_nsim_local.html">control_nsim_local</a></span><span class="op">(</span><span class="fl">1e6</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/control_nsim.html">control_nsim_global</a></span><span class="op">(</span><span class="fl">50000</span><span class="op">)</span> <span class="op">|&gt;</span></span>
+<span>  <span class="fu"><a href="../reference/control_nsim.html">control_nsim_local</a></span><span class="op">(</span><span class="fl">1e6</span><span class="op">)</span> <span class="op">|&gt;</span></span>
 <span>  <span class="fu"><a href="../reference/control_global.html">control_global</a></span><span class="op">(</span>run <span class="op">=</span> <span class="fl">1000</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">g_opt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimise.html">graph_optimise</a></span><span class="op">(</span></span>
+<span><span class="va">g_opt</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/graph_optimisation.html">graph_optimise</a></span><span class="op">(</span></span>
 <span>  pvals <span class="op">=</span> <span class="va">pvals</span>,</span>
 <span>  graph_constraint <span class="op">=</span> <span class="va">my_constraint</span>,</span>
 <span>  alpha <span class="op">=</span> <span class="fl">0.025</span>,</span>
@@ -644,7 +644,7 @@ the global search entirely by setting <code>global_search</code> to
 </h2>
 <p>Once optimised, we can retrieve a summary from the
 <code>optimal_graph</code> objects produced by
-<code><a href="../reference/graph_optimise.html">graph_optimise()</a></code>:</p>
+<code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code>:</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span></span>
 <span>    <span class="st">"Summary of the optimisation results for the graph optimised for AVERAGE power"</span></span>

@@ -7,10 +7,10 @@ multigrain:
 
 2.  Define its behaviour with `control_` functions:
 
-    - [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/reference/control_nsim_local.md)
+    - [`control_nsim_local()`](https://gsk-biostatistics.github.io/multigrain/reference/control_nsim.md)
       to set the number of local simulations.
 
-    - [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/reference/control_nsim_local.md)
+    - [`control_nsim_global()`](https://gsk-biostatistics.github.io/multigrain/reference/control_nsim.md)
       to set the number of global simulations.
 
     - [`control_local()`](https://gsk-biostatistics.github.io/multigrain/reference/control_local.md)
@@ -31,7 +31,7 @@ multigrain_control()
 
 ## Value
 
-A multigrain *control* object.
+A `multigrain_control` object.
 
 ## Examples
 

@@ -130,7 +130,7 @@ When a `trans_constraint` is not present, its dimensions will be derived
 from the `hyp_constraint`. In this case `hyp_constraint` has 4 elements,
 therefore `trans_matrix` will be a 4-by-4 square matrix with all 0 on
 the diagonal and all other values being `NA`. This translates in
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimisation.md)
 later being allowed to optimise any parameter.
 
 ``` r

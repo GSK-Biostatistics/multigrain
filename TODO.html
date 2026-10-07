@@ -3,11 +3,11 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-none" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="index.html">multigrain</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -154,10 +154,10 @@
 </ul></li>
 <li>
 <label><input type="checkbox"><code>@seealso</code> cross-references: add links to connect the natural user workflow:</label>
-<ul class="task-list"><li><label><input type="checkbox"><code><a href="reference/simulate_pvalues.html">simulate_pvalues()</a></code> → <code><a href="reference/calc_ncp.html">calc_ncp()</a></code>, <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code>, <code><a href="reference/graph_optimise.html">graph_optimise()</a></code></label></li>
-<li><label><input type="checkbox"><code><a href="reference/trial_success.html">trial_success()</a></code> → <code><a href="reference/graph_optimise.html">graph_optimise()</a></code>, <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code></label></li>
-<li><label><input type="checkbox"><code><a href="reference/graph_constraint.html">graph_constraint()</a></code> → <code><a href="reference/graph_constraint_free.html">graph_constraint_free()</a></code>, <code><a href="reference/graph_optimise.html">graph_optimise()</a></code></label></li>
-<li><label><input type="checkbox"><code><a href="reference/multigrain_control.html">multigrain_control()</a></code> → <code><a href="reference/control_nsim_local.html">control_nsim_local()</a></code>, <code><a href="reference/control_nsim_local.html">control_nsim_global()</a></code>, <code><a href="reference/control_local.html">control_local()</a></code>, <code><a href="reference/control_global.html">control_global()</a></code></label></li>
+<ul class="task-list"><li><label><input type="checkbox"><code><a href="reference/simulate_pvalues.html">simulate_pvalues()</a></code> → <code><a href="reference/calc_ncp.html">calc_ncp()</a></code>, <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code>, <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code></label></li>
+<li><label><input type="checkbox"><code><a href="reference/trial_success.html">trial_success()</a></code> → <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code>, <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code></label></li>
+<li><label><input type="checkbox"><code><a href="reference/graph_constraint.html">graph_constraint()</a></code> → <code><a href="reference/graph_constraint_free.html">graph_constraint_free()</a></code>, <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code></label></li>
+<li><label><input type="checkbox"><code><a href="reference/multigrain_control.html">multigrain_control()</a></code> → <code><a href="reference/control_nsim.html">control_nsim_local()</a></code>, <code><a href="reference/control_nsim.html">control_nsim_global()</a></code>, <code><a href="reference/control_local.html">control_local()</a></code>, <code><a href="reference/control_global.html">control_global()</a></code></label></li>
 </ul></li>
 </ul></li>
 <li><label><input type="checkbox">check data object documentation, might have to switch to Rd (markdown might not be supported)</label></li>
@@ -175,12 +175,12 @@
 <div class="section level1">
 <h1 id="done-">Done ✓<a class="anchor" aria-label="anchor" href="#done-"></a></h1>
 <ul class="task-list"><li><label><input type="checkbox" checked>add package-level verbosity control</label></li>
-<li><label><input type="checkbox" checked>make the <code>verbose</code> argument to <code><a href="reference/graph_optimise.html">graph_optimise()</a></code>, <code><a href="reference/trial_success.html">trial_success()</a></code> <em>et al.</em> an enumeration - <code>c("info", "detail", "silent")</code></label></li>
+<li><label><input type="checkbox" checked>make the <code>verbose</code> argument to <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code>, <code><a href="reference/trial_success.html">trial_success()</a></code> <em>et al.</em> an enumeration - <code>c("info", "detail", "silent")</code></label></li>
 <li>
 <label><input type="checkbox" checked>introduce <code>...</code> to separate required from optional arguments to relevant functions:</label>
 <ul class="task-list"><li><label><input type="checkbox" checked><code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code></label></li>
 <li><label><input type="checkbox" checked><code><a href="reference/graph_constraint.html">graph_constraint()</a></code></label></li>
-<li><label><input type="checkbox" checked><code><a href="reference/graph_optimise.html">graph_optimise()</a></code></label></li>
+<li><label><input type="checkbox" checked><code><a href="reference/graph_optimisation.html">graph_optimise()</a></code></label></li>
 <li><label><input type="checkbox" checked><code><a href="reference/simulate_pvalues.html">simulate_pvalues()</a></code></label></li>
 <li><label><input type="checkbox" checked><code><a href="reference/normalise_sum.html">normalise_sum()</a></code></label></li>
 </ul></li>
@@ -200,31 +200,31 @@
 <ul class="task-list"><li>
 <label><input type="checkbox" checked>titles and descriptions:</label>
 <ul class="task-list"><li><label><input type="checkbox" checked>added a description for <code><a href="reference/graph_optimal_get_control.html">graph_optimal_get_control()</a></code></label></li>
-<li><label><input type="checkbox" checked>merged the documentation for <code><a href="reference/control_nsim_local.html">control_nsim_global()</a></code> and <code><a href="reference/control_nsim_local.html">control_nsim_local()</a></code> using the same title and adding descriptions</label></li>
+<li><label><input type="checkbox" checked>merged the documentation for <code><a href="reference/control_nsim.html">control_nsim_global()</a></code> and <code><a href="reference/control_nsim.html">control_nsim_local()</a></code> using the same title and adding descriptions</label></li>
 <li><label><input type="checkbox" checked>added a description for <code><a href="reference/graph_constraint_free.html">graph_constraint_free()</a></code></label></li>
-<li><label><input type="checkbox" checked>added a description for <code><a href="reference/autoplot.multigrain_graph_constraint.html">autoplot.multigrain_graph_constraint()</a></code></label></li>
-<li><label><input type="checkbox" checked>added a description for <code><a href="reference/autoplot.multigrain_graph_optimal.html">autoplot.multigrain_graph_optimal()</a></code></label></li>
+<li><label><input type="checkbox" checked>added a description for <code><a href="reference/graph_constraint_plot.html">autoplot.multigrain_graph_constraint()</a></code></label></li>
+<li><label><input type="checkbox" checked>added a description for <code><a href="reference/graph_optimal_plot.html">autoplot.multigrain_graph_optimal()</a></code></label></li>
 </ul></li>
 <li>
 <label><input type="checkbox" checked>arguments:</label>
-<ul class="task-list"><li><label><input type="checkbox" checked><code>global_search</code> in <code><a href="reference/graph_optimise.html">graph_optimise()</a></code>: “A logical indicate whether” → “A logical indicating whether”.</label></li>
+<ul class="task-list"><li><label><input type="checkbox" checked><code>global_search</code> in <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code>: “A logical indicate whether” → “A logical indicating whether”.</label></li>
 <li><label><input type="checkbox" checked><code>.ctrl</code> in <code><a href="reference/control_local.html">control_local()</a></code> / <code><a href="reference/control_global.html">control_global()</a></code> and <code>graph_optimal</code> in <code><a href="reference/graph_optimal_get_control.html">graph_optimal_get_control()</a></code>: missing terminal period.</label></li>
 <li><label><input type="checkbox" checked>argument style: <code>root</code> and <code>digits</code> in plot methods use parenthetical type annotations (<code>(integer-like)</code>, <code>Number</code>) instead of prose sentences. Align with the rest of the package style.</label></li>
 </ul></li>
 <li>
 <label><input type="checkbox" checked>use @inheritParams more (document important arguments only once).</label>
-<ul class="task-list"><li><label><input type="checkbox" checked><code>alpha</code>: documented in <code><a href="reference/graph_optimise.html">graph_optimise()</a></code> and inherited in <code><a href="reference/calc_ncp.html">calc_ncp()</a></code>, <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code>, and <code><a href="reference/simulate_pvalues.html">simulate_pvalues()</a></code>.</label></li>
-<li><label><input type="checkbox" checked>aligned <code>verbose</code> in <code><a href="reference/graph_optimise.html">graph_optimise()</a></code> with <code>verbose</code> in <code><a href="reference/trial_success.html">trial_success()</a></code>.</label></li>
+<ul class="task-list"><li><label><input type="checkbox" checked><code>alpha</code>: documented in <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code> and inherited in <code><a href="reference/calc_ncp.html">calc_ncp()</a></code>, <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code>, and <code><a href="reference/simulate_pvalues.html">simulate_pvalues()</a></code>.</label></li>
+<li><label><input type="checkbox" checked>aligned <code>verbose</code> in <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code> with <code>verbose</code> in <code><a href="reference/trial_success.html">trial_success()</a></code>.</label></li>
 <li><label><input type="checkbox" checked><code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code> inherits the documentation for <code>trans_matrix</code> and <code>hyp_weight</code> from <code><a href="reference/is_graph_valid.html">is_graph_valid()</a></code>.</label></li>
-<li><label><input type="checkbox" checked><code>pvals</code>: the <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code> arg inherits the documentation from <code><a href="reference/graph_optimise.html">graph_optimise()</a></code>.</label></li>
-<li><label><input type="checkbox" checked><del><code>graph_constraint</code>: descriptions have different focus across <code><a href="reference/graph_optimise.html">graph_optimise()</a></code> and <code><a href="reference/graph_random.html">graph_random()</a></code>. Consolidate with <code>@inheritParams</code>.</del></label></li>
+<li><label><input type="checkbox" checked><code>pvals</code>: the <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code> arg inherits the documentation from <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code>.</label></li>
+<li><label><input type="checkbox" checked><del><code>graph_constraint</code>: descriptions have different focus across <code><a href="reference/graph_optimisation.html">graph_optimise()</a></code> and <code><a href="reference/graph_random.html">graph_random()</a></code>. Consolidate with <code>@inheritParams</code>.</del></label></li>
 <li><label><input type="checkbox" checked><code>tolerance</code>: partial consolidation of the arg description across <code><a href="reference/graph_constraint.html">graph_constraint()</a></code>, <code><a href="reference/is_graph_valid.html">is_graph_valid()</a></code>, and <code><a href="reference/normalise_sum.html">normalise_sum()</a></code>.</label></li>
 <li><label><input type="checkbox" checked><code>sum_to_one_constraint</code>: in <code><a href="reference/calc_power_pvals.html">calc_power_pvals()</a></code> the documented default did not match the actual default.</label></li>
 </ul></li>
 <li>
 <label><input type="checkbox" checked><code>@return</code> sections:</label>
 <ul class="task-list"><li><label><input type="checkbox" checked><code><a href="reference/multigrain_control.html">multigrain_control()</a></code>: “an S3 object (a list)” — the parenthetical is redundant. Simplify to “A <code>multigrain_control</code> object.”</label></li>
-<li><label><input type="checkbox" checked><code><a href="reference/control_global.html">control_global()</a></code> / <code><a href="reference/control_local.html">control_local()</a></code>: <code>@return</code> is lowercased (“a modified…”); <code><a href="reference/control_nsim_local.html">control_nsim_global()</a></code> uses a capital. Align.</label></li>
+<li><label><input type="checkbox" checked><code><a href="reference/control_global.html">control_global()</a></code> / <code><a href="reference/control_local.html">control_local()</a></code>: <code>@return</code> is lowercased (“a modified…”); <code><a href="reference/control_nsim.html">control_nsim_global()</a></code> uses a capital. Align.</label></li>
 <li><label><input type="checkbox" checked><code>autoplot</code> methods: “<code>ggraph</code> / <code>ggplot</code> object” — ggraph inherits from ggplot, so “<code>ggraph</code> object” is sufficient and more precise.</label></li>
 </ul></li>
 <li>

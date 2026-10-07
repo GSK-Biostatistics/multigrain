@@ -15,14 +15,14 @@
 Source:
 [`DESCRIPTION`](https://github.com/GSK-Biostatistics/multigrain/blob/main/DESCRIPTION)
 
-Spiers A, Moldovan-Grünfeld D (2026). *multigrain: Optimising Graphical
-Approaches to Multiple Testing Procedures*. R package version 0.3.0,
+Spiers A, Moldovan-Grünfeld D (2026). *multigrain: Optimise Graphical
+Approaches to Multiple Testing Procedures*. R package version 1.0.0,
 <https://github.com/GSK-Biostatistics/multigrain>.
 
     @Manual{,
-      title = {multigrain: Optimising Graphical Approaches to Multiple Testing Procedures},
+      title = {multigrain: Optimise Graphical Approaches to Multiple Testing Procedures},
       author = {Alex Spiers and Dragoș Moldovan-Grünfeld},
       year = {2026},
-      note = {R package version 0.3.0},
+      note = {R package version 1.0.0},
       url = {https://github.com/GSK-Biostatistics/multigrain},
     }

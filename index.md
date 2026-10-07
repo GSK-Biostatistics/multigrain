@@ -24,7 +24,7 @@ controls FWER.
 The fixed-sample gain-function optimisation workflow implemented by
 [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/reference/trial_success.md)
 and
-[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimise.md)
+[`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimisation.md)
 is described in [Spiers et al. (2026), *Gain-function optimisation of
 graphical multiple testing procedures for confirmatory clinical trials*
 (arXiv:2609.19994v1)](https://arxiv.org/abs/2609.19994).
@@ -36,13 +36,19 @@ graphical multiple testing procedures for confirmatory clinical trials*
 | Simulate p-values | [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/reference/simulate_pvalues.md) | Draw p-values from a multivariate normal test-statistic model |
 | Define success | [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/reference/trial_success.md) | Specify what “trial success” means (compiled to C++ for speed) |
 | Constrain the graph | [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_constraint.md) | Fix weights, edges, or testing hierarchies |
-| Optimise | [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimise.md) | Find the graph that maximises expected trial success |
+| Optimise | [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimisation.md) | Find the graph that maximises expected trial success |
 | Evaluate | [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/reference/calc_power_pvals.md) | Compute local power, disjunctive/conjunctive power, and custom metrics |
 
 ## Installation
 
-**multigrain** is not on CRAN yet. Install the development version from
-GitHub with:
+Install the released version of {multigrain} from CRAN:
+
+``` r
+
+install.packages("multigrain")
+```
+
+Or install the development version from GitHub with:
 
 ``` r
 
@@ -166,7 +172,7 @@ calc_power_pvals(
         AvgPower      = avg_power,
         Disjunctive   = disjunctive,
         CustomSuccess = custom_success
-  )
+    )
 )
 ```
 
@@ -185,8 +191,7 @@ calc_power_pvals(
 
 Found a bug, or want to request a feature? Please [open an
 issue](https://github.com/GSK-Biostatistics/multigrain/issues),
-including a [reprex](https://www.tidyverse.org/help/#reprex) where
-relevant.
+including a [reprex](https://tidyverse.org/help/#reprex) where relevant.
 
 ## Contributing
 
@@ -196,5 +201,7 @@ changes before submitting a pull request.
 ## License
 
 **multigrain** is released under the [LGPL (\>=
-3)](https://gsk-biostatistics.github.io/multigrain/LICENSE.md) license.
+3)](https://gsk-biostatistics.github.io/multigrain/LICENSE.html)
+license.
+
 Copyright © GlaxoSmithKline Research & Development Limited.

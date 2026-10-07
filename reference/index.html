@@ -3,11 +3,11 @@
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
-    <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
+    <nav class="navbar navbar-expand-lg fixed-top bg-none" data-bs-theme="light" aria-label="Site navigation"><div class="container">
 
     <a class="navbar-brand me-2" href="../index.html">multigrain</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">0.3.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Released version">1.0.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -39,8 +39,29 @@
     </div>
 
     <div class="section level2">
-      <h2 id="inputs">Inputs<a class="anchor" aria-label="anchor" href="#inputs"></a></h2>
+      <h2 id="optimisation">Optimisation<a class="anchor" aria-label="anchor" href="#optimisation"></a></h2>
 
+
+
+      <dl></dl></div><div class="section level2">
+
+      <h3 id="optimisation-functions">Optimisation functions<a class="anchor" aria-label="anchor" href="#optimisation-functions"></a></h3>
+
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="graph_optimisation.html">graph_optimise()</a></code>
+
+        </dt>
+        <dd>Optimise graph-based multiple testing procedures</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="inputs">Inputs<a class="anchor" aria-label="anchor" href="#inputs"></a></h3>
       <div class="section-desc"><p>Create the optimisation inputs</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -57,17 +78,10 @@
 
         <dt>
 
-          <code><a href="trial_success.html">trial_success()</a></code>
-
-        </dt>
-        <dd>Create a trial success function</dd>
-
-        <dt>
-
           <code><a href="graph_constraint.html">graph_constraint()</a></code>
 
         </dt>
-        <dd>Create a <em>graph constraint</em> object for optimisation procedures</dd>
+        <dd>Create a <em>graph constraint</em> for optimisation procedures</dd>
 
         <dt>
 
@@ -75,10 +89,17 @@
 
         </dt>
         <dd>Create an unconstrained <em>graph constraint</em></dd>
-      </dl></div><div class="section level2">
-      <h2 id="advanced-control">Advanced control<a class="anchor" aria-label="anchor" href="#advanced-control"></a></h2>
 
-      <div class="section-desc"><p>Control more advanced aspects of the global and local optimisation</p></div>
+        <dt>
+
+          <code><a href="trial_success.html">trial_success()</a></code>
+
+        </dt>
+        <dd>Create a <em>trial success</em> function</dd>
+      </dl></div><div class="section level2">
+
+      <h3 id="advanced-control">Advanced control<a class="anchor" aria-label="anchor" href="#advanced-control"></a></h3>
+      <div class="section-desc"><p>Control advanced aspects of the global and local optimisation</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -94,7 +115,7 @@
 
         <dt>
 
-          <code><a href="control_nsim_local.html">control_nsim_local()</a></code> <code><a href="control_nsim_local.html">control_nsim_global()</a></code>
+          <code><a href="control_nsim.html">control_nsim_local()</a></code> <code><a href="control_nsim.html">control_nsim_global()</a></code>
 
         </dt>
         <dd>Modify the number of simulations</dd>
@@ -113,24 +134,8 @@
         </dt>
         <dd>Modify global optimisation options</dd>
       </dl></div><div class="section level2">
-      <h2 id="optimisation">Optimisation<a class="anchor" aria-label="anchor" href="#optimisation"></a></h2>
 
-      <div class="section-desc"><p>Optimisation functions</p></div>
-
-      <dl></dl></div><div class="section level2">
-
-
-
-
-      <dl><dt>
-
-          <code><a href="graph_optimise.html">graph_optimise()</a></code>
-
-        </dt>
-        <dd>Optimise graph-based multiple testing procedures</dd>
-      </dl></div><div class="section level2">
-      <h2 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a></h2>
-
+      <h3 id="post-processing">Post-processing<a class="anchor" aria-label="anchor" href="#post-processing"></a></h3>
       <div class="section-desc"><p>Work with an optimised graph</p></div>
 
       <dl></dl></div><div class="section level2">
@@ -170,14 +175,14 @@
 
       <dl><dt>
 
-          <code><a href="autoplot.multigrain_graph_constraint.html">autoplot(<i>&lt;multigrain_graph_constraint&gt;</i>)</a></code> <code><a href="autoplot.multigrain_graph_constraint.html">plot(<i>&lt;multigrain_graph_constraint&gt;</i>)</a></code>
+          <code><a href="graph_constraint_plot.html">autoplot(<i>&lt;multigrain_graph_constraint&gt;</i>)</a></code> <code><a href="graph_constraint_plot.html">plot(<i>&lt;multigrain_graph_constraint&gt;</i>)</a></code>
 
         </dt>
         <dd>Autoplot method for <code>multigrain_graph_constraint</code> objects</dd>
 
         <dt>
 
-          <code><a href="autoplot.multigrain_graph_optimal.html">autoplot(<i>&lt;multigrain_graph_optimal&gt;</i>)</a></code> <code><a href="autoplot.multigrain_graph_optimal.html">plot(<i>&lt;multigrain_graph_optimal&gt;</i>)</a></code>
+          <code><a href="graph_optimal_plot.html">autoplot(<i>&lt;multigrain_graph_optimal&gt;</i>)</a></code> <code><a href="graph_optimal_plot.html">plot(<i>&lt;multigrain_graph_optimal&gt;</i>)</a></code>
 
         </dt>
         <dd>Autoplot method for <code>multigrain_graph_optimal</code> objects</dd>
