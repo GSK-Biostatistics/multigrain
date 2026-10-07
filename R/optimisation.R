@@ -91,14 +91,6 @@
 #'   trial_success = ts,
 #'   num_threads = 2
 #' )
-#'
-#' # both British and American English spelling are supported
-#' result <- graph_optimize(
-#'   pvals = pvals,
-#'   graph_constraint = graph_constraint_free(4),
-#'   trial_success = ts,
-#'   num_threads = 2
-#' )
 #' }
 graph_optimise <- function(
     pvals,
@@ -491,5 +483,4 @@ graph_optimise <- function(
 
 #' @export
 #' @rdname graph_optimisation
-#' @usage NULL
 graph_optimize <- graph_optimise

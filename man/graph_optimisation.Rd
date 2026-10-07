@@ -17,6 +17,19 @@ graph_optimise(
   control = multigrain_control(),
   verbose = multigrain_verbosity()
 )
+
+graph_optimize(
+  pvals,
+  graph_constraint,
+  trial_success,
+  ...,
+  alpha = 0.025,
+  start_graph = list(list(hyp_weight = NULL, trans_matrix = NULL)),
+  global_search = TRUE,
+  num_threads = 1L,
+  control = multigrain_control(),
+  verbose = multigrain_verbosity()
+)
 }
 \arguments{
 \item{pvals}{A numeric matrix of p-values. Each row represents a simulated
@@ -113,14 +126,6 @@ ts <- trial_success(r1 + r2 + r3 + r4)
 \donttest{
 # Optimise graph
 result <- graph_optimise(
-  pvals = pvals,
-  graph_constraint = graph_constraint_free(4),
-  trial_success = ts,
-  num_threads = 2
-)
-
-# both British and American English spelling are supported
-result <- graph_optimize(
   pvals = pvals,
   graph_constraint = graph_constraint_free(4),
   trial_success = ts,
