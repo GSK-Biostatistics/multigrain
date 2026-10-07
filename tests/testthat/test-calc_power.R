@@ -252,6 +252,7 @@ test_that("calc_power_pvals allows single anonymous function", {
 
 
 test_that("calc_power_pvals allows single trial_success function", {
+    skip_if_not_installed("gMCPLite")
     pvals <- matrix(
         rbeta(40000, shape1 = 0.24, shape2 = 0.65),
         nrow = 10000,
