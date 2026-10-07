@@ -402,6 +402,7 @@ test_that("plot and autoplot with random graph", {
         plot(random_graph)
     )
 
+    skip_if_not_installed("svglite")
     expect_true(
         equivalent_ggplot2(
             plot(random_graph),
