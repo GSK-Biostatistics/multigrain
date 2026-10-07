@@ -57,6 +57,7 @@ test_that("graph_constraint plotting with plot", {
         plot(gc1)
     )
 
+    skip_if_not_installed("svglite")
     expect_true(
         equivalent_ggplot2(
             plot(gc1),
@@ -94,6 +95,7 @@ test_that("plot and autoplot with user-supplied title", {
         )
     )
 
+    skip_if_not_installed("svglite")
     expect_true(
         equivalent_ggplot2(
             plot(

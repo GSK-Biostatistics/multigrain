@@ -354,6 +354,7 @@ test_that("autoplot and plot produce the same output: graph_average_power", {
     # there are some non-deterministic elements in the plot objects themselves,
     # so we cannot compare them (mainly due to {igraph}). `equivalent_ggplot2()`
     # writes them to an .svg file and then compares the md5sums
+    skip_if_not_installed("svglite")
     expect_true(
         equivalent_ggplot2(
             plot(graph_average_power),
@@ -378,6 +379,7 @@ test_that("autoplot and plot produce the same output: graph_custom_power", {
     # there are some non-deterministic elements in the plot objects themselves,
     # so we cannot compare them (mainly due to {igraph}). `equivalent_ggplot2()`
     # writes them to an .svg file and then compares the md5sums
+    skip_if_not_installed("svglite")
     expect_true(
         equivalent_ggplot2(
             plot(graph_custom_power),
@@ -425,6 +427,7 @@ test_that("plot and autoplot with user-supplied title", {
         )
     )
 
+    skip_if_not_installed("svglite")
     expect_true(
         equivalent_ggplot2(
             plot(
