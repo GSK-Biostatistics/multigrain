@@ -1,6 +1,18 @@
-# multigrain: Optimising Graphical Approaches to Multiple Testing Procedures
+# multigrain: Optimise Graphical Approaches to Multiple Testing Procedures
 
-Optimises graphical approaches to multiple testing procedures.
+Find the optimal graphical multiple testing procedure for confirmatory
+clinical trials that test several hypotheses across endpoints, doses, or
+subpopulations. Choose the graph maximising an explicit gain-function: a
+user-defined measure of trial success that scores each possible set of
+rejected hypotheses. Given simulated p-values, search over hypothesis
+weights and transition weights to maximise expected trial success.
+Conventional power criteria are recovered and the family-wise error rate
+is strongly controlled due to the search being confined to graphical
+procedures. Described in Spiers, Grayling, Wheeler, and Mander (2026)
+"Gain-function optimisation of graphical multiple testing procedures for
+confirmatory clinical trials"
+[doi:10.48550/arXiv.2609.19994](https://doi.org/10.48550/arXiv.2609.19994)
+.
 
 ## See also
 

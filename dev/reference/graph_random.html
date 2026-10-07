@@ -13,7 +13,7 @@ equals 1 and each row of the transition matrix sums to 1."><meta name="robots" c
 
     <a class="navbar-brand me-2" href="../index.html">multigrain</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.0.9002</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">0.3.0.9003</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -97,17 +97,17 @@ generated transition matrix.</p></li>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># print the weight vector</span></span></span>
 <span class="r-in"><span><span class="va">random_graph</span><span class="op">$</span><span class="va">hyp_weight</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         H1         H2         H3         H4         H5 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.34995750 0.18347771 0.02713369 0.26768173 0.17174937 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        H1        H2        H3        H4        H5 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.1106319 0.1533899 0.1524895 0.4028438 0.1806449 </span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># print the transition matrix</span></span></span>
 <span class="r-in"><span><span class="va">random_graph</span><span class="op">$</span><span class="va">trans_matrix</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>            H1        H2         H3        H4        H5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> H1 0.00000000 0.1970907 0.02826882 0.1035610 0.6710795</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> H2 0.33323627 0.0000000 0.29235191 0.0588705 0.3155413</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> H3 0.09436979 0.2198000 0.00000000 0.2900734 0.3957568</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> H4 0.20755374 0.2837108 0.31231181 0.0000000 0.1964237</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> H5 0.22885255 0.2476563 0.19637350 0.3271177 0.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           H1        H2         H3         H4         H5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1 0.0000000 0.2561394 0.33795524 0.02935635 0.37654905</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H2 0.2284497 0.0000000 0.53047896 0.03013680 0.21093456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H3 0.3902660 0.1488752 0.00000000 0.09658506 0.36427375</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H4 0.4149580 0.1438325 0.40983617 0.00000000 0.03137333</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H5 0.1979900 0.5556418 0.07636948 0.16999875 0.00000000</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Generate a random graph respecting constraints</span></span></span>
 <span class="r-in"><span><span class="va">gc</span> <span class="op">&lt;-</span> <span class="fu"><a href="graph_constraint.html">graph_constraint</a></span><span class="op">(</span></span></span>
@@ -119,13 +119,13 @@ generated transition matrix.</p></li>
 <span class="r-in"><span><span class="va">random_graph</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $hyp_weight</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>        H1        H2        H3 </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5000000 0.2642026 0.2357974 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 0.5000000 0.1896911 0.3103089 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> $trans_matrix</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>           H1        H2        H3</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> H1 0.0000000 0.4271691 0.5728309</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> H2 0.3382072 0.0000000 0.6617928</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> H3 0.2538808 0.7461192 0.0000000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H1 0.0000000 0.6793908 0.3206092</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H2 0.5065631 0.0000000 0.4934369</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> H3 0.7867861 0.2132139 0.0000000</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 </code></pre></div>
     </div>
