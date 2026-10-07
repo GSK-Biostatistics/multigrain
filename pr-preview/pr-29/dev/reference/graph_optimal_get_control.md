@@ -21,7 +21,7 @@ The `multigrain_control` object holding the optimisation settings.
 ## Examples
 
 ``` r
-# graph_optimal_example is an example optimised graph
+# `graph_optimal_example` is an example optimised graph
 graph_optimal_get_control(graph_optimal_example)
 #> <multigrain_control>
 #> local simulations: 20000
