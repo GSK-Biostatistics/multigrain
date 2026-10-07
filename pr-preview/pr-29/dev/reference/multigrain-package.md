@@ -11,7 +11,8 @@ is strongly controlled due to the search being confined to graphical
 procedures. Described in Spiers, Grayling, Wheeler, and Mander (2026)
 "Gain-function optimisation of graphical multiple testing procedures for
 confirmatory clinical trials"
-[arXiv:2609.19994](https://arxiv.org/abs/2609.19994).
+[doi:10.48550/arXiv.2609.19994](https://doi.org/10.48550/arXiv.2609.19994)
+.
 
 ## See also
 
