@@ -44,7 +44,7 @@ A \verb{multigrain_graph constraint} object containing:
 hypothesis weight vector.
 \item \code{trans_constraint}: a numeric matrix representing the constraints on the
 transition matrix.
-If an element is \code{NA}, it denotes a free parameter to be optimised by
+If an element is \code{NA}, it is a free parameter to be optimised by
 \code{\link[=graph_optimise]{graph_optimise()}}.
 }
 }

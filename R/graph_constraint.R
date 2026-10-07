@@ -81,7 +81,7 @@ new_graph_constraint <- function(
 #'   hypothesis weight vector.
 #'   * `trans_constraint`: a numeric matrix representing the constraints on the
 #'   transition matrix.
-#' If an element is `NA`, it denotes a free parameter to be optimised by
+#' If an element is `NA`, it is a free parameter to be optimised by
 #' [graph_optimise()].
 #'
 #' @references
