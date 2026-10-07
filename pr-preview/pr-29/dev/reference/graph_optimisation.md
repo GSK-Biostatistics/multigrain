@@ -169,19 +169,45 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [23.9s]
+#> ✔ Running global optimization [27.2s]
+#> 
+#> ℹ Evaluating trial success of globally optimised graph
+#> ✔ Evaluating trial success of globally optimised graph [15ms]
+#> 
+#> ℹ Running local optimization
+#> ✔ Running local optimization [88ms]
+#> 
+#> ℹ Evaluating trial success of locally optimised graph
+#> ✔ Evaluating trial success of locally optimised graph [15ms]
+#> 
+#> ℹ Pruning redundant weights and edges
+#> ✔ Pruning redundant weights and edges [19ms]
+#> 
+#> ℹ Evaluating trial success of pruned graph
+#> ✔ Evaluating trial success of pruned graph [7ms]
+#> 
+
+# both British and American English spelling are supported
+result <- graph_optimize(
+  pvals = pvals,
+  graph_constraint = graph_constraint_free(4),
+  trial_success = ts,
+  num_threads = 2
+)
+#> ℹ Running global optimization
+#> ✔ Running global optimization [22.9s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
 #> ✔ Evaluating trial success of globally optimised graph [14ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [85ms]
+#> ✔ Running local optimization [83ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [13ms]
+#> ✔ Evaluating trial success of locally optimised graph [14ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [17ms]
+#> ✔ Pruning redundant weights and edges [18ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
 #> ✔ Evaluating trial success of pruned graph [6ms]
