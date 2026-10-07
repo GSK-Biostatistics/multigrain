@@ -581,6 +581,7 @@ test_that("read-only inputs are not mutated", {
 })
 
 test_that("Validate calc_local_weights; gMCPLite using Bonferroni Holm graph", {
+    skip_if_not_installed("gMCPLite")
     bh_G5 <- gMCPLite::BonferroniHolm(5)
     g <- gMCPLite::getMatrix(bh_G5)
     w <- gMCPLite::getWeights(bh_G5)
@@ -598,6 +599,7 @@ test_that("Validate calc_local_weights; gMCPLite using Bonferroni Holm graph", {
 
 
 test_that("Validate calc_local_weights; gMCPLite using fixed sequence", {
+    skip_if_not_installed("gMCPLite")
     fs4 <- gMCPLite::fixedSequence(4)
     g <- gMCPLite::getMatrix(fs4)
     w <- gMCPLite::getWeights(fs4)
@@ -617,6 +619,7 @@ test_that("Validate calc_local_weights; gMCPLite using fixed sequence", {
 # nolint start: line_length_linter
 test_that("Validate calc_local_weights; gMCPLite + user-defined matrix and weights", {
     # nolint end
+    skip_if_not_installed("gMCPLite")
     # 3 hypothesis
     g <- matrix(
         c(
