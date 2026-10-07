@@ -6,7 +6,7 @@
 \alias{multigrain-package}
 \title{multigrain: Optimise Graphical Approaches to Multiple Testing Procedures}
 \description{
-Find the optimal graphical multiple testing procedure for confirmatory clinical trials that test several hypotheses - across endpoints, doses, or subpopulations. Rather than fixing the graph by hand or defaulting to fixed-sequence or Holm procedures, choose the graph that maximises an explicit gain-function: a user-defined measure of trial success that scores each possible set of rejected hypotheses. Given simulated p-values, search over hypothesis weights and transition weights to maximise expected trial success. Conventional power criteria are recovered and the family-wise error rate is strongly controlled due to the search being confined to graphical procedures.
+Find the optimal graphical multiple testing procedure for confirmatory clinical trials that test several hypotheses across endpoints, doses, or subpopulations. Choose the graph maximising an explicit gain-function: a user-defined measure of trial success that scores each possible set of rejected hypotheses. Given simulated p-values, search over hypothesis weights and transition weights to maximise expected trial success. Conventional power criteria are recovered and the family-wise error rate is strongly controlled due to the search being confined to graphical procedures.
 }
 \seealso{
 Useful links:
