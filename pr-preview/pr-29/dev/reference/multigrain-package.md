@@ -8,7 +8,10 @@ rejected hypotheses. Given simulated p-values, search over hypothesis
 weights and transition weights to maximise expected trial success.
 Conventional power criteria are recovered and the family-wise error rate
 is strongly controlled due to the search being confined to graphical
-procedures.
+procedures. Described in Spiers, Grayling, Wheeler, and Mander (2026)
+"Gain-function optimisation of graphical multiple testing procedures for
+confirmatory clinical trials"
+[arXiv:2609.19994](https://arxiv.org/abs/2609.19994).
 
 ## See also
 
