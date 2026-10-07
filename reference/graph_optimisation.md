@@ -22,6 +22,19 @@ graph_optimise(
   control = multigrain_control(),
   verbose = multigrain_verbosity()
 )
+
+graph_optimize(
+  pvals,
+  graph_constraint,
+  trial_success,
+  ...,
+  alpha = 0.025,
+  start_graph = list(list(hyp_weight = NULL, trans_matrix = NULL)),
+  global_search = TRUE,
+  num_threads = 1L,
+  control = multigrain_control(),
+  verbose = multigrain_verbosity()
+)
 ```
 
 ## Arguments
@@ -170,48 +183,22 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [25.8s]
+#> ✔ Running global optimization [15.2s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [14ms]
+#> ✔ Evaluating trial success of globally optimised graph [9ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [81ms]
+#> ✔ Running local optimization [48ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [14ms]
+#> ✔ Evaluating trial success of locally optimised graph [8ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [20ms]
+#> ✔ Pruning redundant weights and edges [12ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [7ms]
-#> 
-
-# both British and American English spelling are supported
-result <- graph_optimize(
-  pvals = pvals,
-  graph_constraint = graph_constraint_free(4),
-  trial_success = ts,
-  num_threads = 2
-)
-#> ℹ Running global optimization
-#> ✔ Running global optimization [22.5s]
-#> 
-#> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [14ms]
-#> 
-#> ℹ Running local optimization
-#> ✔ Running local optimization [74ms]
-#> 
-#> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [16ms]
-#> 
-#> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [25ms]
-#> 
-#> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [6ms]
+#> ✔ Evaluating trial success of pruned graph [4ms]
 #> 
 # }
 ```

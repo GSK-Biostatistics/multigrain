@@ -5,6 +5,7 @@
 ### Optimisation functions
 
 - [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimisation.md)
+  [`graph_optimize()`](https://gsk-biostatistics.github.io/multigrain/reference/graph_optimisation.md)
   : Optimise graph-based multiple testing procedures
 
 ### Inputs
