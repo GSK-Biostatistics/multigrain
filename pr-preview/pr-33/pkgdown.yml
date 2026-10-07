@@ -1,0 +1,10 @@
+pandoc: 3.1.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  articles/get-started: get-started.html
+  articles/graph_constraint: graph_constraint.html
+last_built: 2026-10-07T15:21Z
+urls:
+  reference: https://gsk-biostatistics.github.io/multigrain/reference
+  article: https://gsk-biostatistics.github.io/multigrain/articles
