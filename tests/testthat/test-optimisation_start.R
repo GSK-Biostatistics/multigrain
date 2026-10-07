@@ -1,4 +1,5 @@
 test_that(".build_start_matrix produces a valid output - no constraints", {
+    skip_if_not_installed("gMCPLite")
     gc <- graph_constraint_free(4)
     start_graph <- list(
         list(
@@ -30,6 +31,7 @@ test_that(".build_start_matrix produces a valid output - no constraints", {
 })
 
 test_that(".build_start_matrix produces a valid output - WITH constraints", {
+    skip_if_not_installed("gMCPLite")
     gc <- graph_constraint(
         hyp_constraint = c(NA, 0.2, 0.2, NA),
         trans_constraint = rbind(

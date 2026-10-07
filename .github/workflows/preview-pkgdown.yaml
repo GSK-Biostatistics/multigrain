@@ -32,7 +32,14 @@ jobs:
       - name: Install dependencies
         uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::pkgdown, any::downlit, any::xml2, any::ggraph, any::ggplot2, any::quarto, local::.
+          extra-packages: |
+            any::pkgdown
+            any::downlit
+            any::xml2
+            any::ggraph
+            any::ggplot2
+            any::quarto
+            local::.
           needs: website
 
       - name: Build pkgdown site

@@ -94,7 +94,7 @@ graph_optimal <- function(
 #'
 #' @export
 #' @examples
-#' # graph_optimal_example is an example optimised graph
+#' # `graph_optimal_example` is an example optimised graph
 #' graph_optimal_get_control(graph_optimal_example)
 graph_optimal_get_control <- function(graph_optimal) {
     check_graph_optimal(graph_optimal)

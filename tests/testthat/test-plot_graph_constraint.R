@@ -31,6 +31,7 @@ test_that("graph_constraint plotting with autoplot", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Graph constraint autoplot",
         autoplot(gc1)
@@ -57,6 +58,7 @@ test_that("graph_constraint plotting with plot", {
         plot(gc1)
     )
 
+    skip_if_not_installed("svglite")
     expect_true(
         equivalent_ggplot2(
             plot(gc1),
@@ -65,6 +67,7 @@ test_that("graph_constraint plotting with plot", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Graph constraint plot",
         plot(gc1)
@@ -94,6 +97,7 @@ test_that("plot and autoplot with user-supplied title", {
         )
     )
 
+    skip_if_not_installed("svglite")
     expect_true(
         equivalent_ggplot2(
             plot(
@@ -108,6 +112,7 @@ test_that("plot and autoplot with user-supplied title", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Graph constraint title with plot",
         plot(
