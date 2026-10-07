@@ -320,6 +320,7 @@ test_that("calc_power_pvals validates input types", {
 
 
 test_that("calc_power_pvals complains", {
+    skip_if_not_installed("gMCPLite")
     # when custom_power is not a list or trial_success
     pvals <- matrix(
         rbeta(40000, shape1 = 0.24, shape2 = 0.65),
