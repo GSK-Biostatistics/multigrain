@@ -1,4 +1,4 @@
-# vdiffr::expect_doppelganger() tests are a bit flaky and always fail on CI.
+# vdiffr::expect_doppelganger() tests are a bit flaky and often fail on CI.
 test_that("graph plotting with graph_custom_power", {
     graph_custom_power <- readRDS(test_path("data", "graph_custom_power.rds"))
 
@@ -17,6 +17,7 @@ test_that("graph plotting with graph_custom_power", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Optimal Graph for Custom Power Metric",
         autoplot(graph_custom_power)
@@ -40,6 +41,7 @@ test_that("graph plotting with graph_average_power", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Optimal Graph for Average Power Metric",
         autoplot(graph_average_power)
@@ -80,6 +82,7 @@ test_that("plot ferber_et_al_2011 graph", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Graph from Ferber et al. 2011",
         autoplot(ferber_et_al_graph)
@@ -117,6 +120,7 @@ test_that("plot bretz_et_al_2009 graph", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Graph from Bretz et al. 2009",
         autoplot(bretz_et_al_2009_graph)
@@ -132,6 +136,7 @@ test_that("plot random graph", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Random Graph",
         autoplot(random_graph)
@@ -147,6 +152,7 @@ test_that("users can control the number of digits and the root", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Random Graph with digits",
         autoplot(random_graph, digits = 2)
@@ -299,6 +305,7 @@ test_that("modify node position manually", {
     plot$data$y[8] <- -1
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Ferber et al. manual adjustment",
         plot
@@ -338,6 +345,7 @@ test_that("another custom graph", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Custom graph with 8 hypotheses",
         autoplot(custom_graph)
@@ -363,6 +371,7 @@ test_that("autoplot and plot produce the same output: graph_average_power", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Graph average power with plot()",
         plot(graph_average_power)
@@ -388,6 +397,7 @@ test_that("autoplot and plot produce the same output: graph_custom_power", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Graph custom power with plot()",
         plot(graph_custom_power)
@@ -411,6 +421,7 @@ test_that("plot and autoplot with random graph", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Random graph with plot",
         plot(random_graph)
@@ -443,6 +454,7 @@ test_that("plot and autoplot with user-supplied title", {
     )
 
     skip_on_ci()
+    skip_if_not_installed("vdiffr")
     vdiffr::expect_doppelganger(
         title = "Random graph and title with plot",
         plot(
