@@ -761,7 +761,7 @@ test_that("recover_full_trans_matrix bug from issue #137 fix", {
     expect_identical(rowSums(result), rep(1, 3))
 })
 
-test_that("recover_full_trans_matrix fully specified matrix passthrough", {
+test_that("recover_full_trans_matrix fully specified matrix pass-through", {
     G_constr <- matrix(
         c(
             0, 1, 0,
