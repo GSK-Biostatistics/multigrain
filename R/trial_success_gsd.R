@@ -639,7 +639,8 @@ validate_expr_symbols_gsd <- function(expr, table_names = character()) {
         cli::cli_abort(
             c(
                 "Discount table {.arg {txt}} must be applied to a decision \\
-                time, e.g. {.code {txt}(t1)}; it cannot stand alone.",
+                time or to the stopping look, e.g. {.code {txt}(t1)} or \\
+                {.code {txt}(s)}; it cannot stand alone.",
                 i = "Use {.code !!} if you meant to inject a value instead."
             )
         )

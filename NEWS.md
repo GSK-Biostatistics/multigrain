@@ -1,7 +1,31 @@
 # multigrain (development version)
 
+## New functionality
+
+* `stopping_rule_gsd()` creates an efficacy stopping rule for a group
+  sequential design: one Boolean condition over the rejection indicators
+  `r1, r2, ...` per interim analysis (or a single condition applied at every
+  interim). Pass it to `graph_optimise_gsd()` or `calc_power_pvals_gsd()`
+  through their new `stopping_rule` argument and each simulated trial stops at
+  the first interim analysis whose condition holds, so the gain and every
+  reported power count only the rejections made before the trial stopped.
+  `calc_power_pvals_gsd()` also reports `stop_distribution`, the proportion of
+  trials stopping at each analysis, and `mean_stop_look`. A trial that rejects
+  every hypothesis stops at that analysis with or without a rule. Stopping only
+  removes rejections, so error control is unaffected.
+* `trial_success_gsd()` gains the symbol `s`, the analysis at which the trial
+  stopped, for use in comparisons (`0.1 * (s == 1)`) and discount tables
+  (`d(s)`). Without a stopping rule `s` is `K` except in trials that rejected
+  every hypothesis earlier. A plain function in the `custom_power` argument of
+  `calc_power_pvals_gsd()` is now called with each trial's decision times and
+  its stopping look.
+
 ## Bug fixes
 
+* `graph_optimise_gsd()` and `calc_power_pvals_gsd()` now check that the graph
+  has as many hypotheses as the p-values and abort with a message naming both
+  numbers; previously the mismatch surfaced only as the internal error "G must
+  be an m x m matrix".
 * `graph_optimise()` and `calc_power_pvals()` now refuse a gain function created
   with `trial_success_gsd()`, which needs decision times; previously the object
   was accepted and every rejection was silently scored as an analysis-1
