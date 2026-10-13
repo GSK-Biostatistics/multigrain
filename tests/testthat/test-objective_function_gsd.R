@@ -55,15 +55,15 @@ obj_make_gsd <- function(
     )
 }
 
-# The user's rule, tabulated once as the public entry points do, and a gain
-# that uses the stopping look.
+# The user's rule, tabulated once as the public entry points do, and a
+# discounted gain to score under it.
 obj_stop_table <- .gsd_stop_table(
     stopping_rule_gsd(r1 && (r2 || r3))$conditions,
     3L,
     2L
 )
-obj_gain_s <- trial_success_gsd(
-    d(t1) + d(t2) + d(t3) + 0.1 * (s == 1),
+obj_gain_rule <- trial_success_gsd(
+    d(t1) + d(t2) + d(t3),
     d = c(1, 0.8),
     verbose = "silent"
 )
@@ -88,14 +88,14 @@ test_that("the closure equals the kernel and gain called by hand", {
         K = obj_pvals_gsd$K
     )
 
-    expect_identical(fn(obj_x), obj_gain_gsd$func(res$time, res$stop_look))
+    expect_identical(fn(obj_x), obj_gain_gsd$func(res$time))
 })
 
 
 test_that("with a stopping table the closure scores the stopped trials", {
     fn <- obj_make_gsd(
         obj_pvals_gsd,
-        gain = obj_gain_s,
+        gain = obj_gain_rule,
         stop_rule = obj_stop_table
     )
 
@@ -116,7 +116,7 @@ test_that("with a stopping table the closure scores the stopped trials", {
 
     # not vacuous: the rule stops some trials at the interim
     expect_true(any(res$stop_look == 1L))
-    expect_identical(fn(obj_x), obj_gain_s$func(res$time, res$stop_look))
+    expect_identical(fn(obj_x), obj_gain_rule$func(res$time))
 })
 
 
@@ -136,13 +136,13 @@ test_that("the parallel closure equals the serial closure", {
     serial_rule <- obj_make_gsd(
         obj_pvals_gsd,
         num_threads = 1L,
-        gain = obj_gain_s,
+        gain = obj_gain_rule,
         stop_rule = obj_stop_table
     )
     parallel_rule <- obj_make_gsd(
         obj_pvals_gsd,
         num_threads = 2L,
-        gain = obj_gain_s,
+        gain = obj_gain_rule,
         stop_rule = obj_stop_table
     )
     expect_identical(parallel_rule(obj_x), serial_rule(obj_x))

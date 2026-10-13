@@ -114,10 +114,6 @@ more than a late one. `trial_success_gsd()` lets you express this.
   `ri = (ti > 0)` inside the compiled function, so `r` and `t` are always
   consistent. You can mix both in one expression.
 
-A third symbol, `s`, the analysis at which the trial stopped, matters only
-when the trial can stop early; it is introduced under
-[Stopping for efficacy](#stopping-for-efficacy).
-
 Decision time is the analysis at which the *procedure declared* the rejection.
 This is not necessarily the analysis at which the data first crossed a boundary.
 Alpha recycling can delay the declaration. For example, suppose PFS data are
@@ -336,12 +332,8 @@ Stopping only removes rejections, so the procedure keeps its error control
 under any rule: a stopped trial keeps the rejections it has declared and makes
 no new ones.
 
-The gain can value the stop itself through `s`, the analysis at which the
-trial stopped (an integer from `1` to `K`). It can be compared, as in
-`s == 1`, or used as the argument of a discount table, as in `d(s)`. The gain
-below values each claim at its own decision look and adds 0.1 for a trial that
-stops at the interim analysis. It is evaluated on a design with three
-hypotheses and $K = 2$ analyses:
+The gain below values each claim at its own decision look. It is evaluated
+on a design with three hypotheses and $K = 2$ analyses:
 
 ```{r}
 #| label: stopping-end-to-end
@@ -356,7 +348,7 @@ sim3 <- simulate_pvalues_gsd(
 pvals <- transform_pvalues_gsd(sim3, spending = gsDesign::sfLDOF)
 
 gain <- trial_success_gsd(
-    d(t1) + d(t2) + d(t3) + 0.1 * (s == 1),
+    d(t1) + d(t2) + d(t3),
     d = c(1, 0.8)
 )
 
@@ -396,11 +388,9 @@ it with the stopping-look distribution.
 
 Once every hypothesis is rejected there is nothing left to test, so the trial
 stops at that analysis whether or not a rule is supplied. Without a rule every
-other trial runs to the final analysis, so `s == K` and `d(s)` is the constant
-`d(K)` except in trials that rejected everything early. In the example above,
-3.3% of trials stop at the interim without the rule, all of them because every
-hypothesis was rejected there. A gain that uses `s` is therefore mainly of
-interest with a rule.
+other trial runs to the final analysis. In the example above, 3.3% of trials
+stop at the interim without the rule, all of them because every hypothesis was
+rejected there.
 :::
 
 # Things that go wrong quietly
@@ -453,19 +443,18 @@ refuse such an object with an error that points to `graph_optimise_gsd()` and
 `calc_power_pvals_gsd()`.
 :::
 
-::: {.callout-warning}
-## Do not add a stopping rule without a value for stopping
+::: {.callout-note}
+## A stopping rule changes which graph is optimal
 
 Under a stopping rule, stopping costs the hypotheses not yet rejected their
-later analyses, and a gain that values only the claims gives nothing in
-return. The optimiser responds by making the stop less likely, which moves the
-optimal graph away from the primary hypothesis. In the user testing (section
-7.4 of `dev/review/gsd_user_testing/README.md`), with a rule that stops once
-$H_1$ is rejected, the optimal weight on $H_1$ fell from 0.98 without the rule
-to 0.32 with it; adding a saving of between 0 and 0.2 for a trial that stops
-at the interim moved it anywhere from 0.32 back to 0.98. Decide what stopping
-is worth and say so in the gain, for example `+ 0.1 * (s == 1)` or a discount
-on the stopping look such as `d(s)`.
+later analyses, and the package does not value the stop itself: the gain
+counts only the claims made before the trial stopped. The optimiser responds
+by making the stop less likely, which can move the optimal graph away from the
+primary hypothesis. In the user testing (section 7.4 of
+`dev/review/gsd_user_testing/README.md`), with a rule that stops once $H_1$ is
+rejected, the optimal weight on $H_1$ fell from 0.98 without the rule to 0.32
+with it. Optimise the graph with and without the rule, compare the two, and
+decide what the design is for before adopting either.
 :::
 
 ::: {.callout-tip}

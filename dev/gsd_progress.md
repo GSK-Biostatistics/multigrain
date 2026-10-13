@@ -767,3 +767,38 @@ Ubuntu 24.04, R 4.3.3; packages installed from CRAN source this session (Posit P
 binaries were blocked by the proxy; `libuv1-dev` and `libtiff-dev` added with apt); roxygen2
 8.1.1; `cyclocomp` installed so `lintr` runs fully; `air` unavailable; pkgdown installed,
 `quarto` (R package) not installed.
+
+### Withdrawal of `s` (2026-10-13)
+
+**Decision (user, the same day).** The gain symbol `s` added in Q3 (`8d8f9d2`) is withdrawn:
+valuing the stop inside the gain was judged too complex. Everything else on the branch stays:
+the rule object, the kernel's `stop_look`, `stop_distribution`, `mean_stop_look`, the display
+and the graph-dimension check. Phase R1; design record 4.11 `[Rev 2026-10-13b]` and section 10
+item 15. Decisions A and C above are superseded.
+
+- The compiled gain is `double powerFunc(IntegerMatrix t)` again, called as `func(time)` by the
+  objective closure, both optimiser drivers and the reporter; no `uses_s`, no length check.
+- The grammar is that of 4.6: a bare `s` is an un-injected symbol (the generic error with the
+  `!!` hint) and a table may be named `s`. A plain `custom_power` function is called as
+  `f(time_row)`.
+- The stopping rule still refuses `s`, now through the generic unknown-symbol message.
+- `R/trial_success_gsd.R`, `man/trial_success_gsd.Rd`, `tests/testthat/test-trial_success_gsd.R`
+  (apart from one new test) and `tests/testthat/_snaps/trial_success_gsd.md` are as at
+  `69fe6f4`; `dev/callflows/trial_success_gsd.md` is as at `69fe6f4` except the comments of the
+  example C++, which now match the generated code.
+
+Files touched: `R/trial_success_gsd.R`, `R/calc_power_gsd.R`, `R/objective_function_gsd.R`,
+`R/optimisation_gsd.R`, `R/stopping_rule_gsd.R`; `man/trial_success_gsd.Rd`,
+`man/calc_power_pvals_gsd.Rd`, `man/stopping_rule_gsd.Rd`; `tests/testthat/test-trial_success_gsd.R`
+(the `s` tests removed; one new test that `s` is an un-injected symbol and a valid table name),
+`tests/testthat/_snaps/trial_success_gsd.md`, `tests/testthat/test-calc_power_gsd.R` (plain
+function back to one argument; the `d(s)` test replaced by a discounted gain checked by hand on
+the stopped and unstopped time matrices), `tests/testthat/test-objective_function_gsd.R`,
+`tests/testthat/test-optimisation_gsd.R`, `tests/testthat/test-post_optim_processing_gsd.R`,
+`tests/testthat/test-stopping_rule_gsd.R`; `NEWS.md`; `vignettes/articles/trial_success.qmd`
+(the `s` pointer and the `s` paragraph removed, the gain of the end-to-end example is
+`d(t1) + d(t2) + d(t3)`, the warning callout replaced by the note "A stopping rule changes which
+graph is optimal"); `dev/gsd_design_record.md`; `dev/callflows/trial_success_gsd.md`,
+`dev/callflows/graph_optimise_gsd.md`, `dev/callflows/stopping_rule_gsd.md`; this entry.
+
+Gate (orchestrator, clean build, NOT_CRAN=true): `test-trial_success_gsd.R` 138, `test-trial_success.R` 117, `test-calc_power_gsd.R` 65, `test-objective_function_gsd.R` 21, `test-post_optim_processing_gsd.R` 21, `test-optimisation_gsd.R` 79, `test-stopping_rule_gsd.R` 107, `test-check_gsd.R` 56, `test-graph_optimal.R` 33, `test-gsd_guards.R` 11, `test-graph_shortcut_gsd.R` 135, all 0 fail, 0 skip; `R/trial_success_gsd.R`, `man/trial_success_gsd.Rd` and the gain snapshots identical to `gsd-build`; `devtools::document()` a no-op afterwards. The prompt for the follow-on spending-function job is `dev/implement_hsd_opt.md`.

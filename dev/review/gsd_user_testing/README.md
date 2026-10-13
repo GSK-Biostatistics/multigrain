@@ -322,7 +322,7 @@ Two hypotheses, two looks, one set of powers, one correlation, one efficacy rule
 ## 8. Suggestions, in the order I would take them
 
 1. **A stopping rule as its own input, and a stopping-look symbol in the gain** (7.7). Without it the gain cannot say what stopping is worth and the reported power ignores the rule.
-   `[Rev 2026-10-13]` Closed: `stopping_rule_gsd()`, the `stopping_rule` argument of `graph_optimise_gsd()` and `calc_power_pvals_gsd()`, and the gain symbol `s` (design record section 4.11).
+   `[Rev 2026-10-13]` Closed: `stopping_rule_gsd()`, the `stopping_rule` argument of `graph_optimise_gsd()` and `calc_power_pvals_gsd()` (design record section 4.11; a gain symbol `s` was added and withdrawn the same day).
 2. **Show the group sequential output in `print()` and `summary()`**: power by analysis and the decision-time distribution. They are computed already and are the first thing a user of a group sequential design looks for.
    `[Rev 2026-10-13]` Closed: `print()` and `summary()` show power by analysis, the decision-time and stopping-look distributions and the stopping rule (design record section 10 item 14).
 3. **Report the nominal boundaries of the final graph** (the record's open item 5). After optimising, the next thing a protocol needs is the boundary at each analysis for each weight a hypothesis can hold, as graphicalMCP prints with `verbose = TRUE`. The tables on the `multigrain_pvals_gsd` object already hold what is needed.

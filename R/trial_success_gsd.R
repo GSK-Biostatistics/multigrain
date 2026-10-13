@@ -14,19 +14,16 @@
 #' * `t1, t2, ..., tm`: the analysis ("look") at which \eqn{H_i} was rejected,
 #'   an integer from `1` to `K`, or `0` if it was never rejected. `ri` is the
 #'   same as `ti > 0`;
-#' * `s`: the analysis at which the trial stopped, an integer from `1` to `K`;
-#'   see [stopping_rule_gsd()];
 #' * arithmetic (`+ - * /`), logical operators (`&&`, `||`, or the words `and`,
 #'   `or` in a string) between logical terms, comparisons (`== != < <= > >=`),
 #'   and parentheses;
 #' * discount tables: any numeric vector of length `K` passed by name through
-#'   `...` can be applied to a decision time as `name(ti)` or to the stopping
-#'   look as `name(s)`. The result is the `ti`-th (or `s`-th) element of the
-#'   table, or `0` when `ti` is `0` (never rejected).
+#'   `...` can be applied to a decision time as `name(ti)`. The result is the
+#'   `ti`-th element of the table, or `0` when `ti` is `0` (never rejected).
 #'
 #' @param objective An expression or string encoding the trial-success utility
-#'   \eqn{\psi} over `r1, r2, ...`, `t1, t2, ...` and `s`. To inject values
-#'   from your R session, use rlang's injection operator -
+#'   \eqn{\psi} over `r1, r2, ...` and `t1, t2, ...`. To inject values from
+#'   your R session, use rlang's injection operator -
 #'   [`!!`][rlang::injection-operator] - (see Examples). Use `!!` only inside
 #'   `objective`; it has a different meaning in ordinary arguments (see
 #'   **Common mistakes**).
@@ -34,8 +31,7 @@
 #'   value per analysis). Supply only the values for analyses 1 through `K`;
 #'   the value for "never rejected" (`ti = 0`) is always `0` and is supplied
 #'   automatically — do not include it yourself (see **Common mistakes**).
-#'   Every table must be named; the names are used as functions in `objective`
-#'   and must not be `s`, `r1`, ..., `t1`, ..., `and` or `or`.
+#'   Every table must be named; the names are used as functions in `objective`.
 #' @param K An optional whole number giving the number of analyses. When
 #'   discount tables are supplied `K` is inferred from their common length and,
 #'   if also given, must agree with it. When neither is given `K` is left
@@ -46,9 +42,7 @@
 #'   `multigrain_trial_success`) made up of:
 #'   * `func`: compiled function that evaluates \eqn{\psi} row-wise on an
 #'     integer matrix of decision times (simulations by hypotheses, `0` for
-#'     never rejected) and returns the mean utility. Its optional second
-#'     argument is the integer vector of stopping looks, one per row; it is
-#'     required when `uses_s` is `TRUE` and ignored otherwise.
+#'     never rejected) and returns the mean utility.
 #'   * `m`: number of hypotheses implied by the largest index among the
 #'     `r<i>` and `t<i>` symbols.
 #'   * `K`: number of analyses, or `NULL` if unknown.
@@ -57,7 +51,6 @@
 #'     the exact values).
 #'   * `cpp_code`: the generated C++ source.
 #'   * `tables`: the discount tables, as supplied.
-#'   * `uses_s`: `TRUE` when `objective` refers to the stopping look `s`.
 #'
 #' @details
 #'
@@ -84,15 +77,7 @@
 #'   rejection at the final analysis is worth 75% of one at the interim, write
 #'   `d = c(1, 0.75)`. Element names on the vector are ignored; only the
 #'   argument name matters (the name you use to apply it in `objective`, e.g.
-#'   `d(t1)` or `d(s)`).
-#'
-#'   ## The stopping look
-#'
-#'   `s` is the analysis at which the trial stopped. Without a stopping rule
-#'   every trial runs to analysis `K` unless it rejects every hypothesis
-#'   earlier, so `s == K` and `d(s)` is the constant `d(K)` except in those
-#'   trials. `s` only varies with a rule (see [stopping_rule_gsd()]) passed to
-#'   [graph_optimise_gsd()] or [calc_power_pvals_gsd()].
+#'   `d(t1)`).
 #'
 #'   ## Operator precedence
 #'
@@ -183,12 +168,6 @@
 #'
 #' # Rejection indicators work as in trial_success()
 #' trial_success_gsd(r1 + r2, K = 2)
-#'
-#' # A bonus for stopping at the interim analysis
-#' trial_success_gsd(d(t1) + d(t2) + 0.1 * (s == 1), d = c(1, 0.8))
-#'
-#' # Every claim discounted by the look at which the trial stopped
-#' trial_success_gsd((r1 + r2) * d(s), d = c(1, 0.75))
 #' }
 trial_success_gsd <- function(
     objective,
@@ -255,8 +234,7 @@ summary.multigrain_trial_success_gsd <- function(object, ...) {
     invisible(object)
 }
 
-# Shared tail of print() and summary(): the number of analyses, the tables and
-# whether the gain uses the stopping look.
+# Shared tail of print() and summary(): the number of analyses and the tables.
 .gsd_gain_cat_detail <- function(x) {
     cli::cat_line(
         "Analyses (K): ",
@@ -267,9 +245,6 @@ summary.multigrain_trial_success_gsd <- function(object, ...) {
             "Discount table ", nm, "(t): ",
             toString(format(x$tables[[nm]]))
         )
-    }
-    if (isTRUE(x$uses_s)) {
-        cli::cat_line("Uses the stopping look (s)")
     }
     invisible(NULL)
 }
@@ -287,9 +262,8 @@ is_trial_success_gsd <- function(x) {
 # Validate the discount tables collected from `...`. Returns a named list of
 # finite numeric vectors that all share one length (the number of analyses).
 # Names must be usable as C++ identifiers (they become `<name>_tab`) and must
-# not collide with the symbol grammar (`r<i>`, `t<i>`, `s`) or the word
-# operators (`and`, `or`), because those are recognised by pattern before table
-# names.
+# not collide with the symbol grammar (`r<i>`, `t<i>`) or the word operators
+# (`and`, `or`), because those are recognised by pattern before table names.
 .gsd_gain_tables <- function(tables, call = rlang::caller_env()) {
     if (length(tables) == 0L) {
         return(rlang::set_names(list(), character()))
@@ -318,7 +292,6 @@ is_trial_success_gsd <- function(x) {
     # nolint start: nonportable_path_linter
     bad_name <- !grepl("^[A-Za-z][A-Za-z0-9_]*$", nms) |
         grepl("^[rt][0-9]+$", nms) |
-        nms == "s" |
         tolower(nms) %in% c("and", "or")
     # nolint end
     if (any(bad_name)) {
@@ -328,8 +301,8 @@ is_trial_success_gsd <- function(x) {
                 allowed.",
                 i = "A name must start with a letter, contain only letters, \\
                 digits and underscores, and must not be a rejection indicator \\
-                ({.code r1}, ...), a decision time ({.code t1}, ...), the \\
-                stopping look {.code s}, {.code and} or {.code or}."
+                ({.code r1}, ...), a decision time ({.code t1}, ...), \\
+                {.code and} or {.code or}."
             ),
             call = call
         )
@@ -524,10 +497,9 @@ gsd_gain_compare_ops <- c("==", "!=", "<", "<=", ">", ">=")
 #' Validate that a GSD trial success expression uses only the grammar
 #'
 #' After `!!` unquoting, the expression may contain only `r<digit>` and
-#' `t<digit>` symbols, the stopping look `s`, numeric or logical scalars, the
-#' arithmetic, logical and comparison operators, parentheses, and calls of a
-#' discount table to a single `t<digit>` symbol or to `s`. Any other symbol
-#' means the user forgot to unquote.
+#' `t<digit>` symbols, numeric or logical scalars, the arithmetic, logical and
+#' comparison operators, parentheses, and calls of a discount table to a single
+#' `t<digit>` symbol. Any other symbol means the user forgot to unquote.
 #'
 #' @param expr A language object (post-unquoting).
 #' @param table_names Names of the discount tables supplied by the user.
@@ -560,9 +532,8 @@ validate_expr_symbols_gsd <- function(expr, table_names = character()) {
     invisible(NULL)
 }
 
-# A call is either a discount table applied to one `t<i>` symbol or to `s`, or
-# one of the allowed operators applied to sub-expressions that are validated
-# in turn.
+# A call is either a discount table applied to one `t<i>` symbol, or one of
+# the allowed operators applied to sub-expressions that are validated in turn.
 .gsd_gain_validate_call <- function(expr, table_names) {
     fn <- expr[[1L]]
     if (!is.symbol(fn)) {
@@ -578,15 +549,14 @@ validate_expr_symbols_gsd <- function(expr, table_names = character()) {
         # nolint start: nonportable_path_linter
         ok <- length(tab_args) == 1L &&
             is.symbol(tab_args[[1L]]) &&
-            (grepl("^t\\d+$", as.character(tab_args[[1L]])) ||
-                identical(as.character(tab_args[[1L]]), "s"))
+            grepl("^t\\d+$", as.character(tab_args[[1L]]))
         # nolint end
         if (!ok) {
             cli::cli_abort(
                 c(
                     "A discount table must be applied to a single decision \\
-                    time symbol ({.code t1}, {.code t2}, ...) or the stopping \\
-                    look {.code s}, not as {.code {deparse1(expr)}}.",
+                    time symbol ({.code t1}, {.code t2}, ...), \\
+                    not as {.code {deparse1(expr)}}.",
                     i = "For example {.code {fn_txt}(t1)}."
                 )
             )
@@ -627,20 +597,19 @@ validate_expr_symbols_gsd <- function(expr, table_names = character()) {
     invisible(NULL)
 }
 
-# A bare symbol must be `r<i>`, `t<i>` or `s`. A table name on its own
-# (without `(t1)`) gets its own hint; anything else is an un-injected variable.
+# A bare symbol must be `r<i>` or `t<i>`. A table name on its own (without
+# `(t1)`) gets its own hint; anything else is an un-injected variable.
 .gsd_gain_validate_symbol <- function(expr, table_names) {
     txt <- as.character(expr)
     # nolint start: nonportable_path_linter, line_length_linter
-    if (grepl("^[rt]\\d+$", txt) || txt == "s") {
+    if (grepl("^[rt]\\d+$", txt)) {
         return(invisible(NULL))
     }
     if (txt %in% table_names) {
         cli::cli_abort(
             c(
                 "Discount table {.arg {txt}} must be applied to a decision \\
-                time or to the stopping look, e.g. {.code {txt}(t1)} or \\
-                {.code {txt}(s)}; it cannot stand alone.",
+                time, e.g. {.code {txt}(t1)}; it cannot stand alone.",
                 i = "Use {.code !!} if you meant to inject a value instead."
             )
         )
@@ -649,8 +618,7 @@ validate_expr_symbols_gsd <- function(expr, table_names = character()) {
         c(
             "Symbol {.arg {txt}} in the trial success expression is not \\
             a rejection indicator ({.code r1}, {.code r2}, ...), a decision \\
-            time ({.code t1}, {.code t2}, ...), the stopping look \\
-            ({.code s}), or a discount table.",
+            time ({.code t1}, {.code t2}, ...), or a discount table.",
             i = "Use {.code !!} to inject values from the calling \\
             environment, e.g. {.code trial_success_gsd(!!{txt} * r1 + r2)}."
         )
@@ -666,9 +634,7 @@ validate_expr_symbols_gsd <- function(expr, table_names = character()) {
 # Constructor. Called by trial_success_gsd() with a validated expression
 # string, validated tables and a settled K. Counts the hypotheses, translates
 # the expression to a C++ body, wraps it in a row loop over the decision-time
-# matrix (and the stopping-look vector `s`, checked against it only when the
-# expression uses `s`), compiles it with Rcpp::sourceCpp() and returns the S3
-# object.
+# matrix, compiles it with Rcpp::sourceCpp() and returns the S3 object.
 new_trial_success_gsd <- function(
     expr_string,
     expr_lang = NULL,
@@ -682,13 +648,13 @@ new_trial_success_gsd <- function(
     # Number of hypotheses: the largest index over r<i> and t<i>
     m <- count_unique_indices_gsd(expr_string)
 
-    # Expression body in C++ over the decision-time matrix `t` and the
-    # stopping-look vector `s`, from the captured expression when there is one
-    # (exact constants), else from the string. The expression is parsed once
-    # so that `uses_s` is read from the same tree that is translated.
-    ast <- .gsd_gain_ast(expr_lang %||% expr_string)
-    cpp_body <- replace_indices_gsd(ast, table_names = names(tables))
-    uses_s <- "s" %in% all.names(ast)
+    # Expression body in C++ over the decision-time matrix `t`, from the
+    # captured expression when there is one (exact constants), else from the
+    # string
+    cpp_body <- replace_indices_gsd(
+        expr_lang %||% expr_string,
+        table_names = names(tables)
+    )
 
     # One static array per discount table. Index 0 is "never rejected" and
     # maps to 0; index k (1..K) is the table value at analysis k. Values are
@@ -713,20 +679,6 @@ new_trial_success_gsd <- function(
         paste0(paste(table_lines, collapse = "\n"), "\n")
     }
 
-    # The stopping-look vector must have one element per row; checked once per
-    # call, and only when the expression reads it (otherwise `s` is unused and
-    # a one-argument call is fine).
-    # nolint start: quotes_linter, line_length_linter
-    s_check <- if (uses_s) {
-        '    if (s.size() != t.nrow()) {
-        stop("the stopping-look vector has %d element(s) but the decision-time matrix has %d row(s)", s.size(), t.nrow());
-    }
-'
-    } else {
-        ""
-    }
-    # nolint end
-
     # nolint start: quotes_linter
     cpp_code <- sprintf(
         '
@@ -737,11 +689,11 @@ using namespace Rcpp;
 
 %s
 // [[Rcpp::export]]
-double %s(IntegerMatrix t, IntegerVector s = IntegerVector::create()) {
+double %s(IntegerMatrix t) {
     if (t.ncol() < %d) {
         stop("the decision-time matrix has %%d column(s) but the trial success function refers to %d hypotheses", t.ncol());
     }
-%s    int n = t.nrow();
+    int n = t.nrow();
     double total = 0.0;
 
     for (int i = 0; i < n; i++) {
@@ -754,7 +706,6 @@ double %s(IntegerMatrix t, IntegerVector s = IntegerVector::create()) {
         "powerFunc",
         m,
         m,
-        s_check,
         cpp_body
     )
     # nolint end
@@ -774,8 +725,7 @@ double %s(IntegerMatrix t, IntegerVector s = IntegerVector::create()) {
             K = K,
             objective = expr_string,
             cpp_code = cpp_code,
-            tables = tables,
-            uses_s = uses_s
+            tables = tables
         ),
         class = c("multigrain_trial_success_gsd", "multigrain_trial_success")
     )
@@ -831,15 +781,20 @@ count_unique_indices_gsd <- function(expr_string) {
 #'   captured language object itself (in which numeric constants are exact,
 #'   where a deparsed string carries 15 significant digits).
 #' @param table_names Names of the discount tables supplied by the user.
-#' @returns A character string of C++ code over the row index `i`, the
-#'   `IntegerMatrix t` of decision times and the `IntegerVector s` of stopping
-#'   looks: `r1` becomes `double(t(i, 0) > 0)`, `t1` becomes `double(t(i, 0))`,
-#'   `d(t1)` becomes `d_tab[t(i, 0)]`, `s` becomes `double(s[i])` and `d(s)`
-#'   becomes `d_tab[s[i]]`.
+#' @returns A character string of C++ code over the row index `i` and the
+#'   `IntegerMatrix t` of decision times: `r1` becomes `double(t(i, 0) > 0)`,
+#'   `t1` becomes `double(t(i, 0))`, `d(t1)` becomes `d_tab[t(i, 0)]`.
 #'
 #' @noRd
 replace_indices_gsd <- function(expr, table_names = character()) {
-    ast <- .gsd_gain_ast(expr)
+    if (is.character(expr)) {
+        fixed_expr <- expr
+        fixed_expr <- gsub("\\b[Aa][Nn][Dd]\\b", "&&", fixed_expr)
+        fixed_expr <- gsub("\\b[Oo][Rr]\\b", "||", fixed_expr)
+        ast <- str2lang(fixed_expr)
+    } else {
+        ast <- expr
+    }
     validate_expr_symbols_gsd(ast, table_names = table_names)
 
     transformed <- parse_and_transform_gsd(ast, table_names = table_names)
@@ -851,17 +806,6 @@ replace_indices_gsd <- function(expr, table_names = character()) {
     out_str <- gsub("([[:alnum:]_\\)])/", "\\1 /", out_str)
     out_str <- gsub("/([[:alnum:]_\\(])", "/ \\1", out_str)
     out_str
-}
-
-# The expression tree: a string has the word operators `and`/`or` mapped to
-# `&&`/`||` and is parsed by R; a language object is returned as it is.
-.gsd_gain_ast <- function(expr) {
-    if (!is.character(expr)) {
-        return(expr)
-    }
-    fixed_expr <- gsub("\\b[Aa][Nn][Dd]\\b", "&&", expr)
-    fixed_expr <- gsub("\\b[Oo][Rr]\\b", "||", fixed_expr)
-    str2lang(fixed_expr)
 }
 
 
@@ -901,17 +845,15 @@ parse_and_transform_gsd <- function(node, table_names = character()) {
         return(parse_and_transform_gsd(parts[[2L]], table_names))
     }
 
-    # --- Discount table applied to a decision time or the stopping look ---
-    # name(t<i>) becomes name_tab[t(i, idx)]; index 0 (never rejected) holds
-    # 0.0. name(s) becomes name_tab[s[i]]; `s` is in 1..K, never 0.
+    # --- Discount table applied to a decision time: name(t<i>) ---
+    # Becomes name_tab[t(i, idx)]; index 0 (never rejected) holds 0.0.
     if (op_text %in% table_names) {
-        arg_txt <- as.character(parts[[2L]])
-        index <- if (arg_txt == "s") {
-            call("[", quote(s), quote(i))
-        } else {
-            call("t", quote(i), as.integer(sub("^t", "", arg_txt)) - 1)
-        }
-        new_call <- call("[", as.symbol(paste0(op_text, "_tab")), index)
+        idx <- as.integer(sub("^t", "", as.character(parts[[2L]]))) - 1
+        new_call <- call(
+            "[",
+            as.symbol(paste0(op_text, "_tab")),
+            call("t", quote(i), idx)
+        )
         return(list(expr = new_call, type = "real"))
     }
 
@@ -977,12 +919,6 @@ parse_and_transform_gsd <- function(node, table_names = character()) {
         idx <- as.integer(sub("^t", "", txt)) - 1
         return(list(
             expr = call("double", call("t", quote(i), idx)),
-            type = "real"
-        ))
-    } else if (txt == "s") {
-        # s => double(s[i]): the look at which the trial stopped, real
-        return(list(
-            expr = call("double", call("[", quote(s), quote(i))),
             type = "real"
         ))
     } else {

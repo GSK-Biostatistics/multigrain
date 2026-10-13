@@ -12,17 +12,6 @@ gsd_time_grid <- function() {
     tm
 }
 
-# Every (t1, t2) pair in 0..2 crossed with the stopping look s in 1..2 (18
-# rows). Rows where s is below a non-zero decision time cannot come from the
-# kernel, but the gain is a pure function of its inputs, so they are included.
-gsd_time_stop_grid <- function() {
-    combos <- expand.grid(t1 = 0:2, t2 = 0:2, s = 1:2)
-    tm <- as.matrix(combos[, c("t1", "t2")])
-    dimnames(tm) <- NULL
-    storage.mode(tm) <- "integer"
-    list(time = tm, stop_look = as.integer(combos$s))
-}
-
 # --- the four gain functions of design record section 4.6 -------------------
 
 test_that("Example 5 gain compiles and matches R on a hand-built time matrix", {
@@ -215,6 +204,24 @@ test_that("un-injected symbols error with the !! hint", {
         trial_success_gsd(r1 * (w + t2), verbose = "silent"),
         "not a rejection indicator"
     )
+})
+
+test_that("s is an ordinary symbol: un-injected alone, allowed as a table", {
+    expect_error(
+        trial_success_gsd(d(t1) + s, d = c(1, 0.75), verbose = "silent"),
+        "Symbol `s` in the trial success expression is not a rejection",
+        fixed = TRUE
+    )
+    expect_error(
+        trial_success_gsd(d(t1) + s, d = c(1, 0.75), verbose = "silent"),
+        "!!s",
+        fixed = TRUE
+    )
+    ts <- trial_success_gsd(s(t1), s = c(1, 0.75), verbose = "silent")
+    expect_named(ts$tables, "s")
+    expect_identical(ts$K, 2L)
+    tm <- gsd_time_grid()
+    expect_identical(ts$func(tm), mean_double(c(0, 1, 0.75)[tm[, 1] + 1]))
 })
 
 test_that("unsupported functions and operators error", {
@@ -501,13 +508,6 @@ test_that("cpp_code snapshots", {
         verbose = "silent"
     )
     expect_snapshot(cat(ts2$cpp_code))
-
-    ts3 <- trial_success_gsd(
-        d(t1) + d(t2) + 0.1 * (s == 1),
-        d = c(1, 0.75),
-        verbose = "silent"
-    )
-    expect_snapshot(cat(ts3$cpp_code))
 })
 
 test_that("compiling twice gives identical results", {
@@ -654,200 +654,4 @@ test_that("the compiled function still works after a warning", {
         ts$func(tm),
         mean_double(lapply(seq_len(nrow(tm)), \(i) dd[[tm[i, 1L] + 1L]]))
     )
-})
-
-# --- the stopping look s ----------------------------------------------------
-
-test_that("gains using s match R on every (t1, t2, s) combination", {
-    inputs <- gsd_time_stop_grid()
-    tm <- inputs$time
-    sl <- inputs$stop_look
-    expect_identical(nrow(tm), 18L)
-    t1 <- tm[, 1]
-    t2 <- tm[, 2]
-    d <- c(1, 0.75)
-    dd <- c(0, d)
-
-    # `s` alone does not count as a hypothesis (at least one r<i> or t<i> is
-    # required), so the s-only gains carry a `0 * (r1 + r2)` term that sets
-    # m = 2 without changing the value
-    bonus <- trial_success_gsd(
-        0.1 * (s == 1) + 0 * (r1 + r2),
-        verbose = "silent"
-    )
-    expect_identical(
-        bonus$func(tm, sl),
-        mean_double(0.1 * (sl == 1) + 0 * ((t1 > 0) + (t2 > 0)))
-    )
-
-    by_s <- trial_success_gsd(d(s) + 0 * (r1 + r2), d = d, verbose = "silent")
-    expect_identical(
-        by_s$func(tm, sl),
-        mean_double(dd[sl + 1] + 0 * ((t1 > 0) + (t2 > 0)))
-    )
-
-    claims <- trial_success_gsd(d(s) * (r1 + r2), d = d, verbose = "silent")
-    expect_identical(
-        claims$func(tm, sl),
-        mean_double(dd[sl + 1] * ((t1 > 0) + (t2 > 0)))
-    )
-
-    mixed <- trial_success_gsd(
-        d(t1) + d(t2) + 0.1 * (s == 1),
-        d = d,
-        verbose = "silent"
-    )
-    expect_identical(
-        mixed$func(tm, sl),
-        mean_double(dd[t1 + 1] + dd[t2 + 1] + 0.1 * (sl == 1))
-    )
-    expect_identical(mixed$m, 2L)
-    expect_identical(mixed$K, 2L)
-})
-
-test_that("s alone does not make a gain", {
-    expect_error(
-        trial_success_gsd(0.1 * (s == 1), verbose = "silent"),
-        "must reference at least one rejection indicator"
-    )
-    expect_error(
-        trial_success_gsd(d(s), d = c(1, 0.75), verbose = "silent"),
-        "must reference at least one rejection indicator"
-    )
-})
-
-test_that("a gain without s ignores a second argument of any length", {
-    tm <- gsd_time_grid()
-    ts <- trial_success_gsd(
-        0.4 * d(t1) + d(t2),
-        d = c(1, 0.75),
-        verbose = "silent"
-    )
-    expect_false(ts$uses_s)
-    expect_no_match(ts$cpp_code, "stopping-look", fixed = TRUE)
-    one_arg <- ts$func(tm)
-    expect_identical(ts$func(tm, integer(0)), one_arg)
-    expect_identical(ts$func(tm, 1L), one_arg)
-    expect_identical(ts$func(tm, rep(2L, nrow(tm))), one_arg)
-    expect_identical(ts$func(tm, rep(1L, 100L)), one_arg)
-})
-
-test_that("a gain with s refuses a missing or wrong-length s", {
-    inputs <- gsd_time_stop_grid()
-    ts <- trial_success_gsd(d(s) * r1, d = c(1, 0.75), verbose = "silent")
-    expect_true(ts$uses_s)
-    expect_error(
-        ts$func(inputs$time),
-        paste(
-            "the stopping-look vector has 0 element(s) but the",
-            "decision-time matrix has 18 row(s)"
-        ),
-        fixed = TRUE
-    )
-    expect_error(ts$func(inputs$time, 1:2), "stopping-look vector")
-    expect_error(
-        ts$func(inputs$time, c(inputs$stop_look, 1L)),
-        "stopping-look vector"
-    )
-})
-
-test_that("uses_s follows the expression, and string input works", {
-    expect_false(trial_success_gsd(r1 + r2, verbose = "silent")$uses_s)
-    expect_true(trial_success_gsd(r1 * (s == 2), verbose = "silent")$uses_s)
-
-    inputs <- gsd_time_stop_grid()
-    tm <- inputs$time
-    sl <- inputs$stop_look
-    dd <- c(0, 1, 0.75)
-    from_string <- trial_success_gsd(
-        "d(s) + r1",
-        d = c(1, 0.75),
-        verbose = "silent"
-    )
-    expect_true(from_string$uses_s)
-    expect_identical(from_string$objective, "d(s) + r1")
-    expect_identical(
-        from_string$func(tm, sl),
-        mean_double(dd[sl + 1] + (tm[, 1] > 0))
-    )
-
-    # word operators and s together
-    words <- trial_success_gsd("r1 and s == 1", verbose = "silent")
-    expect_true(words$uses_s)
-    expect_identical(words$func(tm, sl), mean(tm[, 1] > 0 & sl == 1))
-})
-
-test_that("a table named s is refused; S is allowed", {
-    expect_error(
-        trial_success_gsd(s(t1), s = c(1, 1), verbose = "silent"),
-        "not allowed"
-    )
-    expect_error(
-        trial_success_gsd(s(t1), s = c(1, 1), verbose = "silent"),
-        "the stopping look `s`",
-        fixed = TRUE
-    )
-    upper <- trial_success_gsd(S(t1) + S(s), S = c(1, 1), verbose = "silent")
-    expect_identical(upper$K, 2L)
-    expect_named(upper$tables, "S")
-    expect_true(upper$uses_s)
-})
-
-test_that("a table applied to s fixes K like one applied to t<i>", {
-    ts <- trial_success_gsd(d(s) + r1, d = c(1, 0.5, 0.25), verbose = "silent")
-    expect_identical(ts$K, 3L)
-    expect_error(
-        trial_success_gsd(d(s) + r1, d = c(1, 0.75), K = 3, verbose = "silent"),
-        "`K` is 3 but the discount table `d` has length 2"
-    )
-})
-
-test_that("s is validated like a decision time", {
-    expect_error(
-        trial_success_gsd(d(s + 1) + r1, d = c(1, 0.75), verbose = "silent"),
-        "applied to a single decision time symbol"
-    )
-    expect_error(
-        trial_success_gsd(d(s + 1) + r1, d = c(1, 0.75), verbose = "silent"),
-        "or the stopping look `s`",
-        fixed = TRUE
-    )
-    expect_error(
-        trial_success_gsd(d(s, t1), d = c(1, 0.75), verbose = "silent"),
-        "applied to a single decision time symbol"
-    )
-    w <- 2
-    expect_error(
-        trial_success_gsd(w * r1, verbose = "silent"),
-        "the stopping look (`s`)",
-        fixed = TRUE
-    )
-    expect_error(
-        trial_success_gsd(s && r1, verbose = "silent"),
-        "`&&` (AND) only allowed between booleans",
-        fixed = TRUE
-    )
-    expect_no_error(trial_success_gsd((s == 1) && r1, verbose = "silent"))
-})
-
-test_that("replace_indices_gsd emits the C++ forms of s", {
-    expect_identical(replace_indices_gsd("s"), "double(s[i])")
-    expect_identical(
-        replace_indices_gsd("d(s)", table_names = "d"),
-        "d_tab[s[i]]"
-    )
-    expect_identical(
-        replace_indices_gsd("s == 1"),
-        "double(double(s[i]) == 1.0)"
-    )
-})
-
-test_that("print and summary show the stopping look", {
-    ts <- trial_success_gsd(
-        (r1 + r2) * d(s),
-        d = c(1, 0.75),
-        verbose = "silent"
-    )
-    expect_snapshot(print(ts))
-    expect_snapshot(summary(ts))
 })

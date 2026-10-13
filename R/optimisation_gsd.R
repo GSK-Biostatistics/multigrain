@@ -490,7 +490,7 @@ control_prepare_dims <- function(
             stop_rule = stop_rule
         )
 
-        ga_trial_success <- trial_success$func(res$time, res$stop_look)
+        ga_trial_success <- trial_success$func(res$time)
     }
 
     list(
@@ -594,7 +594,7 @@ control_prepare_dims <- function(
             stop_rule = stop_rule
         )
 
-        local_trial_success <- trial_success$func(res$time, res$stop_look)
+        local_trial_success <- trial_success$func(res$time)
     }
 
     list(

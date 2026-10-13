@@ -515,10 +515,9 @@ When the returned closure is called with a parameter vector `x`:
    entry records the analysis at which each hypothesis was declared rejected,
    or 0 for never (or not before the trial stopped).
 
-5. `power_criterion(res$time, res$stop_look)` evaluates the gain on the
-   integer time matrix and the stopping looks and returns a scalar. A gain
-   that does not use `s` ignores the second argument. This is the single line
-   that differs from the fixed-sample closure, which calls
+5. `power_criterion(res$time)` evaluates the gain on the integer time
+   matrix (stopped, when a rule applies) and returns a scalar. This is the
+   single line that differs from the fixed-sample closure, which calls
    `power_criterion(rej_matrix)`.
 
 ### Where it differs from `create_obj_func()`
@@ -527,8 +526,8 @@ The two closures are identical except for three things. First,
 `create_obj_func_gsd()` takes `K` (and `[Rev 2026-10-13]` `stop_rule`) as
 parameters, forces them, and passes them to the kernel. Second, the kernel
 call is `graph_shortcut_gsd` (or its parallel variant) instead of
-`graph_shortcut`. Third, the gain is evaluated on `res$time` and
-`res$stop_look` instead of on `rej_matrix` (the logical rejection matrix). The decode-and-penalise block, the snap-to-zero constants,
+`graph_shortcut`. Third, the gain is evaluated on `res$time`
+instead of on `rej_matrix` (the logical rejection matrix). The decode-and-penalise block, the snap-to-zero constants,
 the parallel dispatch logic, and the `force()` calls are character-for-character
 identical.
 
@@ -829,7 +828,7 @@ subsample, or `NULL`), `is_graph_valid` (logical) and `ga_output` (the `GA::ga` 
    validation is skipped. Then the kernel is called directly on the full
    sample via `graph_shortcut_gsd(pvals = .gsd_kernel_matrix(pvals), alpha =
    alpha, w = sol$hyp_weight, G = sol$trans_matrix, K = pvals$K, stop_rule =
-   stop_rule)`, and `trial_success$func(res$time, res$stop_look)` evaluates
+   stop_rule)`, and `trial_success$func(res$time)` evaluates
    the gain on the full sample. The full-sample gain is stored as
    `ga_trial_success`.
 
@@ -838,8 +837,8 @@ subsample, or `NULL`), `is_graph_valid` (logical) and `ga_output` (the `GA::ga` 
 Three differences. First, `.sample_pvals_gsd()` replaces the fixed-sample
 row-subsetting. Second, `create_obj_func_gsd()` replaces `create_obj_func()`.
 Third, the re-evaluation uses `.calc_power_pvals_gsd_core()` and
-`graph_shortcut_gsd()` and evaluates `trial_success$func(res$time,
-res$stop_look)` instead of calling `graph_shortcut()` and passing the
+`graph_shortcut_gsd()` and evaluates `trial_success$func(res$time)`
+instead of calling `graph_shortcut()` and passing the
 rejection matrix. The starting-value logic, the GA arguments,
 `param_to_solution()`, `is_graph_valid()` and the overall control flow are
 identical.
@@ -899,7 +898,7 @@ Returns a list with `local_hyp_weight`, `local_trans_matrix`,
 8. If valid, re-evaluation proceeds identically to the GA driver: subsample
    power via `.calc_power_pvals_gsd_core(pvals_sampled, ..., stop_rule =
    stop_rule)`, then a direct kernel call on the full sample with `stop_rule`
-   followed by `trial_success$func(res$time, res$stop_look)`.
+   followed by `trial_success$func(res$time)`.
 
 ### Where it differs from `.graph_optimise_local()`
 
@@ -1044,8 +1043,8 @@ documented under `calc_power_pvals_gsd()`.
    `.gsd_stop_distribution(res$stop_look, n_look = pvals$K)` and
    `mean(res$stop_look)`.
 
-6. `.eval_custom_power_gsd(custom_power, res$rejected, res$time,
-   res$stop_look, call)` evaluates each custom measure.
+6. `.eval_custom_power_gsd(custom_power, res$rejected, res$time, call)`
+   evaluates each custom measure.
 
 7. All results are assembled by `c(list(...), .eval_custom_power_gsd(...))`.
 
@@ -1237,7 +1236,6 @@ matrix to pass based on the entry's class. Called by
 - `custom_power`: a named list (from `.auto_name_custom_power_gsd()`).
 - `rejected`: the N-by-m logical matrix from the kernel.
 - `time`: the N-by-m integer matrix from the kernel.
-- `stop_look` `[Rev 2026-10-13]`: the length-N integer vector from the kernel.
 - `call`: error context.
 
 Returns a named list of scalars, one per entry.
@@ -1247,20 +1245,16 @@ Returns a named list of scalars, one per entry.
 The function applies `lapply` over the list. For each item, it dispatches on
 three cases, in this order:
 
-1. `is_trial_success_gsd(item)`: evaluated as `item$func(time, stop_look)`.
-   The compiled function takes the integer time matrix and the stopping looks
-   and returns the mean utility; a gain that does not use `s` ignores the
-   second argument.
+1. `is_trial_success_gsd(item)`: evaluated as `item$func(time)`. The compiled
+   function takes the integer time matrix and returns the mean utility.
 
 2. `is_trial_success(item)` (but not GSD, since the GSD check was first):
    evaluated as `item$func(rejected)`. The fixed-sample compiled function
    takes the logical rejection matrix.
 
-3. `is.function(item)`: a plain R function, called once per trial as
-   `item(time[i, ], stop_look[i])` `[Rev 2026-10-13]`, that is, always with
-   two arguments: the trial's integer decision-time row and its stopping look
-   (user decision C, design record 4.11). The results are averaged with
-   `mean(vapply(..., numeric(1L)))`. This is the slow path, as each trial is
+3. `is.function(item)`: a plain R function, called once per trial on the
+   trial's integer decision-time row. The results are averaged with `mean(
+   vapply(..., numeric(1L)))`. This is the slow path, as each trial is
    evaluated separately in R.
 
 4. Anything else aborts.
@@ -1272,7 +1266,7 @@ gain type is explicit (Sol item 5). A `multigrain_trial_success_gsd` entry
 gets the time matrix (so discount tables work); a fixed-sample entry gets the
 rejection matrix (so a rejection-only gain reports the same number as
 `calc_power_pvals()` would); and a plain function gets the time row (since
-time is the richer output) and, `[Rev 2026-10-13]`, the stopping look. The `is_trial_success_gsd` check must come before
+time is the richer output). The `is_trial_success_gsd` check must come before
 `is_trial_success` because the GSD class inherits from the fixed-sample
 class.
 

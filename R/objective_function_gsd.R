@@ -10,10 +10,8 @@
 #'
 #' @param m Number of hypotheses.
 #' @param power_criterion Function accessed from [trial_success_gsd()] used to
-#'   calculate the trial success measure. It takes the decision-time matrix
-#'   and the stopping looks: the kernel's integer matrix of decision times
-#'   (`0` = never rejected) and its integer vector of the analysis at which
-#'   each trial stopped.
+#'   calculate the trial success measure. It takes the kernel's integer matrix
+#'   of decision times (`0` = never rejected).
 #' @param hyp_constraint (numeric) Vector of hypothesis weight constraints.
 #' @param trans_constraint (numeric matrix) Transition matrix constraints.
 #' @param pvals (numeric matrix) The reshaped repeated p-values
@@ -105,6 +103,6 @@ create_obj_func_gsd <- function(
             )
         }
 
-        power_criterion(res$time, res$stop_look)
+        power_criterion(res$time)
     }
 }

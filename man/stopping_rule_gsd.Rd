@@ -54,8 +54,7 @@ count of rejections such as \code{r1 + r2 + r3 >= 2} can be tested;
 
 Every condition must refer to at least one \verb{r<i>}. Decision times (\code{t1},
 ...) and discount tables, which a group sequential gain can use (see
-\code{\link[=trial_success_gsd]{trial_success_gsd()}}), are not available to a stopping rule, and nor is
-the stopping look, which is what the rule determines.
+\code{\link[=trial_success_gsd]{trial_success_gsd()}}), are not available to a stopping rule.
 \subsection{When the rule is applied}{
 
 The rule does not store the number of hypotheses \code{m} or of analyses \code{K};
