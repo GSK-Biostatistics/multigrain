@@ -12,6 +12,7 @@ graph_optimise_gsd(
   trial_success,
   ...,
   alpha = NULL,
+  stopping_rule = NULL,
   start_graph = list(list(hyp_weight = NULL, trans_matrix = NULL)),
   global_search = TRUE,
   num_threads = 1L,
@@ -40,6 +41,10 @@ significance level, or \code{NULL} (the default) to use the level of \code{pvals
 A supplied value must be greater than \code{0} and at most the level the
 repeated p-values were built up to: above that they are capped at 1, so
 no allocation beyond it could ever reject.}
+
+\item{stopping_rule}{A \code{multigrain_stopping_rule_gsd} object from
+\code{\link[=stopping_rule_gsd]{stopping_rule_gsd()}}, or \code{NULL} (the default) for a trial that runs to
+its final analysis unless it rejects every hypothesis earlier.}
 
 \item{start_graph}{Optional. Initial list of graphs suggested. Each graph is
 defined as a list containing starting weight vector \code{hyp_weight} and
@@ -94,6 +99,7 @@ passed on by the user are complemented with contextual defaults.
 optimisation was performed.
 \item \code{local_output}: Output from the NLOPT optimisation.
 \item \code{start_graph}: Initial starting values used in the optimisation.
+\item \code{stopping_rule}: the rule, when one was supplied.
 }
 }
 \description{
@@ -116,6 +122,11 @@ kernel runs the fixed-sample cascade once per analysis, carrying the
 updated graph forward, and reports the analysis at which each hypothesis
 was declared rejected. Those decision times are what \code{trial_success}
 scores.
+
+With a stopping rule the kernel stops each simulated trial at the first
+interim whose condition holds, so the gain and every reported power see
+only the rejections made before the trial stopped; a trial that rejects
+every hypothesis stops at that analysis in any case.
 }
 \examples{
 # two hypotheses, an interim at 50\% information and a final analysis
@@ -146,6 +157,7 @@ result <- graph_optimise_gsd(
     pvals = pvals,
     graph_constraint = graph_constraint_free(2),
     trial_success = gain,
+    stopping_rule = stopping_rule_gsd(r1),
     num_threads = 2
 )
 }

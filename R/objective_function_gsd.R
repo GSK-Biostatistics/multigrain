@@ -10,8 +10,10 @@
 #'
 #' @param m Number of hypotheses.
 #' @param power_criterion Function accessed from [trial_success_gsd()] used to
-#'   calculate the trial success measure. It takes the kernel's integer matrix
-#'   of decision times (`0` = never rejected).
+#'   calculate the trial success measure. It takes the decision-time matrix
+#'   and the stopping looks: the kernel's integer matrix of decision times
+#'   (`0` = never rejected) and its integer vector of the analysis at which
+#'   each trial stopped.
 #' @param hyp_constraint (numeric) Vector of hypothesis weight constraints.
 #' @param trans_constraint (numeric matrix) Transition matrix constraints.
 #' @param pvals (numeric matrix) The reshaped repeated p-values
@@ -21,12 +23,16 @@
 #' @param K (integer) Number of analyses.
 #' @param alpha (numeric scalar) Overall one-sided significance level. Default
 #'   is 0.025.
+#' @param stop_rule (logical matrix or `NULL`) The truth table of an efficacy
+#'   stopping rule, `2^m` by `K - 1`, built once by `.gsd_stop_table()` before
+#'   the closure is created, or `NULL` (the default) for no rule. It is passed
+#'   to the kernel unchanged.
 #' @inheritParams graph_optimise_gsd
 #'
 #' @returns A function with signature `function(x)` that evaluates the trial
 #'   success measure for a given encoded parameter vector `x`. All other
-#'   inputs (`alpha`, `pvals`, `K`, constraints, thread count) are captured in
-#'   the closure at creation time.
+#'   inputs (`alpha`, `pvals`, `K`, constraints, thread count, stopping
+#'   table) are captured in the closure at creation time.
 #' @noRd
 create_obj_func_gsd <- function(
     m,
@@ -36,7 +42,8 @@ create_obj_func_gsd <- function(
     pvals,
     K, # nolint: object_name_linter. K is the design record's symbol
     alpha = 0.025,
-    num_threads = 1L
+    num_threads = 1L,
+    stop_rule = NULL
 ) {
     force(power_criterion)
     force(hyp_constraint)
@@ -45,6 +52,7 @@ create_obj_func_gsd <- function(
     force(pvals)
     force(K)
     force(num_threads)
+    force(stop_rule)
 
     use_parallel <- num_threads >= 2L
 
@@ -83,7 +91,8 @@ create_obj_func_gsd <- function(
                 G = trans_matrix,
                 K = K,
                 num_threads = num_threads,
-                grain_size = -1L
+                grain_size = -1L,
+                stop_rule = stop_rule
             )
         } else {
             graph_shortcut_gsd(
@@ -91,10 +100,11 @@ create_obj_func_gsd <- function(
                 alpha = alpha,
                 w = hyp_weight,
                 G = trans_matrix,
-                K = K
+                K = K,
+                stop_rule = stop_rule
             )
         }
 
-        power_criterion(res$time)
+        power_criterion(res$time, res$stop_look)
     }
 }

@@ -1,7 +1,9 @@
 # Group sequential twins of the greedy pruning helpers in
 # `R/post_optim_processing.R`. The loops, the acceptance rule and the mass
 # redistribution are those of the fixed-sample versions; only the evaluation
-# changes, from `calc_power_pvals()` to `calc_power_pvals_gsd()`.
+# changes, from `calc_power_pvals()` to `.calc_power_pvals_gsd_core()` (the
+# candidates are valid graphs by construction, and the stopping table is built
+# once by the caller).
 # `.redistribute_mass()` and `.marginal_violated()` are reused unchanged.
 
 
@@ -21,6 +23,9 @@
 #' @param constrained_idx Integer vector; which hypotheses carry marginal
 #'   constraints.
 #' @param power_constraint Numeric vector of marginal thresholds.
+#' @param stop_rule (logical matrix or `NULL`) The truth table of an efficacy
+#'   stopping rule, built once by `.gsd_stop_table()`, or `NULL` (the default)
+#'   for no rule.
 #'
 #' @returns A list with `hyp_weight`, `trans_matrix`, `power_best`, and
 #'   `accepted` (logical).
@@ -33,14 +38,16 @@
     power_best,
     constrained_idx,
     power_constraint,
-    alpha = 0.025
+    alpha = 0.025,
+    stop_rule = NULL
 ) {
-    power_all <- calc_power_pvals_gsd(
+    power_all <- .calc_power_pvals_gsd_core(
         pvals,
         hyp_weight = hyp_weight,
         trans_matrix = trans_matrix,
         alpha = alpha,
-        custom_power = trial_success
+        custom_power = trial_success,
+        stop_rule = stop_rule
     )
 
     violated <- .marginal_violated(
@@ -85,6 +92,9 @@
 #' @param tolerance numeric >= 0. Sum-to-one tolerance forwarded to
 #'   [normalise_sum()] during mass redistribution. Defaults to
 #'   `sqrt(.Machine$double.eps)`.
+#' @param stop_rule (logical matrix or `NULL`) The truth table of an efficacy
+#'   stopping rule, built once by `.gsd_stop_table()`, or `NULL` (the default)
+#'   for no rule.
 #'
 #' @returns A list with elements `hyp_weight` (pruned weights), `trans_matrix`
 #'   (unchanged), and `power_best` (the best power achieved).
@@ -99,14 +109,16 @@ prune_hyp_weights_gsd <- function(
     alpha = 0.025,
     gamma = 1,
     power_constraint = NULL,
-    tolerance = sqrt(.Machine$double.eps)
+    tolerance = sqrt(.Machine$double.eps),
+    stop_rule = NULL
 ) {
-    power_all <- calc_power_pvals_gsd(
+    power_all <- .calc_power_pvals_gsd_core(
         pvals,
         hyp_weight = hyp_weight,
         trans_matrix = trans_matrix,
         alpha = alpha,
-        custom_power = trial_success
+        custom_power = trial_success,
+        stop_rule = stop_rule
     )
     power_best <- power_all$custom_power
 
@@ -144,7 +156,8 @@ prune_hyp_weights_gsd <- function(
             trial_success = trial_success,
             power_best = power_best,
             constrained_idx = constrained_idx,
-            power_constraint = power_constraint
+            power_constraint = power_constraint,
+            stop_rule = stop_rule
         )
 
         if (result$accepted) {
@@ -183,6 +196,9 @@ prune_hyp_weights_gsd <- function(
 #' @param tolerance numeric >= 0. Sum-to-one tolerance forwarded to
 #'   [normalise_sum()] during mass redistribution. Defaults to
 #'   `sqrt(.Machine$double.eps)`.
+#' @param stop_rule (logical matrix or `NULL`) The truth table of an efficacy
+#'   stopping rule, built once by `.gsd_stop_table()`, or `NULL` (the default)
+#'   for no rule.
 #'
 #' @returns A list with elements `hyp_weight` (unchanged), `trans_matrix`
 #'   (pruned edges), and `power_best` (the best power achieved).
@@ -198,7 +214,8 @@ prune_edges_gsd <- function(
     alpha = 0.025,
     gamma = 1,
     power_constraint = NULL,
-    tolerance = sqrt(.Machine$double.eps)
+    tolerance = sqrt(.Machine$double.eps),
+    stop_rule = NULL
 ) {
     G_best <- trans_matrix
 
@@ -242,7 +259,8 @@ prune_edges_gsd <- function(
                 trial_success = trial_success,
                 power_best = power_best,
                 constrained_idx = constrained_idx,
-                power_constraint = power_constraint
+                power_constraint = power_constraint,
+                stop_rule = stop_rule
             )
 
             if (result$accepted) {
@@ -276,6 +294,9 @@ prune_edges_gsd <- function(
 #' @param power_constraint Optional numeric vector of length m; only entries
 #'   that are non-`NA` impose a marginal-power requirement. Defaults to `NULL`
 #'   (no marginal constraints).
+#' @param stop_rule (logical matrix or `NULL`) The truth table of an efficacy
+#'   stopping rule, built once by `.gsd_stop_table()`, or `NULL` (the default)
+#'   for no rule.
 #' @inheritParams graph_optimise_gsd
 #'
 #' @returns A list with elements `hyp_weight` and `trans_matrix`, the pruned
@@ -291,7 +312,8 @@ prune_graph_gsd <- function(
     alpha = 0.025,
     gamma = 1,
     power_constraint = NULL,
-    verbose = c("info", "detail", "silent")
+    verbose = c("info", "detail", "silent"),
+    stop_rule = NULL
 ) {
     verbose <- rlang::arg_match(verbose)
 
@@ -313,7 +335,8 @@ prune_graph_gsd <- function(
         alpha = alpha,
         gamma = gamma,
         power_constraint = power_constraint,
-        tolerance = tolerance
+        tolerance = tolerance,
+        stop_rule = stop_rule
     )
 
     pruned <- prune_edges_gsd(
@@ -326,7 +349,8 @@ prune_graph_gsd <- function(
         gamma = gamma,
         power_best = pruned_weights$power_best,
         power_constraint = power_constraint,
-        tolerance = tolerance
+        tolerance = tolerance,
+        stop_rule = stop_rule
     )
 
     list(

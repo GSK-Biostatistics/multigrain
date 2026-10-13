@@ -11,6 +11,7 @@ calc_power_pvals_gsd(
   ...,
   alpha = NULL,
   custom_power = NULL,
+  stopping_rule = NULL,
   sum_to_one_constraint = TRUE,
   call = rlang::caller_env()
 )
@@ -44,12 +45,17 @@ times (simulations by hypotheses, \code{0} for never rejected);
 \item a fixed-sample \code{multigrain_trial_success} object from \code{\link[=trial_success]{trial_success()}}
 is evaluated on the logical matrix of rejections, so a rejection-only
 gain reports the same number here as \code{\link[=calc_power_pvals]{calc_power_pvals()}} would;
-\item a plain function is called once per simulated trial with that trial's
-integer vector of decision times, and the results are averaged.
+\item a plain function is called once per simulated trial with two
+arguments: that trial's integer vector of decision times and its
+stopping look, and the results are averaged.
 }
 
 If the list has no names, the measures are reported as \code{"func1"},
 \code{"func2"}, and so on.}
+
+\item{stopping_rule}{A \code{multigrain_stopping_rule_gsd} object from
+\code{\link[=stopping_rule_gsd]{stopping_rule_gsd()}}, or \code{NULL} (the default) for a trial that runs to
+its final analysis unless it rejects every hypothesis earlier.}
 
 \item{sum_to_one_constraint}{A logical value controlling whether to allow
 graphs where transition matrix rows are not constrained to sum to one,
@@ -78,8 +84,17 @@ the simulations in which it was rejected, and \code{NA} when it never was.
 \code{"never"} column followed by one column per analysis. Its rows sum to
 one, and one minus its \code{"never"} column equals \code{local_power} up to
 floating-point rounding.
+\item \code{stop_distribution}: a named numeric vector of length \code{K}, the
+proportion of simulations whose stopping look is each analysis; sums
+to one; without a rule the mass sits on analysis \code{K} except for trials
+that rejected every hypothesis earlier.
+\item \code{mean_stop_look}: the mean stopping look over the simulations.
 \item \code{"..."}: one entry per measure in \code{custom_power}.
 }
+
+Every field is computed from the stopped decision times, so all of them
+honour the stopping rule: a hypothesis not rejected by the time a trial
+stops counts as never rejected in that trial.
 }
 \description{
 Group sequential counterpart of \code{\link[=calc_power_pvals]{calc_power_pvals()}}. Applies a graph to an
@@ -119,15 +134,18 @@ gain <- trial_success_gsd(
     verbose = "silent"
 )
 
+# stop the trial at the interim once H1 is rejected
 result <- calc_power_pvals_gsd(
     pvals,
     hyp_weight = c(0.5, 0.5),
     trans_matrix = matrix(c(0, 1, 1, 0), nrow = 2),
-    custom_power = list(gain = gain)
+    custom_power = list(gain = gain),
+    stopping_rule = stopping_rule_gsd(r1)
 )
 
 result$local_power_by_analysis
 result$time_distribution
+result$stop_distribution
 result$gain
 }
 \seealso{
