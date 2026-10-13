@@ -20,6 +20,11 @@
 #'   was declared rejected. Those decision times are what `trial_success`
 #'   scores.
 #'
+#'   With a stopping rule the kernel stops each simulated trial at the first
+#'   interim whose condition holds, so the gain and every reported power see
+#'   only the rejections made before the trial stopped; a trial that rejects
+#'   every hypothesis stops at that analysis in any case.
+#'
 #' @param pvals A `multigrain_pvals_gsd` object of repeated (or, per
 #'   hypothesis, sequential) p-values, created with [transform_pvalues_gsd()].
 #' @param graph_constraint A `multigrain_graph_constraint` object containing
@@ -36,6 +41,9 @@
 #'   A supplied value must be greater than `0` and at most the level the
 #'   repeated p-values were built up to: above that they are capped at 1, so
 #'   no allocation beyond it could ever reject.
+#' @param stopping_rule A `multigrain_stopping_rule_gsd` object from
+#'   [stopping_rule_gsd()], or `NULL` (the default) for a trial that runs to
+#'   its final analysis unless it rejects every hypothesis earlier.
 #' @param start_graph Optional. Initial list of graphs suggested. Each graph is
 #'   defined as a list containing starting weight vector `hyp_weight` and
 #'   transition matrix `trans_matrix`. If `NULL`, default starting values are
@@ -81,6 +89,7 @@
 #'   optimisation was performed.
 #' * `local_output`: Output from the NLOPT optimisation.
 #' * `start_graph`: Initial starting values used in the optimisation.
+#' * `stopping_rule`: the rule, when one was supplied.
 #'
 #' @seealso [graph_optimise()] for the fixed-sample version,
 #'   [transform_pvalues_gsd()] for the p-value object and
@@ -116,6 +125,7 @@
 #'     pvals = pvals,
 #'     graph_constraint = graph_constraint_free(2),
 #'     trial_success = gain,
+#'     stopping_rule = stopping_rule_gsd(r1),
 #'     num_threads = 2
 #' )
 #' }
@@ -125,6 +135,7 @@ graph_optimise_gsd <- function(
     trial_success,
     ...,
     alpha = NULL,
+    stopping_rule = NULL,
     start_graph = list(
         list(
             hyp_weight = NULL,
@@ -139,6 +150,7 @@ graph_optimise_gsd <- function(
     check_pvals_gsd(pvals)
     check_graph_constraint(graph_constraint)
     check_trial_success_gsd(trial_success)
+    check_stopping_rule_gsd(stopping_rule, allow_null = TRUE)
     rlang::check_dots_empty()
     rlang::check_number_whole(num_threads, min = 1)
     check_control(control)
@@ -155,6 +167,12 @@ graph_optimise_gsd <- function(
 
     alpha <- .gsd_check_alpha(alpha, pvals)
 
+    .gsd_check_graph_dims(
+        graph_constraint_get_m(graph_constraint),
+        pvals,
+        "{.arg graph_constraint}"
+    )
+
     # Both dimensions of the gain are settled before the first evaluation: a
     # gain carrying discount tables indexes a C array with the decision time
     # (design record, section 10 item 6).
@@ -164,6 +182,18 @@ graph_optimise_gsd <- function(
         start_graph,
         m = pvals$m
     )
+
+    # The rule is settled against the p-values and tabulated once; every
+    # internal below receives the table.
+    stop_rule <- if (is.null(stopping_rule)) {
+        NULL
+    } else {
+        .gsd_stop_table(
+            .gsd_check_stopping_rule_dims(stopping_rule, pvals),
+            pvals$m,
+            pvals$K
+        )
+    }
 
     control <- control_prepare_dims(
         control,
@@ -185,6 +215,7 @@ graph_optimise_gsd <- function(
             start_graph = start_graph,
             global_opts = control$global_opt,
             num_threads = num_threads,
+            stop_rule = stop_rule,
             verbose = verbose
         )
 
@@ -211,6 +242,7 @@ graph_optimise_gsd <- function(
         local_opts = control$local_opt,
         num_threads = num_threads,
         x0 = x0_for_local,
+        stop_rule = stop_rule,
         verbose = verbose
     )
 
@@ -224,7 +256,8 @@ graph_optimise_gsd <- function(
         graph_constraint = graph_constraint,
         trial_success = trial_success,
         gamma = 1,
-        verbose = verbose
+        verbose = verbose,
+        stop_rule = stop_rule
     )
 
     if (verbose != "silent") {
@@ -238,7 +271,8 @@ graph_optimise_gsd <- function(
         hyp_weight = clean_graph$hyp_weight,
         trans_matrix = clean_graph$trans_matrix,
         alpha = alpha,
-        custom_power = list(trial_success = trial_success)
+        custom_power = list(trial_success = trial_success),
+        stopping_rule = stopping_rule
     )
 
     # Apply hypothesis names
@@ -267,7 +301,8 @@ graph_optimise_gsd <- function(
         control = control,
         global_output = ga_result$ga_output,
         local_output = local_result$local_output,
-        start_graph = start_graph
+        start_graph = start_graph,
+        stopping_rule = stopping_rule
     )
 }
 
@@ -383,7 +418,8 @@ control_prepare_dims <- function(
             trans_matrix = NULL
         )
     ),
-    verbose = c("info", "detail", "silent")
+    verbose = c("info", "detail", "silent"),
+    stop_rule = NULL
 ) {
     verbose <- rlang::arg_match(verbose)
 
@@ -405,7 +441,8 @@ control_prepare_dims <- function(
             alpha = alpha,
             pvals = .gsd_kernel_matrix(pvals_sampled),
             K = pvals$K,
-            num_threads = num_threads
+            num_threads = num_threads,
+            stop_rule = stop_rule
         ),
         lower = rep(0, ncol(x0)),
         upper = rep(1, ncol(x0)),
@@ -435,23 +472,25 @@ control_prepare_dims <- function(
                 "Evaluating trial success of globally optimised graph"
             )
         }
-        ga_subset_power <- calc_power_pvals_gsd(
+        ga_subset_power <- .calc_power_pvals_gsd_core(
             pvals_sampled, # calculated using nsim_global samples
             hyp_weight = sol$hyp_weight,
             trans_matrix = sol$trans_matrix,
             alpha = alpha,
-            custom_power = list(trial_success = trial_success)
+            custom_power = list(trial_success = trial_success),
+            stop_rule = stop_rule
         )
 
-        time_mat <- graph_shortcut_gsd(
+        res <- graph_shortcut_gsd(
             pvals = .gsd_kernel_matrix(pvals), # calculated on full sample
             alpha = alpha,
             w = sol$hyp_weight,
             G = sol$trans_matrix,
-            K = pvals$K
-        )$time
+            K = pvals$K,
+            stop_rule = stop_rule
+        )
 
-        ga_trial_success <- trial_success$func(time_mat)
+        ga_trial_success <- trial_success$func(res$time)
     }
 
     list(
@@ -481,7 +520,8 @@ control_prepare_dims <- function(
     num_threads = 1L,
     nsim = pvals$nsim,
     x0 = NULL,
-    verbose = c("info", "detail", "silent")
+    verbose = c("info", "detail", "silent"),
+    stop_rule = NULL
 ) {
     verbose <- rlang::arg_match(verbose)
 
@@ -503,7 +543,8 @@ control_prepare_dims <- function(
         alpha = alpha,
         pvals = .gsd_kernel_matrix(pvals_sampled),
         K = pvals$K,
-        num_threads = num_threads
+        num_threads = num_threads,
+        stop_rule = stop_rule
     )
     nlopt_obj_func <- function(x) {
         -obj_fun(x)
@@ -535,23 +576,25 @@ control_prepare_dims <- function(
                 "Evaluating trial success of locally optimised graph"
             )
         }
-        local_subset_power <- calc_power_pvals_gsd(
+        local_subset_power <- .calc_power_pvals_gsd_core(
             pvals_sampled, # calculated using nsim_local samples
             hyp_weight = sol$hyp_weight,
             trans_matrix = sol$trans_matrix,
             alpha = alpha,
-            custom_power = list(trial_success = trial_success)
+            custom_power = list(trial_success = trial_success),
+            stop_rule = stop_rule
         )
 
-        time_mat <- graph_shortcut_gsd(
+        res <- graph_shortcut_gsd(
             pvals = .gsd_kernel_matrix(pvals), # calculated on full sample
             alpha = alpha,
             w = sol$hyp_weight,
             G = sol$trans_matrix,
-            K = pvals$K
-        )$time
+            K = pvals$K,
+            stop_rule = stop_rule
+        )
 
-        local_trial_success <- trial_success$func(time_mat)
+        local_trial_success <- trial_success$func(res$time)
     }
 
     list(

@@ -114,6 +114,71 @@ test_that("a user start_graph is accepted", {
 })
 
 
+test_that("a result without a stopping rule has no stopping_rule element", {
+    expect_null(opt_result$stopping_rule)
+    expect_false("stopping_rule" %in% names(opt_result))
+})
+
+
+test_that("a stopping rule runs through the whole pipeline", {
+    rule <- stopping_rule_gsd(r1 && (r2 || r3))
+    gain <- trial_success_gsd(
+        d(t1) + d(t2) + d(t3),
+        d = c(1, 0.8),
+        verbose = "silent"
+    )
+
+    result <- withr::with_seed(313, {
+        graph_optimise_gsd(
+            pvals = opt_pvals_gsd,
+            graph_constraint = graph_constraint_free(3),
+            trial_success = gain,
+            stopping_rule = rule,
+            global_search = FALSE,
+            control = opt_control,
+            verbose = "silent"
+        )
+    })
+
+    expect_s3_class(result, "multigrain_graph_optimal")
+    expect_true(is_graph_valid(result$hyp_weight, result$trans_matrix))
+    expect_gt(result$power$stop_distribution[["analysis 1"]], 0)
+    expect_identical(result$stopping_rule, rule)
+
+    # the reported gain is the reporter's under the same rule
+    expect_identical(
+        result$power$trial_success,
+        calc_power_pvals_gsd(
+            opt_pvals_gsd,
+            result$hyp_weight,
+            result$trans_matrix,
+            custom_power = gain,
+            stopping_rule = rule
+        )$custom_power
+    )
+})
+
+
+test_that("a graph constraint over the wrong m aborts before any work", {
+    # before this check the mismatch surfaced only as the kernel's C++ error
+    # "G must be an m x m matrix"; `control` is never touched
+    expect_error(
+        graph_optimise_gsd(
+            pvals = opt_pvals_gsd,
+            graph_constraint = graph_constraint_free(2),
+            trial_success = opt_gain_gsd,
+            global_search = FALSE,
+            verbose = "silent"
+        ),
+        paste(
+            "`graph_constraint` describes m = 2 hypotheses, but the p-values",
+            "hold m = 3"
+        ),
+        fixed = TRUE
+    )
+})
+
+
 test_that("print() and summary() of the result succeed", {
     expect_output(print(opt_result))
     expect_output(summary(opt_result))

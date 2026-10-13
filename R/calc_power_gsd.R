@@ -34,6 +34,9 @@
 #'
 #'   If the list has no names, the measures are reported as `"func1"`,
 #'   `"func2"`, and so on.
+#' @param stopping_rule A `multigrain_stopping_rule_gsd` object from
+#'   [stopping_rule_gsd()], or `NULL` (the default) for a trial that runs to
+#'   its final analysis unless it rejects every hypothesis earlier.
 #' @param sum_to_one_constraint A logical value controlling whether to allow
 #'   graphs where transition matrix rows are not constrained to sum to one,
 #'   for example in a fixed sequence. Defaults to `TRUE`.
@@ -55,7 +58,16 @@
 #'     `"never"` column followed by one column per analysis. Its rows sum to
 #'     one, and one minus its `"never"` column equals `local_power` up to
 #'     floating-point rounding.
+#'   * `stop_distribution`: a named numeric vector of length `K`, the
+#'     proportion of simulations whose stopping look is each analysis; sums
+#'     to one; without a rule the mass sits on analysis `K` except for trials
+#'     that rejected every hypothesis earlier.
+#'   * `mean_stop_look`: the mean stopping look over the simulations.
 #'   * `"..."`: one entry per measure in `custom_power`.
+#'
+#'   Every field is computed from the stopped decision times, so all of them
+#'   honour the stopping rule: a hypothesis not rejected by the time a trial
+#'   stops counts as never rejected in that trial.
 #'
 #' @seealso [calc_power_pvals()] for the fixed-sample version and
 #'   [graph_optimise_gsd()] for the optimiser.
@@ -86,15 +98,18 @@
 #'     verbose = "silent"
 #' )
 #'
+#' # stop the trial at the interim once H1 is rejected
 #' result <- calc_power_pvals_gsd(
 #'     pvals,
 #'     hyp_weight = c(0.5, 0.5),
 #'     trans_matrix = matrix(c(0, 1, 1, 0), nrow = 2),
-#'     custom_power = list(gain = gain)
+#'     custom_power = list(gain = gain),
+#'     stopping_rule = stopping_rule_gsd(r1)
 #' )
 #'
 #' result$local_power_by_analysis
 #' result$time_distribution
+#' result$stop_distribution
 #' result$gain
 calc_power_pvals_gsd <- function(
     pvals,
@@ -103,6 +118,7 @@ calc_power_pvals_gsd <- function(
     ...,
     alpha = NULL,
     custom_power = NULL,
+    stopping_rule = NULL,
     sum_to_one_constraint = TRUE,
     call = rlang::caller_env()
 ) {
@@ -112,6 +128,25 @@ calc_power_pvals_gsd <- function(
     rlang::check_dots_empty()
     alpha <- .gsd_check_alpha(alpha, pvals)
     check_logical(sum_to_one_constraint)
+
+    .gsd_check_graph_dims(
+        length(hyp_weight),
+        pvals,
+        "{.arg hyp_weight}",
+        call = call
+    )
+    .gsd_check_graph_dims(
+        nrow(trans_matrix),
+        pvals,
+        "{.arg trans_matrix}",
+        call = call
+    )
+    .gsd_check_graph_dims(
+        ncol(trans_matrix),
+        pvals,
+        "{.arg trans_matrix}",
+        call = call
+    )
 
     if (
         !is_graph_valid(
@@ -127,7 +162,45 @@ calc_power_pvals_gsd <- function(
         )
     }
 
-    custom_power <- .auto_name_custom_power_gsd(custom_power)
+    check_stopping_rule_gsd(stopping_rule, allow_null = TRUE, call = call)
+    stop_rule <- if (is.null(stopping_rule)) {
+        NULL
+    } else {
+        .gsd_stop_table(
+            .gsd_check_stopping_rule_dims(stopping_rule, pvals, call = call),
+            pvals$m,
+            pvals$K,
+            call = call
+        )
+    }
+
+    .calc_power_pvals_gsd_core(
+        pvals,
+        hyp_weight = hyp_weight,
+        trans_matrix = trans_matrix,
+        alpha = alpha,
+        custom_power = custom_power,
+        stop_rule = stop_rule,
+        call = call
+    )
+}
+
+
+# The body of `calc_power_pvals_gsd()` after validation: it assumes a valid
+# graph over `pvals$m` hypotheses, a resolved `alpha` and, when a stopping rule
+# applies, its prebuilt truth table `stop_rule` (`.gsd_stop_table()`). The
+# optimiser internals call it directly, so the table is built once per public
+# call and the graph is not re-checked on every candidate.
+.calc_power_pvals_gsd_core <- function(
+    pvals,
+    hyp_weight,
+    trans_matrix,
+    alpha,
+    custom_power,
+    stop_rule = NULL,
+    call = rlang::caller_env()
+) {
+    custom_power <- .auto_name_custom_power_gsd(custom_power, call = call)
     # Every compiled gain is checked, group sequential or fixed-sample: both
     # index their matrix by hypothesis without a bounds check, so a gain over
     # more hypotheses than the graph has reads past the row. A fixed-sample
@@ -148,7 +221,8 @@ calc_power_pvals_gsd <- function(
         alpha = alpha,
         w = hyp_weight,
         G = trans_matrix,
-        K = pvals$K
+        K = pvals$K,
+        stop_rule = stop_rule
     )
 
     # Cannot happen with the kernel of design record section 4.3, but a
@@ -179,7 +253,12 @@ calc_power_pvals_gsd <- function(
                 res$time,
                 m = pvals$m,
                 n_look = pvals$K
-            )
+            ),
+            stop_distribution = .gsd_stop_distribution(
+                res$stop_look,
+                n_look = pvals$K
+            ),
+            mean_stop_look = mean(res$stop_look)
         ),
         .eval_custom_power_gsd(
             custom_power,
@@ -244,6 +323,14 @@ calc_power_pvals_gsd <- function(
         .gsd_hyp_labels(m),
         c("never", paste("analysis", seq_len(n_look)))
     )
+    out
+}
+
+
+# Proportion of trials whose stopping look is each analysis; sums to 1.
+.gsd_stop_distribution <- function(stop_look, n_look) {
+    out <- tabulate(stop_look, nbins = n_look) / length(stop_look)
+    names(out) <- paste("analysis", seq_len(n_look))
     out
 }
 

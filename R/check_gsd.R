@@ -144,6 +144,32 @@ check_trial_success_gsd <- function(
     alpha
 }
 
+# The graph must be defined over the hypotheses of the p-values. Before this
+# check a mismatch surfaced only as the kernel's C++ error "G must be an m x m
+# matrix" (review finding), which names neither argument. `what` is a
+# preformatted string such as "{.arg graph_constraint}" or "{.arg hyp_weight}".
+.gsd_check_graph_dims <- function(
+    m_graph,
+    pvals,
+    what,
+    call = rlang::caller_env()
+) {
+    if (m_graph != pvals$m) {
+        cli::cli_abort(
+            c(
+                paste(what, "and {.arg pvals} disagree on the number of \\
+                hypotheses."),
+                x = paste(what, "describes {cli::qty(m_graph)}m = {m_graph} \\
+                hypothes{?is/es}, but the p-values hold \\
+                {cli::qty(pvals$m)}m = {pvals$m}.")
+            ),
+            call = call
+        )
+    }
+
+    invisible(NULL)
+}
+
 # The `dim<-` reshape of section 4.1: column (k - 1) * m + i is hypothesis i
 # at analysis k, which R's column-major layout gives without a rearrangement.
 # This is also the single `anyNA()` assertion of section 10 item 11: the
@@ -183,4 +209,99 @@ check_trial_success_gsd <- function(
     }
 
     values
+}
+
+# The truth table of an efficacy stopping rule (one condition per interim
+# analysis, a language object over `r1..rm`), evaluated once here so that the
+# kernel only indexes it. Row index convention: row `mask + 1` holds the
+# rejection set whose bitmask is `mask`, with hypothesis i (1-based) at bit
+# i - 1; column k holds interim analysis k. The kernel
+# (`src/graph_shortcut_gsd.cpp`) uses the same convention.
+.gsd_stop_table <- function(
+    conditions,
+    m,
+    K, # nolint: object_name_linter.
+    call = rlang::caller_env()
+) {
+    n_cond <- length(conditions)
+
+    if (m > 16L && n_cond > 0L) {
+        cli::cli_abort(
+            c(
+                "A stopping rule is evaluated on every rejection set, 2^m \\
+                rows per interim; m = {m} gives {2^m} rows.",
+                i = "Stopping rules are limited to at most 16 hypotheses."
+            ),
+            call = call
+        )
+    }
+
+    if (n_cond != K - 1L) {
+        cli::cli_abort(
+            c(
+                "A stopping rule needs one condition per interim analysis.",
+                x = "K = {K} analyses need {K - 1} condition{?s}, not \\
+                {n_cond}."
+            ),
+            call = call
+        )
+    }
+
+    n_row <- 2^m
+    if (n_cond == 0L) {
+        return(matrix(logical(), nrow = n_row, ncol = 0L))
+    }
+
+    syms <- paste0("r", seq_len(m))
+    stop_table <- matrix(NA, nrow = n_row, ncol = n_cond)
+
+    for (mask in seq_len(n_row) - 1L) {
+        rejected <- bitwAnd(mask, bitwShiftL(1L, seq_len(m) - 1L)) > 0L
+        env <- new.env(parent = baseenv())
+        for (i in seq_len(m)) {
+            assign(syms[[i]], rejected[[i]], envir = env)
+        }
+
+        for (k in seq_len(n_cond)) {
+            result <- eval(conditions[[k]], env)
+            if (!is.logical(result) || length(result) != 1L || is.na(result)) {
+                .gsd_stop_condition_abort(
+                    conditions[[k]],
+                    result,
+                    rejected,
+                    k,
+                    call = call
+                )
+            }
+            stop_table[mask + 1L, k] <- result
+        }
+    }
+
+    stop_table
+}
+
+.gsd_stop_condition_abort <- function(condition, result, rejected, k, call) {
+    # nolint start: object_usage_linter. used inside the cli message
+    cond_text <- deparse1(condition)
+    set_text <- if (any(rejected)) {
+        paste0("{", paste0("H", which(rejected), collapse = ", "), "}")
+    } else {
+        "none"
+    }
+    result_text <- if (is.logical(result) && length(result) == 1L) {
+        "NA"
+    } else {
+        obj_type_friendly(result)
+    }
+    # nolint end
+
+    cli::cli_abort(
+        c(
+            "Stopping condition {.code {cond_text}} must return a single \\
+            {.code TRUE} or {.code FALSE}.",
+            x = "At interim {k} with rejection set {set_text} it returned \\
+            {result_text}."
+        ),
+        call = call
+    )
 }

@@ -35,18 +35,38 @@ obj_decode <- function(x, hyp_constraint, trans_constraint) {
     list(w = w, G = G)
 }
 
-obj_make_gsd <- function(pvals, num_threads = 1L, alpha = NULL) {
+obj_make_gsd <- function(
+    pvals,
+    num_threads = 1L,
+    alpha = NULL,
+    gain = obj_gain_gsd,
+    stop_rule = NULL
+) {
     create_obj_func_gsd(
-        m = obj_gain_gsd$m,
-        power_criterion = obj_gain_gsd$func,
+        m = gain$m,
+        power_criterion = gain$func,
         hyp_constraint = obj_free_3$hyp_constraint,
         trans_constraint = obj_free_3$trans_constraint,
         pvals = .gsd_kernel_matrix(pvals),
         K = pvals$K,
         alpha = alpha %||% pvals$alpha,
-        num_threads = num_threads
+        num_threads = num_threads,
+        stop_rule = stop_rule
     )
 }
+
+# The user's rule, tabulated once as the public entry points do, and a
+# discounted gain to score under it.
+obj_stop_table <- .gsd_stop_table(
+    stopping_rule_gsd(r1 && (r2 || r3))$conditions,
+    3L,
+    2L
+)
+obj_gain_rule <- trial_success_gsd(
+    d(t1) + d(t2) + d(t3),
+    d = c(1, 0.8),
+    verbose = "silent"
+)
 
 obj_x <- c(0.45, 0.3, 0.6, 0.2, 0.7)
 
@@ -72,6 +92,34 @@ test_that("the closure equals the kernel and gain called by hand", {
 })
 
 
+test_that("with a stopping table the closure scores the stopped trials", {
+    fn <- obj_make_gsd(
+        obj_pvals_gsd,
+        gain = obj_gain_rule,
+        stop_rule = obj_stop_table
+    )
+
+    decoded <- obj_decode(
+        obj_x,
+        obj_free_3$hyp_constraint,
+        obj_free_3$trans_constraint
+    )
+
+    res <- graph_shortcut_gsd(
+        pvals = .gsd_kernel_matrix(obj_pvals_gsd),
+        alpha = obj_pvals_gsd$alpha,
+        w = decoded$w,
+        G = decoded$G,
+        K = obj_pvals_gsd$K,
+        stop_rule = obj_stop_table
+    )
+
+    # not vacuous: the rule stops some trials at the interim
+    expect_true(any(res$stop_look == 1L))
+    expect_identical(fn(obj_x), obj_gain_rule$func(res$time))
+})
+
+
 test_that("the same encoded vector gives an identical value twice", {
     # design record, section 8 item 11 and brief claim 5
     fn <- obj_make_gsd(obj_pvals_gsd)
@@ -84,6 +132,20 @@ test_that("the parallel closure equals the serial closure", {
     parallel <- obj_make_gsd(obj_pvals_gsd, num_threads = 2L)
 
     expect_identical(parallel(obj_x), serial(obj_x))
+
+    serial_rule <- obj_make_gsd(
+        obj_pvals_gsd,
+        num_threads = 1L,
+        gain = obj_gain_rule,
+        stop_rule = obj_stop_table
+    )
+    parallel_rule <- obj_make_gsd(
+        obj_pvals_gsd,
+        num_threads = 2L,
+        gain = obj_gain_rule,
+        stop_rule = obj_stop_table
+    )
+    expect_identical(parallel_rule(obj_x), serial_rule(obj_x))
 })
 
 

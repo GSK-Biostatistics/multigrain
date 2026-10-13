@@ -40,7 +40,6 @@ reference:
     contents:
     - simulate_pvalues
     - trial_success
-    - trial_success_gsd
     - graph_constraint
     - graph_constraint_free
 
@@ -68,6 +67,17 @@ reference:
     - calc_power_pvals
     - is_graph_valid
     - graph_optimal_get_control
+
+  - title: Group sequential designs
+    desc: >
+      Simulate, transform, value and optimise a design with interim analyses
+    contents:
+    - simulate_pvalues_gsd
+    - transform_pvalues_gsd
+    - trial_success_gsd
+    - stopping_rule_gsd
+    - graph_optimise_gsd
+    - calc_power_pvals_gsd
 
   - title: Plotting
     desc: >

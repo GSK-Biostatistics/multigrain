@@ -100,6 +100,8 @@ test_that("K = 1 is identical to graph_shortcut(), including p below 1e-12", {
                 ncol = ncol(pvals)
             )
         )
+        # with a single analysis every trial stops at it
+        expect_identical(out$stop_look, rep(1L, nrow(pvals)))
     }
 })
 
@@ -643,5 +645,400 @@ test_that("the kernel validates its inputs", {
             grain_size = 0L
         ),
         "grain_size must be >= 1"
+    )
+})
+
+
+### STOPPING RULES ###
+
+# The m = 3, K = 3 design of the stopping-rule tests: repeated p-values,
+# the graph, and the kernel run without a rule.
+gsd_stopping_fixture <- function() {
+    raw_pvals <- withr::with_seed(
+        5,
+        simulate_pvalues_gsd(
+            power_nominal = c(0.9, 0.85, 0.8),
+            corr_matrix = diag(3),
+            info_frac = c(1 / 3, 2 / 3, 1),
+            nsim = 2000
+        )
+    )
+    transformed <- transform_pvalues_gsd(
+        raw_pvals,
+        spending = gsDesign::sfLDOF,
+        grid_size = 128L
+    )
+    # nolint start: object_usage_linter. `gsd_pvals_matrix` is a test helper.
+    pvals <- gsd_pvals_matrix(transformed)
+    # nolint end
+    w <- c(0.4, 0.3, 0.3)
+    G <- matrix(0.5, nrow = 3L, ncol = 3L)
+    diag(G) <- 0
+
+    list(
+        pvals = pvals,
+        alpha = transformed$alpha,
+        w = w,
+        G = G,
+        no_rule = graph_shortcut_gsd(pvals, transformed$alpha, w, G, K = 3L)
+    )
+}
+
+# One `function(tau, k)` per condition, for `gsd_apply_stopping()`: it
+# evaluates the condition trial by trial on the hypotheses rejected at
+# analyses 1..k, independently of `.gsd_stop_table()`.
+gsd_stop_when <- function(conditions) {
+    lapply(conditions, function(condition) {
+        function(tau, k) {
+            rejected <- tau > 0L & tau <= k
+            apply(rejected, 1L, function(r) {
+                env <- list2env(
+                    stats::setNames(as.list(r), paste0("r", seq_along(r))),
+                    parent = baseenv()
+                )
+                eval(condition, env)
+            })
+        }
+    })
+}
+
+test_that("without a rule the kernel reproduces the committed reference", {
+    # `gsd_kernel_reference.rds` holds the output of the kernel as committed
+    # before the stopping rule was added (commit ee91a11): the Appendix B
+    # fixture under four look-back configurations, and the extreme p-values
+    # at K = 1 under four random graphs
+    reference <- readRDS(test_path("data", "gsd_kernel_reference.rds"))
+    alpha <- 0.025
+
+    expected_stop <- function(out, m, K) { # nolint: object_name_linter.
+        ifelse(
+            rowSums(out$rejected) == m,
+            apply(out$time, 1L, max),
+            K
+        )
+    }
+
+    setup <- gsd_appendix_b()
+    configs <- list(
+        c(FALSE, FALSE, FALSE),
+        c(TRUE, TRUE, TRUE),
+        c(TRUE, FALSE, TRUE),
+        c(FALSE, TRUE, FALSE)
+    )
+    for (look_back in configs) {
+        label <- paste(substr(as.character(look_back), 1L, 1L), collapse = "")
+        saved <- reference$appendix_b[[label]]
+
+        transformed <- transform_pvalues_gsd(
+            setup$raw_pvals,
+            info_frac = setup$tmat,
+            spending = setup$sfs,
+            alpha = alpha,
+            look_back = look_back,
+            grid_size = 1024L
+        )
+        out <- graph_shortcut_gsd(
+            gsd_pvals_matrix(transformed),
+            alpha,
+            setup$w0,
+            setup$G0,
+            K = setup$n_look
+        )
+
+        expect_named(out, c("rejected", "time", "stop_look"))
+        expect_identical(out$rejected, saved$rejected, info = label)
+        expect_identical(out$time, saved$time, info = label)
+        expect_identical(
+            out$stop_look,
+            expected_stop(saved, setup$m, setup$n_look),
+            info = label
+        )
+    }
+
+    pvals <- gsd_extreme_pvals()
+    for (seed in 1:4) {
+        gr <- make_test_graph(4L, seed = seed)
+        saved <- reference$extreme[[as.character(seed)]]
+        out <- graph_shortcut_gsd(pvals, alpha, gr$w, gr$G, K = 1L)
+
+        expect_identical(out$rejected, saved$rejected, info = seed)
+        expect_identical(out$time, saved$time, info = seed)
+        expect_identical(out$stop_look, expected_stop(saved, 4L, 1L))
+    }
+})
+
+test_that("a stopping rule is the R edit of the always-continue times", {
+    fx <- gsd_stopping_fixture()
+    no_rule <- fx$no_rule
+
+    # the all-rejected stop applies with or without a rule
+    all_rej_look <- ifelse(
+        rowSums(no_rule$time > 0L) == 3L,
+        apply(no_rule$time, 1L, max),
+        3L
+    )
+    expect_identical(no_rule$stop_look, all_rej_look)
+
+    rules <- list(
+        a = list(quote(r1), quote(r1 && (r2 || r3))),
+        b = list(quote(r1 + r2 + r3 >= 2), quote(r2)),
+        c = list(quote(!r1 && r3), quote(TRUE))
+    )
+
+    for (nm in names(rules)) {
+        conditions <- rules[[nm]]
+        stop_table <- .gsd_stop_table(conditions, 3L, 3L)
+        out <- graph_shortcut_gsd(
+            fx$pvals,
+            fx$alpha,
+            fx$w,
+            fx$G,
+            K = 3L,
+            stop_rule = stop_table
+        )
+        edit <- gsd_apply_stopping(
+            no_rule$time,
+            gsd_stop_when(conditions),
+            3L
+        )
+
+        expect_identical(out$time, edit$time, info = nm)
+        expect_identical(out$rejected, edit$time > 0L, info = nm)
+        expect_identical(
+            out$stop_look,
+            pmin(edit$stop_look, all_rej_look),
+            info = nm
+        )
+
+        if (nm == "a") {
+            # not vacuous: the rule fires at both interims and removes
+            # rejections the always-continue trial makes
+            expect_true(any(edit$stop_look == 1L))
+            expect_true(any(edit$stop_look == 2L))
+            expect_true(any(out$stop_look == 1L & all_rej_look > 1L))
+            expect_true(any(out$stop_look == 2L & all_rej_look > 2L))
+            expect_lt(sum(out$rejected), sum(no_rule$rejected))
+        }
+    }
+})
+
+test_that("the kernel matches a reference that really stops", {
+    # `gsd_ref_test()` stops analysing a trial once H1 is rejected, on raw
+    # p-values with boundaries by quadrature: no gsDesign, no transform and
+    # no kernel. `gsDesign::sfLDOF` and `gsd_ref_sf_ldof()` are the same
+    # spending function.
+    raw_pvals <- withr::with_seed(
+        20261007,
+        gsd_ref_simulate(
+            c(0.9, 0.8),
+            corr = matrix(c(1, 0.5, 0.5, 1), 2L),
+            t1 = 0.5,
+            nsim = 500
+        )
+    )
+    transformed <- transform_pvalues_gsd(
+        raw_pvals,
+        info_frac = c(0.5, 1),
+        spending = gsDesign::sfLDOF,
+        alpha = 0.025,
+        grid_size = 1024L
+    )
+    w <- c(0.8, 0.2)
+    G <- rbind(c(0, 1), c(1, 0))
+
+    tau_ref <- gsd_ref_test(
+        raw_pvals,
+        w,
+        G,
+        t1 = 0.5,
+        sf = gsd_ref_sf_ldof,
+        alpha = 0.025,
+        stop_fun = function(tr) tr[1] > 0
+    )
+    out <- graph_shortcut_gsd(
+        gsd_pvals_matrix(transformed),
+        0.025,
+        w,
+        G,
+        K = 2L,
+        stop_rule = .gsd_stop_table(list(quote(r1)), 2L, 2L)
+    )
+    no_rule <- graph_shortcut_gsd(
+        gsd_pvals_matrix(transformed),
+        0.025,
+        w,
+        G,
+        K = 2L
+    )
+
+    expect_identical(out$time, tau_ref)
+    expect_identical(
+        out$stop_look,
+        ifelse(out$time[, 1L] == 1L, 1L, 2L)
+    )
+    # not vacuous: some trials lose an H2 rejection at the final analysis
+    expect_true(any(no_rule$time[, 2L] == 2L & out$time[, 2L] == 0L))
+})
+
+test_that("the rule r1 && (r2 || r3) stops only when it holds", {
+    fx <- gsd_stopping_fixture()
+    condition <- quote(r1 && (r2 || r3))
+    out <- graph_shortcut_gsd(
+        fx$pvals,
+        fx$alpha,
+        fx$w,
+        fx$G,
+        K = 3L,
+        stop_rule = .gsd_stop_table(list(condition, condition), 3L, 3L)
+    )
+
+    stopped <- out$stop_look == 1L
+    expect_true(all(out$time[stopped, 1L] == 1L))
+    expect_true(all(out$time[stopped, 2L] == 1L | out$time[stopped, 3L] == 1L))
+    expect_false(any(out$time[stopped, ] == 2L))
+
+    # on this design no trial rejects H1 and H2 or H3 at analysis 1, so the
+    # checks above are vacuous; the same checks at analysis 2 are not
+    stopped <- out$stop_look == 2L
+    early <- out$time[stopped, , drop = FALSE] %in% 1:2
+    dim(early) <- c(sum(stopped), 3L)
+    expect_gt(sum(stopped), 0L)
+    expect_true(all(early[, 1L] & (early[, 2L] | early[, 3L])))
+    expect_false(any(out$time[stopped, ] == 3L))
+
+    # stopping only removes rejections
+    expect_true(all(out$rejected <= fx$no_rule$rejected))
+})
+
+test_that("the parallel kernel with a rule is identical to the serial one", {
+    fx <- gsd_stopping_fixture()
+    stop_table <- .gsd_stop_table(
+        list(quote(r1), quote(r1 && (r2 || r3))),
+        3L,
+        3L
+    )
+    serial <- graph_shortcut_gsd(
+        fx$pvals,
+        fx$alpha,
+        fx$w,
+        fx$G,
+        K = 3L,
+        stop_rule = stop_table
+    )
+
+    for (threads in c(1L, 2L, 4L)) {
+        expect_identical(
+            graph_shortcut_gsd_parallel(
+                fx$pvals,
+                fx$alpha,
+                fx$w,
+                fx$G,
+                K = 3L,
+                num_threads = threads,
+                stop_rule = stop_table
+            ),
+            serial,
+            info = paste("num_threads =", threads)
+        )
+    }
+
+    expect_identical(
+        graph_shortcut_gsd_parallel(
+            fx$pvals,
+            fx$alpha,
+            fx$w,
+            fx$G,
+            K = 3L,
+            num_threads = 4L,
+            grain_size = 7L,
+            stop_rule = stop_table
+        ),
+        serial
+    )
+})
+
+test_that("the kernel validates the stopping rule", {
+    pvals <- matrix(stats::runif(60L), nrow = 10L, ncol = 6L)
+    w <- c(0.5, 0.5, 0)
+    G <- matrix(0, nrow = 3L, ncol = 3L)
+
+    # m = 3 and K = 2: the table must be 8 by 1
+    expect_error(
+        graph_shortcut_gsd(
+            pvals,
+            0.025,
+            w,
+            G,
+            K = 2L,
+            stop_rule = matrix(FALSE, 4L, 1L)
+        ),
+        "stop_rule must have 2^m rows",
+        fixed = TRUE
+    )
+    expect_error(
+        graph_shortcut_gsd(
+            pvals,
+            0.025,
+            w,
+            G,
+            K = 2L,
+            stop_rule = matrix(FALSE, 8L, 2L)
+        ),
+        "stop_rule must have K - 1 columns",
+        fixed = TRUE
+    )
+    expect_error(
+        graph_shortcut_gsd_parallel(
+            pvals,
+            0.025,
+            w,
+            G,
+            K = 2L,
+            stop_rule = matrix(FALSE, 4L, 1L)
+        ),
+        "stop_rule must have 2^m rows",
+        fixed = TRUE
+    )
+    expect_error(
+        graph_shortcut_gsd_parallel(
+            pvals,
+            0.025,
+            w,
+            G,
+            K = 2L,
+            stop_rule = matrix(FALSE, 8L, 2L)
+        ),
+        "stop_rule must have K - 1 columns",
+        fixed = TRUE
+    )
+})
+
+test_that(".gsd_stop_table() builds and validates the truth table", {
+    # row mask + 1 holds the rejection set with hypothesis i at bit i - 1
+    expect_identical(
+        .gsd_stop_table(list(quote(r1 && (r2 || r3))), 3L, 2L)[, 1L],
+        c(FALSE, FALSE, FALSE, TRUE, FALSE, TRUE, FALSE, TRUE)
+    )
+    expect_identical(
+        .gsd_stop_table(list(), 3L, 1L),
+        matrix(logical(), nrow = 8L, ncol = 0L)
+    )
+
+    expect_error(
+        .gsd_stop_table(list(quote(r1)), 17L, 2L),
+        "at most 16 hypotheses"
+    )
+    expect_error(
+        # nolint next: equals_na_linter. a condition that evaluates to NA
+        .gsd_stop_table(list(quote(r1 == NA)), 3L, 2L),
+        "returned NA"
+    )
+    expect_error(
+        .gsd_stop_table(list(quote(c(r1, r2))), 3L, 2L),
+        "a logical vector"
+    )
+    expect_error(
+        .gsd_stop_table(list(quote(r1)), 3L, 3L),
+        "one condition per interim"
     )
 })

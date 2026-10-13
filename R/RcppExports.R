@@ -110,16 +110,27 @@ graph_shortcut_parallel <- function(pvals, alpha, w, G, num_threads = 1L, grain_
 #' @param G NumericMatrix (m x m) transition matrix. Diagonal must be 0,
 #'   row sums must be <= 1.
 #' @param K Number of analyses (>= 1). Must divide ncol(pvals).
+#' @param stop_rule Optional efficacy stopping rule: NULL (default) or a
+#'   LogicalMatrix (2^m x (K - 1)) truth table. Row r + 1 holds the rejection
+#'   set whose bitmask is r (hypothesis i at bit i - 1); column k holds interim
+#'   analysis k. After the cascade at interim k the trial stops if the entry
+#'   for the hypotheses rejected at analyses 1..k is TRUE. A matrix with zero
+#'   columns means no rule.
 #' @return A list with `rejected`, a LogicalMatrix (N x m) of rejection
-#'   indicators, and `time`, an IntegerMatrix (N x m) of decision times
-#'   (0 = never rejected).
+#'   indicators, `time`, an IntegerMatrix (N x m) of decision times
+#'   (0 = never rejected), and `stop_look`, an IntegerVector (length N) of the
+#'   analysis at which each trial stopped. A trial stops at the first interim
+#'   whose rule entry is TRUE, or, with or without a rule, at the analysis of
+#'   its last rejection once all m hypotheses are rejected; otherwise
+#'   `stop_look` is K. Later analyses are not run, so hypotheses not rejected
+#'   by then keep decision time 0.
 #'
 #' @seealso \code{\link{graph_shortcut_gsd_parallel}} for the multithreaded
 #'   variant.
 #' @name graph_shortcut_gsd
 #' @noRd
-graph_shortcut_gsd <- function(pvals, alpha, w, G, K) {
-    .Call(`_multigrain_graph_shortcut_gsd`, pvals, alpha, w, G, K)
+graph_shortcut_gsd <- function(pvals, alpha, w, G, K, stop_rule = NULL) {
+    .Call(`_multigrain_graph_shortcut_gsd`, pvals, alpha, w, G, K, stop_rule)
 }
 
 #' Group sequential graphical shortcut algorithm -- parallel backend
@@ -141,16 +152,27 @@ graph_shortcut_gsd <- function(pvals, alpha, w, G, K) {
 #'   TARGET_OPS worth of inner-loop operations. Per-trial work is O(K * m^3)
 #'   worst case (K looks, each with up to m rejections triggering an m*m
 #'   graph update).
+#' @param stop_rule Optional efficacy stopping rule: NULL (default) or a
+#'   LogicalMatrix (2^m x (K - 1)) truth table. Row r + 1 holds the rejection
+#'   set whose bitmask is r (hypothesis i at bit i - 1); column k holds interim
+#'   analysis k. After the cascade at interim k the trial stops if the entry
+#'   for the hypotheses rejected at analyses 1..k is TRUE. A matrix with zero
+#'   columns means no rule.
 #'
 #' @return A list with `rejected`, a LogicalMatrix (N x m) of rejection
-#'   indicators, and `time`, an IntegerMatrix (N x m) of decision times
-#'   (0 = never rejected).
+#'   indicators, `time`, an IntegerMatrix (N x m) of decision times
+#'   (0 = never rejected), and `stop_look`, an IntegerVector (length N) of the
+#'   analysis at which each trial stopped. A trial stops at the first interim
+#'   whose rule entry is TRUE, or, with or without a rule, at the analysis of
+#'   its last rejection once all m hypotheses are rejected; otherwise
+#'   `stop_look` is K. Later analyses are not run, so hypotheses not rejected
+#'   by then keep decision time 0.
 #'
 #' @seealso \code{\link{graph_shortcut_gsd}} for the single-threaded variant.
 #' @name graph_shortcut_gsd_parallel
 #' @noRd
-graph_shortcut_gsd_parallel <- function(pvals, alpha, w, G, K, num_threads = 1L, grain_size = -1L) {
-    .Call(`_multigrain_graph_shortcut_gsd_parallel`, pvals, alpha, w, G, K, num_threads, grain_size)
+graph_shortcut_gsd_parallel <- function(pvals, alpha, w, G, K, num_threads = 1L, grain_size = -1L, stop_rule = NULL) {
+    .Call(`_multigrain_graph_shortcut_gsd_parallel`, pvals, alpha, w, G, K, num_threads, grain_size, stop_rule)
 }
 
 #' Graph violation score
