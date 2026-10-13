@@ -20,6 +20,16 @@ integer matrix of decision times (simulations by hypotheses) and returns
 the mean utility. Discount lookup uses the shared analysis index, not the
 numeric information fraction used earlier to construct repeated p-values.
 
+`[Rev 2026-10-13]` The grammar also has `s`, the analysis at which the
+simulated trial stopped (an integer in 1..K; design record section 4.11).
+`s` can be compared, used in arithmetic, and passed to a discount table
+(`d(s)`). The compiled function takes the stopping looks as an optional
+second argument, `IntegerVector s`, one element per row of the time matrix.
+Without a stopping rule `s` is K except in trials that rejected every
+hypothesis earlier. The rest of this document describes each function as it
+is now; the paragraphs marked `[Rev 2026-10-13]` are what the `s` work
+changed.
+
 
 ## The call chain at a glance
 
@@ -34,15 +44,17 @@ numeric information fraction used earlier to construct repeated p-values.
 
 3. `new_trial_success_gsd()` receives the display string, the captured
    language object, the validated tables and the settled K. It counts
-   hypotheses with `count_unique_indices_gsd()`, translates the
-   expression to a C++ body with `replace_indices_gsd()` (which calls
-   `parse_and_transform_gsd()` recursively), wraps it in a row loop
-   over the decision-time matrix, compiles it with `Rcpp::sourceCpp()`,
-   and returns the S3 object.
+   hypotheses with `count_unique_indices_gsd()`, parses the expression
+   once with `.gsd_gain_ast()`, translates the tree to a C++ body with
+   `replace_indices_gsd()` (which calls `parse_and_transform_gsd()`
+   recursively), reads `uses_s` from the same tree, wraps the body in a row
+   loop over the decision-time matrix (with a length check on `s` when the
+   expression uses it), compiles it with `Rcpp::sourceCpp()`, and returns
+   the S3 object.
 
 4. `print.multigrain_trial_success_gsd()` and
    `summary.multigrain_trial_success_gsd()` display the object, both
-   calling `.gsd_gain_cat_detail()` for the K and tables block.
+   calling `.gsd_gain_cat_detail()` for the K, tables and `s` block.
 
 
 ---
@@ -152,11 +164,12 @@ a cli error on failure.
 - Each name must be a valid C identifier (starts with a letter, contains
   only letters, digits and underscores), must not match the rejection
   indicator pattern `r<digits>` or the decision-time pattern
-  `t<digits>`, and must not be one of the word operators `and` or `or`
+  `t<digits>`, must not be the stopping look `s` `[Rev 2026-10-13]`, and
+  must not be one of the word operators `and` or `or`
   (case-insensitive). This matters because the name becomes
-  `static const double <name>_tab[]` in C++, and the `r<i>`/`t<i>`
-  patterns and word operators are recognised by pattern before table
-  names during parsing.
+  `static const double <name>_tab[]` in C++, and the `r<i>`/`t<i>`/`s`
+  symbols and word operators are recognised before table names during
+  parsing.
 - Each table must be a non-empty numeric vector of finite values.
 - All tables must have the same length (one value per analysis).
 
@@ -170,7 +183,7 @@ during discount lookup.
 
 ### Edge cases
 
-An attempt to name a table `r1`, `t2`, `and`, or `or` is caught and
+An attempt to name a table `r1`, `t2`, `s`, `and`, or `or` is caught and
 reported with a message explaining the restriction. A table containing
 `NA`, `Inf` or `NaN` is rejected. Duplicate names are rejected.
 
@@ -241,9 +254,10 @@ produces the display string. Any other type aborts.
 ### Purpose
 
 After `!!` unquoting, the expression may contain only the symbols
-`r<digit>` and `t<digit>`, numeric or logical scalars, the arithmetic
-operators, logical connectives, comparisons, parentheses, and calls of
-a discount table to a single `t<digit>` symbol. Any other symbol means
+`r<digit>` and `t<digit>`, `[Rev 2026-10-13]` the stopping look `s`,
+numeric or logical scalars, the arithmetic operators, logical connectives,
+comparisons, parentheses, and calls of a discount table to a single
+`t<digit>` symbol or to `s`. Any other symbol means
 the user forgot to unquote a variable, and any other operator means the
 expression is not in the gain language. Called by `resolve_expr_gsd()`
 on the captured language object, and again by `replace_indices_gsd()` on
@@ -272,8 +286,9 @@ The function dispatches on the type of node.
 
 If the call's function name is one of the table names, the call must
 have exactly one argument and that argument must be a bare symbol
-matching `^t\d+$`. A table call like `d(t1 + 1)` or `d(r1)` is
-rejected. Otherwise, the function name must be in the allowed set:
+matching `^t\d+$` or, `[Rev 2026-10-13]`, the symbol `s`. A table call
+like `d(t1 + 1)`, `d(r1)` or `d(s + 1)` is rejected, with a message naming
+both accepted forms. Otherwise, the function name must be in the allowed set:
 `+`, `-`, `*`, `/`, `(`, `&&`, `||`, `==`, `!=`, `<`, `<=`, `>`, `>=`.
 This is a superset of what the fixed-sample validator allows (the
 fixed-sample version has no comparisons and no table calls). If the
@@ -282,10 +297,10 @@ operator is allowed, all sub-arguments are validated recursively.
 ### `.gsd_gain_validate_symbol()`
 
 A bare symbol must match `^[rt]\d+$` (a rejection indicator or a
-decision time). If the symbol is a table name used without parentheses
+decision time) or be `s` `[Rev 2026-10-13]` (the stopping look). If the symbol is a table name used without parentheses
 (e.g. `d` instead of `d(t1)`), the error message says the table must
-be applied to a decision time. Any other symbol gets an error suggesting
-`!!` injection.
+be applied to a decision time. Any other symbol gets an error that lists
+the stopping look among the accepted symbols and suggests `!!` injection.
 
 
 ---
@@ -313,17 +328,22 @@ the object. Called only from `trial_success_gsd()`.
 
 Returns a list with class
 `c("multigrain_trial_success_gsd", "multigrain_trial_success")`
-containing `func`, `m`, `K`, `objective`, `cpp_code`, and `tables`.
+containing `func`, `m`, `K`, `objective`, `cpp_code`, `tables` and
+`[Rev 2026-10-13]` `uses_s` (`TRUE` when the expression refers to `s`).
 
 ### How it works
 
 1. `count_unique_indices_gsd(expr_string)` finds the largest index among
    all `r<i>` and `t<i>` symbols in the display string; that is `m`.
 
-2. `replace_indices_gsd(expr_lang %||% expr_string, table_names)` is
-   called on the captured language object if one exists, otherwise on
-   the display string. It returns a C++ expression string that can be
-   dropped into the body of a `for` loop.
+2. `[Rev 2026-10-13]` `.gsd_gain_ast(expr_lang %||% expr_string)` gives
+   the expression tree: the captured language object if one exists,
+   otherwise the display string parsed (see `replace_indices_gsd()`).
+   `replace_indices_gsd(ast, table_names)` returns a C++ expression string
+   that can be dropped into the body of a `for` loop, and `uses_s` is
+   `"s" %in% all.names(ast)`. Reading `uses_s` from the tree that is
+   translated, rather than from the display string, means the two can never
+   disagree.
 
 3. For each discount table, a separate `static const double` array is
    generated. Index 0 is always `0.0` (the "never rejected" case);
@@ -335,10 +355,14 @@ containing `func`, `m`, `K`, `objective`, `cpp_code`, and `tables`.
 4. The full C++ source is assembled by `sprintf()`. It includes Rcpp,
    defines `std_min` as `std::min` (so that the deparsed R call
    `std_min(...)` is valid C++), places the table arrays above the
-   function, and generates `double powerFunc(IntegerMatrix t)`. The
-   function body checks once that the matrix has at least `m` columns,
-   then loops over rows, accumulating the gain expression into `total`,
-   and returns `total / n`.
+   function, and generates `double powerFunc(IntegerMatrix t,
+   IntegerVector s = IntegerVector::create())` `[Rev 2026-10-13]`. The
+   function body checks once that the matrix has at least `m` columns and,
+   only when `uses_s` is `TRUE`, that `s` has one element per row of `t`;
+   it then loops over rows, accumulating the gain expression into `total`,
+   and returns `total / n`. The empty default means a gain that does not
+   use `s` can still be called with the time matrix alone; Rcpp's R
+   wrapper shows the default as `as.integer(c())`.
 
 5. `Rcpp::sourceCpp(code = cpp_code, env = local_env)` compiles the
    source into a fresh environment. The `powerFunc` binding from that
@@ -366,6 +390,12 @@ The generated C++ checks, once per call, that the integer matrix `t` has
 at least `m` columns. If not, it calls Rcpp's `stop()` with a message
 naming the actual and expected column counts. Without this check, a
 narrower matrix would read past the end of a row and crash R.
+`[Rev 2026-10-13]` A gain that uses `s` also checks that `s` has
+`t.nrow()` elements, so a call without the stopping looks errors ("the
+stopping-look vector has 0 element(s) but the decision-time matrix has 3
+row(s)") instead of reading past the end of an empty vector. The values of
+`s` are not checked: `d_tab[s[i]]` is unchecked like the decision-time
+lookup, and the kernel emits only 1..K.
 
 What is deliberately *not* checked is the value of each time entry. The
 discount-table lookup `name_tab[t(i, idx)]` is an unchecked C array
@@ -402,7 +432,9 @@ Returns a positive integer.
 The function finds all word-boundary-delimited matches of `[rt][0-9]+`
 in the string. If none are found, it aborts with a message saying the
 expression must reference at least one rejection indicator or decision
-time. The numeric suffix of each match is extracted with `sub("^[rt]",
+time. `[Rev 2026-10-13]` `s` does not count, so a gain written only in `s`
+(such as `d(s)`) is refused here; `d(t1) + ... + 0.1 * (s == 1)` is the
+supported shape. The numeric suffix of each match is extracted with `sub("^[rt]",
 "", ...)` and coerced to integer. The maximum of the unique indices is
 `m`. If the sequence 1..m has gaps (e.g. the expression uses `r1` and
 `r3` but not `r2`), a warning is issued listing the missing indices.
@@ -419,7 +451,8 @@ This is the group sequential twin of `count_unique_indices()` from
 ### Purpose
 
 Translates the gain expression into a C++ expression string over the row
-index `i` and the `IntegerMatrix t`. Called by `new_trial_success_gsd()`.
+index `i`, the `IntegerMatrix t` and `[Rev 2026-10-13]` the
+`IntegerVector s`. Called by `new_trial_success_gsd()`.
 
 ### Inputs and output
 
@@ -432,10 +465,12 @@ Returns a character string of C++ code.
 
 ### How it works
 
-1. If `expr` is a string, the word operators `and`/`or` (case-insensitive)
-   are replaced by `&&`/`||` with `gsub()`, and the result is parsed
-   with `str2lang()` to obtain an AST. If `expr` is already a language
-   object, it is used directly.
+1. `.gsd_gain_ast(expr)` `[Rev 2026-10-13]` gives the AST: if `expr` is
+   a string, the word operators `and`/`or` (case-insensitive) are replaced
+   by `&&`/`||` with `gsub()`, and the result is parsed with `str2lang()`;
+   if `expr` is already a language object, it is returned as it is. The
+   constructor calls the same helper and passes the tree in, so the string
+   is parsed once.
 
 2. `validate_expr_symbols_gsd()` is called on the AST. This is the
    second validation: the first happened in `resolve_expr_gsd()` on the
@@ -540,10 +575,12 @@ recursively and returned directly (parentheses are elided from the
 output; the deparsed R call already groups correctly).
 
 **Discount table.** If the operator name is one of `table_names`, the
-call is `name(t<i>)`. The hypothesis index is extracted from the symbol
-name (e.g. `t1` gives `idx = 0`), and the call is rewritten as
-`name_tab[t(i, idx)]` -- an array lookup into the static C array
-declared by `new_trial_success_gsd()`. Index 0 of the array is `0.0`,
+call is `name(t<i>)` or `[Rev 2026-10-13]` `name(s)`. For `t<i>` the
+hypothesis index is extracted from the symbol name (e.g. `t1` gives
+`idx = 0`), and the call is rewritten as `name_tab[t(i, idx)]`; for `s` it
+is rewritten as `name_tab[s[i]]`. Either is an array lookup into the
+static C array declared by `new_trial_success_gsd()`; `s` is in 1..K, so
+index 0 is never read through it. Index 0 of the array is `0.0`,
 so a never-rejected hypothesis contributes zero from every table. Type
 is `"real"`. The table name chooses the value schedule, while `t<i>` chooses
 both the hypothesis column and the declaration-analysis index. No information
@@ -634,12 +671,12 @@ comparisons are bool, and `0.5 * r1` succeeds as real.
 
 ### Purpose
 
-Translates a bare symbol (`r<i>` or `t<i>`) into C++ matrix access.
-Called by `parse_and_transform_gsd()`.
+Translates a bare symbol (`r<i>`, `t<i>` or `s`) into C++ matrix or
+vector access. Called by `parse_and_transform_gsd()`.
 
 ### How it works
 
-The symbol text is matched against two patterns.
+The symbol text is matched against two patterns and one name.
 
 - `r<i>` (rejection indicator): becomes `double(t(i, idx) > 0)`, where
   `idx` is the 0-based column index (`i - 1`). The `double()` cast
@@ -648,6 +685,10 @@ The symbol text is matched against two patterns.
 
 - `t<i>` (decision time): becomes `double(t(i, idx))`, casting the
   integer matrix element to double. Type is `"real"`.
+
+- `s` (stopping look, `[Rev 2026-10-13]`): becomes `double(s[i])`. Type is
+  `"real"`, so `s == 1` is a comparison of type `"bool"` and `s` alone can
+  be multiplied but not combined with `&&` or `||`.
 
 Any other symbol falls through to a default branch that returns the node
 unchanged with type `"real"`. This branch cannot be reached after
@@ -751,7 +792,8 @@ Prints the K line and the discount-table lines, shared by `print()` and
 It prints `"Analyses (K): "` followed by the formatted K (or `"not set"`
 if K is `NULL`). Then, for each table name, it prints
 `"Discount table <name>(t): "` followed by the formatted values
-separated by commas. Returns invisible `NULL`.
+separated by commas. `[Rev 2026-10-13]` When `uses_s` is `TRUE` it adds the
+line `"Uses the stopping look (s)"`. Returns invisible `NULL`.
 
 
 ---
@@ -789,6 +831,9 @@ gain language is translated. The translations were verified by running
 | `A && B`           | `A * B`                                              | bool |
 | `A \|\| B`         | `std_min(double(1), A + B)`                          | bool |
 | `d_pfs(t1)`        | `d_pfs_tab[t(i, 0)]`                                 | real |
+| `s`                | `double(s[i])`                                       | real |
+| `s == 1`           | `double(double(s[i]) == 1.0)`                        | bool |
+| `d(s)`             | `d_tab[s[i]]`                                        | real |
 | numeric `0.4`      | `0.4`                                                | real |
 | `TRUE`             | `1.0`                                                | bool |
 | integer `2`        | `2.0`                                                | real |
@@ -809,7 +854,7 @@ static const double d_pfs_tab[] = {0.0, 1.0, 0.5};
 static const double d_os_tab[] = {0.0, 1.0, 0.75};
 
 // [[Rcpp::export]]
-double powerFunc(IntegerMatrix t) {
+double powerFunc(IntegerMatrix t, IntegerVector s = IntegerVector::create()) {
     if (t.ncol() < 2) {
         stop("the decision-time matrix has %d column(s) but the trial success function refers to 2 hypotheses", t.ncol());
     }
@@ -817,12 +862,15 @@ double powerFunc(IntegerMatrix t) {
     double total = 0.0;
 
     for (int i = 0; i < n; i++) {
-        total += (0.4 * d_pfs_tab[t(i, 0)] + 0.6 * d_os_tab[t(i, 1)]);
+        total += (0.4 * d_pfs_tab[t(i, 0)] + 0.6 * d_os_tab[t(i, 1)]); // gain of simulated trial i from its decision times
     }
 
-    return total / n;
+    return total / n; // Return the mean
 }
 ```
+
+`[Rev 2026-10-13]` This gain does not use `s`, so there is no check on `s`
+and the function can be called with the time matrix alone.
 
 Each table array has three entries: index 0 is `0.0` (never rejected), and
 indices 1 and 2 contain that table's values for declarations at analyses 1
@@ -837,3 +885,44 @@ look 1 and H2 at look 2, row 2 has only H2 rejected at look 1, and
 row 3 has no rejections, the function returns
 (0.4 * 1.0 + 0.6 * 0.75 + 0.4 * 0.0 + 0.6 * 1.0 + 0 + 0) / 3 =
 0.4833.
+
+
+## Complete C++ for a gain that uses the stopping look `[Rev 2026-10-13]`
+
+The gain `(r1 + r2) * d(s)` with `d = c(1, 0.75)` (every claim discounted by
+the look at which the trial stopped) compiles to:
+
+```cpp
+#include <Rcpp.h>
+using namespace Rcpp;
+
+#define std_min std::min
+
+static const double d_tab[] = {0.0, 1.0, 0.75};
+
+// [[Rcpp::export]]
+double powerFunc(IntegerMatrix t, IntegerVector s = IntegerVector::create()) {
+    if (t.ncol() < 2) {
+        stop("the decision-time matrix has %d column(s) but the trial success function refers to 2 hypotheses", t.ncol());
+    }
+    if (s.size() != t.nrow()) {
+        stop("the stopping-look vector has %d element(s) but the decision-time matrix has %d row(s)", s.size(), t.nrow());
+    }
+    int n = t.nrow();
+    double total = 0.0;
+
+    for (int i = 0; i < n; i++) {
+        total += ((double(t(i, 0) > 0) + double(t(i, 1) > 0)) * d_tab[s[i]]); // gain of simulated trial i from its decision times
+    }
+
+    return total / n; // Return the mean
+}
+```
+
+On the same three-row time matrix with stopping looks `c(2, 1, 2)` it
+returns (2 * 0.75 + 1 * 1.0 + 0) / 3 = 0.8333. Called without the stopping
+looks it errors with "the stopping-look vector has 0 element(s) but the
+decision-time matrix has 3 row(s)". The consumers always pass both
+arguments: the objective closure as `power_criterion(res$time,
+res$stop_look)` and `.eval_custom_power_gsd()` as `item$func(time,
+stop_look)` (see the `graph_optimise_gsd()` call flow).

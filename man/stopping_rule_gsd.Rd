@@ -66,6 +66,9 @@ analyses; otherwise one condition per interim analysis is needed. A list
 of \code{K} conditions is accepted with a warning: the final analysis always
 ends the trial, so its condition is dropped. With \code{K = 1} there is no
 interim analysis, and a single condition is accepted and has no effect.
+The rule is evaluated once on every possible set of rejected hypotheses,
+\code{2^m} sets per interim analysis, so it can be used with at most 16
+hypotheses.
 
 Stopping only removes rejections, so error control is unaffected: a
 stopped trial keeps the rejections it has already declared and declares
