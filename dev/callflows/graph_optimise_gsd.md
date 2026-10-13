@@ -23,17 +23,33 @@ sequential kernel, `graph_shortcut_gsd()` and `graph_shortcut_gsd_parallel()`
 in `src/graph_shortcut_gsd.cpp`, is described at the point of call but is
 documented in `dev/gsd_progress.md` and design record section 4.3.
 
+`[Rev 2026-10-13]` The efficacy-stopping work (design record section 4.11)
+adds a `stopping_rule` argument to `graph_optimise_gsd()` and
+`calc_power_pvals_gsd()`, three helpers in `R/check_gsd.R`
+(`.gsd_check_graph_dims()`, `.gsd_stop_table()` and its message helper
+`.gsd_stop_condition_abort()`), two in `R/calc_power_gsd.R`
+(`.calc_power_pvals_gsd_core()` and `.gsd_stop_distribution()`), and display
+code in `R/graph_optimal.R` (last section). The rule object and
+`.gsd_check_stopping_rule_dims()`, which settles it against the p-values, live
+in `R/stopping_rule_gsd.R` and are described in
+`dev/callflows/stopping_rule_gsd.md`. Internally the rule travels as its truth
+table, a logical matrix called `stop_rule`, never as the object.
+
 Notation follows the design record and the earlier call flows: *m* hypotheses,
 *K* analyses ("looks"). The `multigrain_pvals_gsd` object holds the
 N-by-m-by-K array of repeated (or, per hypothesis, sequential) p-values, plus
 the scalars `nsim`, `m`, `K`, `alpha` and the per-hypothesis metadata; it is
 produced by `transform_pvalues_gsd()` and documented in the P0 call flow.
-The kernel returns a list with `rejected` (N-by-m logical) and `time`
+The kernel returns a list with `rejected` (N-by-m logical), `time`
 (N-by-m integer, where 0 means "never rejected" and a positive value is the
-analysis at which the hypothesis was declared rejected). The gain is a
-`multigrain_trial_success_gsd` object whose compiled function takes the
-integer time matrix and returns the mean utility; it is produced by
-`trial_success_gsd()` and documented in the P3 call flow. The encoded
+analysis at which the hypothesis was declared rejected) and `[Rev 2026-10-13]`
+`stop_look` (length-N integer, the analysis at which each trial stopped: the
+interim at which a stopping rule fired, the analysis at which every hypothesis
+had been rejected, or K). With a stopping rule, `rejected` and `time` describe
+the stopped trial. The gain is a `multigrain_trial_success_gsd` object whose
+compiled function takes the integer time matrix and, as an optional second
+argument, the stopping-look vector, and returns the mean utility; it is
+produced by `trial_success_gsd()` and documented in the P3 call flow. The encoded
 parameter vector `x` that the optimisers work on is a numeric vector of
 length `(number of free hypothesis weights - 1) + (number of free transition
 entries - one per row that has at least one free cell)`; it lives in [0, 1]
@@ -45,17 +61,22 @@ and is decoded by `split_theta()` and the two `recover_full_*` helpers.
 1. `graph_optimise_gsd()` validates its three main inputs with
    `check_pvals_gsd()`, `check_graph_constraint()` and
    `check_trial_success_gsd()` from `R/check_gsd.R`, resolves the testing
-   level with `.gsd_check_alpha()`, asserts dimension agreement between the
-   gain and the p-values with `.gsd_check_gain_dims()`, normalises the
-   control object with `control_prepare_dims()`, and then follows the same
-   global-then-local-then-prune-then-report flow as `graph_optimise()`.
+   level with `.gsd_check_alpha()`, checks that the graph constraint has as
+   many hypotheses as the p-values with `.gsd_check_graph_dims()`, asserts
+   dimension agreement between the gain and the p-values with
+   `.gsd_check_gain_dims()`, settles a stopping rule with
+   `.gsd_check_stopping_rule_dims()` and tabulates it once with
+   `.gsd_stop_table()`, normalises the control object with
+   `control_prepare_dims()`, and then follows the same
+   global-then-local-then-prune-then-report flow as `graph_optimise()`,
+   handing the table (`stop_rule`) to every internal.
 
 2. The global search (`.graph_optimise_ga_gsd()`) subsamples the p-value
    object with `.sample_pvals_gsd()`, builds the objective closure with
    `create_obj_func_gsd()` (which calls `.gsd_kernel_matrix()` to reshape the
    array), runs `GA::ga()`, decodes the best individual with
    `param_to_solution()`, and, if the decoded graph is valid, re-evaluates it
-   on the full sample with `calc_power_pvals_gsd()` and on the full sample
+   on the subsample with `.calc_power_pvals_gsd_core()` and on the full sample
    through the kernel and the gain directly.
 
 3. The local search (`.graph_optimise_local_gsd()`) follows the same
@@ -66,20 +87,24 @@ and is decoded by `split_theta()` and the two `recover_full_*` helpers.
 
 5. `prune_graph_gsd()` drives `prune_hyp_weights_gsd()` then
    `prune_edges_gsd()`, each calling `.try_prune_gsd()` which evaluates
-   candidates with `calc_power_pvals_gsd()` and accepts only if the gain does
+   candidates with `.calc_power_pvals_gsd_core()` and accepts only if the gain does
    not decrease and marginal constraints are met (`.marginal_violated()`,
    reused unchanged).
 
-6. `calc_power_pvals_gsd()` runs the kernel once via `.gsd_kernel_matrix()`
-   and `graph_shortcut_gsd()`, computes the fixed-sample power metrics from
-   the rejection matrix, the group sequential metrics (power by analysis,
-   mean decision look, time distribution) from the time matrix, and evaluates
-   each `custom_power` entry through `.eval_custom_power_gsd()`, which
-   dispatches on the entry's class.
+6. `calc_power_pvals_gsd()` validates its inputs (including
+   `.gsd_check_graph_dims()` on the weights and the matrix, and the stopping
+   rule) and hands over to `.calc_power_pvals_gsd_core()`, which runs the
+   kernel once via `.gsd_kernel_matrix()` and `graph_shortcut_gsd()`, computes
+   the fixed-sample power metrics from the rejection matrix, the group
+   sequential metrics (power by analysis, mean decision look, time
+   distribution) from the time matrix, the stopping-look distribution and its
+   mean from `stop_look` (`.gsd_stop_distribution()`), and evaluates each
+   `custom_power` entry through `.eval_custom_power_gsd()`, which dispatches on
+   the entry's class.
 
-7. `graph_optimal()` wraps the pruned graph, the power summary and the
-   optimiser outputs into the returned `multigrain_graph_optimal` object
-   (reused unchanged).
+7. `graph_optimal()` wraps the pruned graph, the power summary, the
+   optimiser outputs and, when one was supplied, the stopping rule into the
+   returned `multigrain_graph_optimal` object.
 
 
 ---
@@ -316,6 +341,104 @@ repeating them, and the objective closure itself carries no check.
 ---
 
 
+## `.gsd_check_graph_dims()` -- the graph has the hypotheses of the p-values `[Rev 2026-10-13]`
+
+### Purpose
+
+Asserts that a graph (or one dimension of it) describes as many hypotheses as
+the p-value object holds, and aborts in R naming both numbers. Called by
+`graph_optimise_gsd()` once, on the graph constraint, and by
+`calc_power_pvals_gsd()` three times, on `length(hyp_weight)`,
+`nrow(trans_matrix)` and `ncol(trans_matrix)`. In both it runs before the
+graph is validated, before any control is prepared and before anything
+reaches the kernel.
+
+### Inputs and output
+
+- `m_graph`: the number of hypotheses the graph describes (an integer).
+- `pvals`: a `multigrain_pvals_gsd` object.
+- `what`: a preformatted cli label for the argument, such as
+  `"{.arg graph_constraint}"` or `"{.arg hyp_weight}"`, pasted into the
+  message.
+- `call`: error context.
+
+Returns invisible `NULL` on success.
+
+### How it works
+
+If `m_graph != pvals$m` it aborts with "<what> and `pvals` disagree on the
+number of hypotheses" and a bullet "<what> describes m = a hypothesis (or
+hypotheses), but the p-values hold m = b". Each number has its own explicit
+`cli::qty()`, so `m = 1` reads "hypothesis" and the message carries one
+quantity per plural marker. `graph_optimise_gsd()` reads the constraint's
+number of hypotheses with `graph_constraint_get_m()`.
+
+### Why it is done this way
+
+Review finding: before the check a graph of the wrong size reached the kernel
+and surfaced as its C++ error "G must be an m x m matrix", which names neither
+argument. A check in R, first, gives a message the user can act on.
+
+
+---
+
+
+## `.gsd_stop_table()` -- tabulate an efficacy stopping rule `[Rev 2026-10-13]`
+
+### Purpose
+
+Evaluates a stopping rule's per-interim conditions on every possible set of
+rejected hypotheses, once, and returns the truth table the kernel indexes.
+Called by `graph_optimise_gsd()` and `calc_power_pvals_gsd()` after
+`.gsd_check_stopping_rule_dims()` has settled the conditions against the
+p-values (one per interim analysis); never inside the objective closure.
+
+### Inputs and output
+
+- `conditions`: a list of `K - 1` language objects over `r1..rm` (an empty
+  list when `K = 1`).
+- `m`, `K`: the numbers of hypotheses and analyses.
+- `call`: error context.
+
+Returns a logical matrix with `2^m` rows and `K - 1` columns. Row `mask + 1`
+holds the rejection set whose bitmask is `mask`, with hypothesis `i` at bit
+`i - 1`; column `k` holds interim analysis `k`. The kernel uses the same
+convention (design record sections 4.3 and 4.11).
+
+### How it works
+
+1. If `m > 16` and there is at least one condition it aborts: the table has
+   `2^m` rows per interim, and rules are limited to 16 hypotheses (about 2.5 s
+   to build at `m = 16`).
+
+2. If the number of conditions is not `K - 1` it aborts. The public callers
+   cannot reach this, since `.gsd_check_stopping_rule_dims()` has already
+   settled the length; it guards direct internal use.
+
+3. With no condition (`K = 1`) it returns a `2^m`-by-0 logical matrix, which
+   the kernel treats as no rule.
+
+4. Otherwise, for each `mask` from 0 to `2^m - 1` it derives the logical
+   vector `rejected` with `bitwAnd(mask, bitwShiftL(1L, seq_len(m) - 1L)) >
+   0L`, assigns `r1..rm` in a fresh environment whose parent is `baseenv()`
+   (so only base operators and the indicators are visible), and evaluates
+   each condition there. A result that is not a single non-`NA` logical is
+   passed to `.gsd_stop_condition_abort()`, which aborts naming the
+   condition, the interim, the rejection set (as `{H1, H3}` or `none`) and
+   what was returned. Errors raised inside a condition are not wrapped.
+
+### Why it is done this way
+
+The rule depends only on the cumulative rejection set at each interim, which
+has `2^m` values, so evaluating it once in R gives R's own semantics for the
+grammar with no second code generator and no compilation per rule, and leaves
+the kernel with one array lookup per interim and trial. The price is the
+`2^m` rows, hence the cap.
+
+
+---
+
+
 ## `create_obj_func_gsd()` -- the objective closure
 
 ### Purpose
@@ -334,7 +457,8 @@ and `.graph_optimise_local_gsd()`.
 
 - `m`: number of hypotheses (integer).
 - `power_criterion`: the compiled gain function (`trial_success$func`),
-  which takes an integer matrix of decision times and returns a scalar.
+  which takes an integer matrix of decision times and the stopping-look
+  vector and returns a scalar.
 - `hyp_constraint`: the hypothesis weight constraint vector from the
   graph constraint (NA marks free positions).
 - `trans_constraint`: the transition matrix constraint (NA marks free
@@ -344,6 +468,8 @@ and `.graph_optimise_local_gsd()`.
 - `K`: the number of analyses (integer).
 - `alpha`: the overall one-sided significance level (default 0.025).
 - `num_threads`: number of threads (default 1).
+- `stop_rule` `[Rev 2026-10-13]`: the truth table from `.gsd_stop_table()`,
+  or `NULL` (default) for no rule. Forced and passed to the kernel unchanged.
 
 Returns a function of one argument `x`.
 
@@ -379,26 +505,29 @@ When the returned closure is called with a parameter vector `x`:
 
 4. The group sequential kernel is called. If `use_parallel` is true,
    `graph_shortcut_gsd_parallel()` is called with `pvals`, `alpha`, the weight
-   vector `w`, the transition matrix `G`, `K`, `num_threads` and `grain_size =
-   -1L` (auto-tuned); otherwise `graph_shortcut_gsd()` is called without the
-   threading arguments. Both have the C++ signature
+   vector `w`, the transition matrix `G`, `K`, `num_threads`, `grain_size =
+   -1L` (auto-tuned) and `stop_rule`; otherwise `graph_shortcut_gsd()` is
+   called without the threading arguments. Both have the C++ signature
    `List graph_shortcut_gsd(NumericMatrix pvals, double alpha, NumericVector w,
-   NumericMatrix G, int K)` and return a list with `rejected` (N-by-m logical)
-   and `time` (N-by-m integer). The `time` entry records the analysis at which
-   each hypothesis was declared rejected, or 0 for never.
+   NumericMatrix G, int K, Nullable<LogicalMatrix> stop_rule = R_NilValue)`
+   `[Rev 2026-10-13]` and return a list with `rejected` (N-by-m logical),
+   `time` (N-by-m integer) and `stop_look` (length-N integer). The `time`
+   entry records the analysis at which each hypothesis was declared rejected,
+   or 0 for never (or not before the trial stopped).
 
-5. `power_criterion(res$time)` evaluates the gain on the integer time matrix
-   and returns a scalar. This is the single line that differs from the
-   fixed-sample closure, which calls `power_criterion(rej_matrix)`.
+5. `power_criterion(res$time)` evaluates the gain on the integer time
+   matrix (stopped, when a rule applies) and returns a scalar. This is the
+   single line that differs from the fixed-sample closure, which calls
+   `power_criterion(rej_matrix)`.
 
 ### Where it differs from `create_obj_func()`
 
 The two closures are identical except for three things. First,
-`create_obj_func_gsd()` takes `K` as a parameter, forces it, and passes it to
-the kernel. Second, the kernel call is `graph_shortcut_gsd` (or its parallel
-variant) instead of `graph_shortcut`. Third, the gain is evaluated on
-`res$time` (the integer time matrix) instead of on `rej_matrix` (the logical
-rejection matrix). The decode-and-penalise block, the snap-to-zero constants,
+`create_obj_func_gsd()` takes `K` (and `[Rev 2026-10-13]` `stop_rule`) as
+parameters, forces them, and passes them to the kernel. Second, the kernel
+call is `graph_shortcut_gsd` (or its parallel variant) instead of
+`graph_shortcut`. Third, the gain is evaluated on `res$time`
+instead of on `rej_matrix` (the logical rejection matrix). The decode-and-penalise block, the snap-to-zero constants,
 the parallel dispatch logic, and the `force()` calls are character-for-character
 identical.
 
@@ -430,6 +559,8 @@ documented in this file.
 - `...`: enforced empty by `rlang::check_dots_empty()`.
 - `alpha`: `NULL` (default) to use the level of `pvals`, or a positive scalar
   at most `pvals$alpha`.
+- `stopping_rule` `[Rev 2026-10-13]`: `NULL` (default) or a
+  `multigrain_stopping_rule_gsd` object from `stopping_rule_gsd()`.
 - `start_graph`: a list of starting graphs for the GA; each element has
   `hyp_weight` and `trans_matrix`. `NULL` weights and matrix trigger the
   default Bonferroni-Holm start.
@@ -442,7 +573,8 @@ documented in this file.
 Returns a `multigrain_graph_optimal` object with `hyp_weight`, `trans_matrix`,
 `constraints`, `trial_success`, `power` (the `calc_power_pvals_gsd()` output
 for the pruned graph), `solution`, `global_search`, `control`,
-`global_output`, `local_output` and `start_graph`.
+`global_output`, `local_output` and `start_graph`, and `[Rev 2026-10-13]`
+`stopping_rule` when one was supplied (the element is absent otherwise).
 
 ### How it works
 
@@ -450,6 +582,8 @@ for the pruned graph), `solution`, `global_search`, `control`,
    `check_graph_constraint(graph_constraint)` and
    `check_trial_success_gsd(trial_success)`. The last of these refuses a
    fixed-sample gain with a pointer to `trial_success_gsd()`.
+   `[Rev 2026-10-13]` `check_stopping_rule_gsd(stopping_rule, allow_null =
+   TRUE)` follows.
 
 2. The dots, `num_threads`, `control` and `global_search` are validated
    (`rlang::check_dots_empty()`, `rlang::check_number_whole(num_threads, min =
@@ -461,9 +595,16 @@ for the pruned graph), `solution`, `global_search`, `control`,
    `verbosity_levels`.
 
 4. `.gsd_check_alpha(alpha, pvals)` resolves the testing level.
+   `[Rev 2026-10-13]` `.gsd_check_graph_dims(graph_constraint_get_m(
+   graph_constraint), pvals, "{.arg graph_constraint}")` then checks the
+   constraint's number of hypotheses against the p-values.
 
 5. `.gsd_check_gain_dims(trial_success, pvals)` asserts that the gain and
    p-values agree on `m` and, when the gain has a non-`NULL` `K`, on `K`.
+   `[Rev 2026-10-13]` A stopping rule is then settled and tabulated once:
+   `stop_rule <- .gsd_stop_table(.gsd_check_stopping_rule_dims(stopping_rule,
+   pvals), pvals$m, pvals$K)`, or `NULL` without a rule. Every internal call
+   below (steps 8, 9 and 11) receives `stop_rule`.
 
 6. `.validate_start_graphs(start_graph, m = pvals$m)` checks the starting
    graphs (reused unchanged from the fixed-sample path).
@@ -489,13 +630,16 @@ for the pruned graph), `solution`, `global_search`, `control`,
 
 12. `calc_power_pvals_gsd()` evaluates the pruned graph on the full sample
     and reports the power summary, with the gain passed as the sole
-    `custom_power` entry.
+    `custom_power` entry and `[Rev 2026-10-13]` `stopping_rule` passed as the
+    object (so the public function settles and tabulates it a second time;
+    this happens once per optimisation).
 
 13. Hypothesis names from `graph_constraint_get_names(graph_constraint)` are
     applied to the weight vector and the transition matrix dimnames.
 
 14. `graph_optimal()` wraps everything into the returned
-    `multigrain_graph_optimal` object.
+    `multigrain_graph_optimal` object, adding `stopping_rule` when it is not
+    `NULL`.
 
 ### Where it differs from `graph_optimise()`
 
@@ -510,7 +654,8 @@ counterpart (the fixed path checks `trial_success$m != ncol(pvals)` inline);
 `m` as scalars rather than reading `dim(pvals)` from a matrix; (f) every
 optimiser driver, pruning function and power function is the `_gsd` variant;
 (g) `graph_optimise()` does not call `.gsd_check_alpha()` or
-`.gsd_check_gain_dims()`.
+`.gsd_check_gain_dims()`; (h) `[Rev 2026-10-13]` `graph_optimise()` has no
+`stopping_rule` and no `.gsd_check_graph_dims()`.
 
 
 ---
@@ -638,11 +783,12 @@ sequential twin of `.graph_optimise_ga()` in `R/optimisation.R`. Called by
 - `alpha`, `num_threads`: passed through.
 - `start_graph`: starting graphs for the GA's suggestions.
 - `verbose`: verbosity string.
+- `stop_rule` `[Rev 2026-10-13]`: the truth table, or `NULL`.
 
 Returns a list with `ga_hyp_weight`, `ga_trans_matrix`,
 `ga_trial_success` (scalar gain on the full sample, or `NULL`),
-`ga_subset_power` (the `calc_power_pvals_gsd()` result on the subsample, or
-`NULL`), `is_graph_valid` (logical) and `ga_output` (the `GA::ga` object).
+`ga_subset_power` (the `.calc_power_pvals_gsd_core()` result on the
+subsample, or `NULL`), `is_graph_valid` (logical) and `ga_output` (the `GA::ga` object).
 
 ### How it works
 
@@ -655,8 +801,8 @@ Returns a list with `ga_hyp_weight`, `ga_trans_matrix`,
 
 4. The objective closure is built: `create_obj_func_gsd()` receives
    `trial_success$m`, `trial_success$func`, the constraint templates, `alpha`,
-   `.gsd_kernel_matrix(pvals_sampled)` (the reshaped subsample), `pvals$K`
-   and `num_threads`. Note that `K` comes from the original `pvals` object,
+   `.gsd_kernel_matrix(pvals_sampled)` (the reshaped subsample), `pvals$K`,
+   `num_threads` and `stop_rule`. Note that `K` comes from the original `pvals` object,
    not from `pvals_sampled`; both have the same `K` since subsampling does not
    change the number of analyses.
 
@@ -675,21 +821,25 @@ Returns a list with `ga_hyp_weight`, `ga_trans_matrix`,
 7. `is_graph_valid(sol$hyp_weight, sol$trans_matrix)` checks the decoded
    graph.
 
-8. If valid, two re-evaluations happen on the full sample.
-   `calc_power_pvals_gsd(pvals_sampled, ...)` evaluates on the subsample with
-   the gain as `custom_power`. Then the kernel is called directly on the full
+8. If valid, two re-evaluations happen.
+   `.calc_power_pvals_gsd_core(pvals_sampled, ..., stop_rule = stop_rule)`
+   `[Rev 2026-10-13]` evaluates on the subsample with the gain as
+   `custom_power`; the graph was just checked, so the public function's
+   validation is skipped. Then the kernel is called directly on the full
    sample via `graph_shortcut_gsd(pvals = .gsd_kernel_matrix(pvals), alpha =
-   alpha, w = sol$hyp_weight, G = sol$trans_matrix, K = pvals$K)`, and
-   `trial_success$func(time_mat)` evaluates the gain on the full sample's
-   time matrix. The full-sample gain is stored as `ga_trial_success`.
+   alpha, w = sol$hyp_weight, G = sol$trans_matrix, K = pvals$K, stop_rule =
+   stop_rule)`, and `trial_success$func(res$time)` evaluates
+   the gain on the full sample. The full-sample gain is stored as
+   `ga_trial_success`.
 
 ### Where it differs from `.graph_optimise_ga()`
 
 Three differences. First, `.sample_pvals_gsd()` replaces the fixed-sample
 row-subsetting. Second, `create_obj_func_gsd()` replaces `create_obj_func()`.
-Third, the re-evaluation uses `graph_shortcut_gsd()` and evaluates
-`trial_success$func(time_mat)` instead of calling `graph_shortcut()` and
-passing the rejection matrix. The starting-value logic, the GA arguments,
+Third, the re-evaluation uses `.calc_power_pvals_gsd_core()` and
+`graph_shortcut_gsd()` and evaluates `trial_success$func(res$time)`
+instead of calling `graph_shortcut()` and passing the
+rejection matrix. The starting-value logic, the GA arguments,
 `param_to_solution()`, `is_graph_valid()` and the overall control flow are
 identical.
 
@@ -713,6 +863,7 @@ Called by `graph_optimise_gsd()`.
 - `x0`: the starting point, typically the GA's best individual clamped to
   [0, 1], or `NULL`.
 - `verbose`: verbosity string.
+- `stop_rule` `[Rev 2026-10-13]`: the truth table, or `NULL`.
 
 Returns a list with `local_hyp_weight`, `local_trans_matrix`,
 `local_trial_success`, `local_subset_power`, `is_graph_valid` and
@@ -726,7 +877,7 @@ Returns a list with `local_hyp_weight`, `local_trans_matrix`,
 2. `.sample_pvals_gsd(pvals, nsim)` draws the subsample for COBYLA.
 
 3. `create_obj_func_gsd()` builds the closure on the subsampled, reshaped
-   matrix.
+   matrix, with `stop_rule`.
 
 4. Because `nloptr` minimises by convention, the closure is wrapped:
    `nlopt_obj_func <- function(x) -obj_fun(x)`.
@@ -745,8 +896,9 @@ Returns a list with `local_hyp_weight`, `local_trans_matrix`,
 7. `is_graph_valid()` checks the decoded and repaired graph.
 
 8. If valid, re-evaluation proceeds identically to the GA driver: subsample
-   power via `calc_power_pvals_gsd(pvals_sampled, ...)`, then a direct kernel
-   call on the full sample followed by `trial_success$func(time_mat)`.
+   power via `.calc_power_pvals_gsd_core(pvals_sampled, ..., stop_rule =
+   stop_rule)`, then a direct kernel call on the full sample with `stop_rule`
+   followed by `trial_success$func(res$time)`.
 
 ### Where it differs from `.graph_optimise_local()`
 
@@ -766,9 +918,10 @@ Evaluates a graph on a `multigrain_pvals_gsd` object and reports per-hypothesis
 power, per-analysis power, the decision-time distribution, and any
 user-supplied custom power measures. It is the group sequential counterpart of
 `calc_power_pvals()`. Called by `graph_optimise_gsd()` (for the final pruned
-graph), by `.graph_optimise_ga_gsd()` and `.graph_optimise_local_gsd()` (for
-the re-evaluation on the subsample), by `.try_prune_gsd()` (during greedy
-pruning), and directly by the user.
+graph) and directly by the user. `[Rev 2026-10-13]` It is now the validating
+front of `.calc_power_pvals_gsd_core()` (next section), which the drivers and
+the pruning call directly with a prebuilt stopping table, so the table is
+built once per public call and a candidate graph is not re-validated.
 
 ### Inputs and output
 
@@ -780,6 +933,8 @@ pruning), and directly by the user.
 - `custom_power`: `NULL`, a single measure, or a list of measures. Three
   kinds are accepted: a `multigrain_trial_success_gsd`, a fixed-sample
   `multigrain_trial_success`, or a plain R function.
+- `stopping_rule` `[Rev 2026-10-13]`: `NULL` (default) or a
+  `multigrain_stopping_rule_gsd` object.
 - `sum_to_one_constraint`: logical, whether transition rows must sum to one.
 - `call`: error context.
 
@@ -798,7 +953,14 @@ Returns a list with:
   column (the proportion of simulations with decision time 0) followed by one
   column per analysis. Rows sum to one, and one minus the `"never"` column
   equals `local_power` up to floating-point rounding.
+- `stop_distribution` `[Rev 2026-10-13]`: a numeric vector of length K named
+  `"analysis 1"`, ..., the proportion of simulations whose stopping look is
+  each analysis; it sums to one.
+- `mean_stop_look` `[Rev 2026-10-13]`: the mean stopping look.
 - One entry per element of `custom_power`, named by the list name.
+
+Every field is computed from the stopped trials: a hypothesis not rejected by
+the time a trial stopped counts as never rejected in that trial.
 
 ### How it works
 
@@ -806,12 +968,48 @@ Returns a list with:
    `check_double(hyp_weight)` and `check_double_matrix(trans_matrix)` validate
    the graph. `rlang::check_dots_empty()` enforces no extra arguments.
 
-2. `.gsd_check_alpha(alpha, pvals)` resolves the level.
+2. `.gsd_check_alpha(alpha, pvals)` resolves the level, and
+   `check_logical(sum_to_one_constraint)` follows.
 
-3. `is_graph_valid(hyp_weight, trans_matrix, sum_to_one_constraint)` checks
+3. `[Rev 2026-10-13]` `.gsd_check_graph_dims()` is called three times, on
+   `length(hyp_weight)`, `nrow(trans_matrix)` and `ncol(trans_matrix)`, each
+   against `pvals$m`, before the graph is validated.
+
+4. `is_graph_valid(hyp_weight, trans_matrix, sum_to_one_constraint)` checks
    the graph; the function aborts if it is invalid.
 
-4. `.auto_name_custom_power_gsd(custom_power)` normalises `custom_power` to
+5. `[Rev 2026-10-13]` `check_stopping_rule_gsd(stopping_rule, allow_null =
+   TRUE)`; with a rule, `stop_rule <- .gsd_stop_table(
+   .gsd_check_stopping_rule_dims(stopping_rule, pvals), pvals$m, pvals$K)`,
+   otherwise `NULL`.
+
+6. Everything else is `.calc_power_pvals_gsd_core(pvals, hyp_weight,
+   trans_matrix, alpha, custom_power, stop_rule)`.
+
+
+---
+
+
+## `.calc_power_pvals_gsd_core()` -- the reporter after validation `[Rev 2026-10-13]`
+
+### Purpose
+
+The body of `calc_power_pvals_gsd()` after validation. It assumes a valid
+graph over `pvals$m` hypotheses, a resolved `alpha` and, when a stopping rule
+applies, its prebuilt table. Called by `calc_power_pvals_gsd()`, by the
+re-evaluation blocks of `.graph_optimise_ga_gsd()` and
+`.graph_optimise_local_gsd()`, and by `prune_hyp_weights_gsd()` and
+`.try_prune_gsd()`.
+
+### Inputs and output
+
+`pvals`, `hyp_weight`, `trans_matrix`, `alpha`, `custom_power` (not yet
+normalised), `stop_rule` (the table or `NULL`) and `call`. Returns the list
+documented under `calc_power_pvals_gsd()`.
+
+### How it works
+
+1. `.auto_name_custom_power_gsd(custom_power)` normalises `custom_power` to
    a named list. Then, for each element that passes `is_trial_success()` --
    which covers both GSD and fixed-sample compiled gains, since the GSD class
    inherits from the fixed-sample class -- `.gsd_check_gain_dims()` asserts
@@ -823,40 +1021,45 @@ Returns a list with:
    matrix, and the compiled function would read column index 2 (zero-based)
    past the end of each row, returning garbage without an abort.
 
-5. The kernel is called: `graph_shortcut_gsd(pvals =
+2. The kernel is called: `graph_shortcut_gsd(pvals =
    .gsd_kernel_matrix(pvals, call = call), alpha = alpha, w = hyp_weight, G =
-   trans_matrix, K = pvals$K)`. The serial kernel is always used here (no
-   parallel dispatch), because this is the reporting path, not the hot loop.
+   trans_matrix, K = pvals$K, stop_rule = stop_rule)`. The serial kernel is
+   always used here (no parallel dispatch), because this is the reporting
+   path, not the hot loop.
 
-6. A defensive assertion checks `max(res$time) > pvals$K`. This cannot
+3. A defensive assertion checks `max(res$time) > pvals$K`. This cannot
    happen with the kernel of design record section 4.3, but a decision time
    above K would be an out-of-bounds read in a gain that carries discount
    tables. If triggered, the function aborts.
 
-7. The fixed-sample metrics are computed from `res$rejected`:
+4. The fixed-sample metrics are computed from `res$rejected`:
    `colMeans(res$rejected)` for `local_power`, `sum(res$rejected) /
    nrow(res$rejected)` for `exp_rejections`, and the row-sum-based
    disjunctive and conjunctive powers.
 
-8. The group sequential metrics are computed from `res$time`:
+5. The group sequential metrics are computed from `res$time`:
    `.gsd_power_by_analysis()`, `.gsd_mean_decision_look()` and
-   `.gsd_time_distribution()`.
+   `.gsd_time_distribution()`; `[Rev 2026-10-13]` then
+   `.gsd_stop_distribution(res$stop_look, n_look = pvals$K)` and
+   `mean(res$stop_look)`.
 
-9. `.eval_custom_power_gsd(custom_power, res$rejected, res$time, call)` 
+6. `.eval_custom_power_gsd(custom_power, res$rejected, res$time, call)`
    evaluates each custom measure.
 
-10. All results are assembled by `c(list(...), .eval_custom_power_gsd(...))`.
+7. All results are assembled by `c(list(...), .eval_custom_power_gsd(...))`.
 
 ### Where it differs from `calc_power_pvals()`
 
 `calc_power_pvals()` calls `graph_shortcut()` (the fixed-sample kernel),
 returns only the four fixed-sample metrics, and evaluates custom power via
 `.eval_custom_power()` which passes only the rejection matrix.
-`calc_power_pvals_gsd()` calls `graph_shortcut_gsd()`, adds the five
+`calc_power_pvals_gsd()` calls `graph_shortcut_gsd()`, adds the
 group-sequential-specific outputs (`local_power_by_analysis`,
-`mean_decision_look`, `time_distribution`, and implicitly the custom measure
-dispatch), asserts `max(time) <= K`, and evaluates custom power via
-`.eval_custom_power_gsd()` which dispatches on class.
+`mean_decision_look`, `time_distribution`, `[Rev 2026-10-13]`
+`stop_distribution` and `mean_stop_look`), asserts `max(time) <= K`, and
+evaluates custom power via `.eval_custom_power_gsd()` which dispatches on
+class. It also takes a stopping rule, checks the graph's dimensions against
+the p-values, and is split into a validating front and a core.
 
 
 ---
@@ -952,6 +1155,31 @@ to floating-point rounding (both are computed as `mean()` of different boolean
 conditions on the same integer column), and the remaining columns partition
 the rejections across the K analyses. Rows sum to one because every simulation
 falls into exactly one category.
+
+
+---
+
+
+## `.gsd_stop_distribution()` -- proportions of stopping looks `[Rev 2026-10-13]`
+
+### Purpose
+
+Computes the proportion of simulated trials that stopped at each analysis.
+Called by `.calc_power_pvals_gsd_core()`.
+
+### Inputs and output
+
+- `stop_look`: the kernel's length-N integer vector, values in 1..K.
+- `n_look`: number of analyses (K).
+
+Returns a numeric vector of length K named `"analysis 1"`, ...,
+`"analysis K"`.
+
+### How it works
+
+`tabulate(stop_look, nbins = n_look) / length(stop_look)`, then the names.
+The vector sums to one. Without a rule the mass sits on analysis K except
+for trials that rejected every hypothesis at an earlier analysis.
 
 
 ---
@@ -1075,6 +1303,8 @@ It is the group sequential twin of `prune_graph()` in
   removal (default 1, meaning every non-zero entry is a candidate).
 - `power_constraint`: optional marginal-power thresholds.
 - `verbose`: verbosity string.
+- `stop_rule` `[Rev 2026-10-13]`: the truth table, or `NULL`; passed to both
+  stages.
 
 Returns a list with `hyp_weight` and `trans_matrix`.
 
@@ -1117,16 +1347,17 @@ are met. Called by `prune_graph_gsd()`.
 ### Inputs and output
 
 - `pvals`, `hyp_weight`, `trans_matrix`, `trial_success`, `fixed_w`,
-  `alpha`, `gamma`, `power_constraint`, `tolerance`: as described in
-  `prune_graph_gsd()`.
+  `alpha`, `gamma`, `power_constraint`, `tolerance`, `stop_rule`: as
+  described in `prune_graph_gsd()`.
 
 Returns a list with `hyp_weight` (pruned), `trans_matrix` (unchanged) and
 `power_best`.
 
 ### How it works
 
-1. `calc_power_pvals_gsd()` evaluates the current graph and extracts
-   `power_all$custom_power` as the baseline `power_best`.
+1. `.calc_power_pvals_gsd_core()` `[Rev 2026-10-13]` evaluates the current
+   graph (with `stop_rule`) and extracts `power_all$custom_power` as the
+   baseline `power_best`.
 
 2. `constrained_idx` is set to the indices of non-`NA` entries in
    `power_constraint`, or an empty integer vector if there are no marginal
@@ -1168,7 +1399,8 @@ Called by `prune_graph_gsd()`.
 ### Inputs and output
 
 - `pvals`, `hyp_weight`, `trans_matrix`, `trial_success`, `fixed_edge`,
-  `power_best`, `alpha`, `gamma`, `power_constraint`, `tolerance`: as above.
+  `power_best`, `alpha`, `gamma`, `power_constraint`, `tolerance`,
+  `stop_rule`: as above.
 
 Returns a list with `hyp_weight` (unchanged), `trans_matrix` (pruned) and
 `power_best`.
@@ -1220,14 +1452,17 @@ marginal constraints are satisfied. Called by `prune_hyp_weights_gsd()` and
 - `power_best`: the current best gain (scalar).
 - `constrained_idx`, `power_constraint`: marginal constraints.
 - `alpha`: the testing level (default 0.025).
+- `stop_rule` `[Rev 2026-10-13]`: the truth table, or `NULL`.
 
 Returns a list with `hyp_weight`, `trans_matrix`, `power_best` and `accepted`
 (logical).
 
 ### How it works
 
-1. `calc_power_pvals_gsd()` evaluates the candidate graph with the gain
-   passed as `custom_power = trial_success`.
+1. `.calc_power_pvals_gsd_core()` `[Rev 2026-10-13]` evaluates the candidate
+   graph with the gain passed as `custom_power = trial_success` and
+   `stop_rule`. The candidate is valid by construction, so the public
+   function's checks are not repeated.
 
 2. `.marginal_violated()` checks whether any constrained hypothesis's
    `local_power` falls below its threshold (reused unchanged).
@@ -1238,8 +1473,8 @@ Returns a list with `hyp_weight`, `trans_matrix`, `power_best` and `accepted`
 
 ### Where it differs from `.try_prune()`
 
-The only difference is `calc_power_pvals_gsd()` instead of
-`calc_power_pvals()`. The acceptance rule (`!violated && gain >= best`) and
+The only difference is `.calc_power_pvals_gsd_core()` instead of
+`calc_power_pvals()` (and the `stop_rule` argument). The acceptance rule (`!violated && gain >= best`) and
 the return structure are identical.
 
 
@@ -1314,3 +1549,33 @@ table built by arithmetic (for example a sequence computed with `cumprod()`)
 is not flagged for rounding noise. These are warnings, not errors: the
 package does not forbid non-standard value tables. The rest of
 `R/trial_success_gsd.R` is documented in the P3 call flow.
+
+
+---
+
+
+## The stopping rule and the group sequential fields in `R/graph_optimal.R` `[Rev 2026-10-13]`
+
+Phases Q2 (the `stopping_rule` field) and Q4 (the display) of the stopping
+work edit the shared result container (design record section 4.10, second
+exception; section 10 item 14):
+
+- `graph_optimal()` takes `stopping_rule = NULL`, checks it with
+  `check_stopping_rule_gsd(allow_null = TRUE)`, and adds it to the object
+  built by `new_graph_optimal()` only when it is not `NULL`, so fixed-sample
+  results and group sequential results without a rule are unchanged.
+- `print.multigrain_graph_optimal()` prints "Stopping rule:" and the rule's
+  conditions (through `.gsd_rule_cat_detail()` from `R/stopping_rule_gsd.R`)
+  after the trial success function.
+- `summary.multigrain_graph_optimal()` calls `summary()` on the rule after
+  the gain's summary.
+- `summarise_power_object()` prints, after the fixed-sample metrics and only
+  when the power list carries them, "Power by analysis"
+  (`local_power_by_analysis`), "Decision-time distribution"
+  (`time_distribution`), "Stopping-look distribution" (`stop_distribution`)
+  and "Mean stopping look" (`mean_stop_look`), each rounded to four places.
+  `mean_decision_look` is not printed. The `local_power` lookup uses
+  `power_object[["local_power"]]`: with `$`, a list that has
+  `local_power_by_analysis` but no `local_power` would partially match it.
+  A fixed-sample power list has none of the new fields and prints as before
+  (the `graph_optimal_example` snapshots are byte-identical).

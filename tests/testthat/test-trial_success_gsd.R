@@ -206,6 +206,24 @@ test_that("un-injected symbols error with the !! hint", {
     )
 })
 
+test_that("s is an ordinary symbol: un-injected alone, allowed as a table", {
+    expect_error(
+        trial_success_gsd(d(t1) + s, d = c(1, 0.75), verbose = "silent"),
+        "Symbol `s` in the trial success expression is not a rejection",
+        fixed = TRUE
+    )
+    expect_error(
+        trial_success_gsd(d(t1) + s, d = c(1, 0.75), verbose = "silent"),
+        "!!s",
+        fixed = TRUE
+    )
+    ts <- trial_success_gsd(s(t1), s = c(1, 0.75), verbose = "silent")
+    expect_named(ts$tables, "s")
+    expect_identical(ts$K, 2L)
+    tm <- gsd_time_grid()
+    expect_identical(ts$func(tm), mean_double(c(0, 1, 0.75)[tm[, 1] + 1]))
+})
+
 test_that("unsupported functions and operators error", {
     expect_error(
         trial_success_gsd(sqrt(t1), verbose = "silent"),

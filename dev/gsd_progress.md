@@ -606,3 +606,199 @@ Rtools g++ 14.3.0. In the P0 to P2 session the `.claude/agents/*.md` definitions
 registered as agent types, so each agent ran as a general-purpose Opus agent with the role text
 embedded in its delegation. In the P3 session (2026-09-17) `gsd-reviewer` and `gsd-documenter`
 were registered and ran as defined.
+
+## Stopping rules (2026-10-13)
+
+Branch `gsd-build-stopping`, from `gsd-build`. Efficacy stopping rules and the stopping-look
+gain symbol `s` (user-testing suggestions 1 and 2, `dev/review/gsd_user_testing/README.md`
+section 8; design record section 4.11). One implementation agent per phase; the orchestrator
+re-ran every gate from `devtools::clean_dll(); devtools::install(quick = TRUE)` with
+`NOT_CRAN=true` before committing. Phase order Q0, Q1, Q3, Q2, Q4, Q5. Counts below are
+0 fail, 0 warn, 0 skip unless noted.
+
+### Status
+
+| Phase | Commit | Gate (re-run before acceptance) | Review verdict |
+|---|---|---|---|
+| Prerequisite | (none) | `test-graph_shortcut_gsd.R` 64 on the freshly installed toolchain, before any code | n/a |
+| Q0 Kernel | `9ba7bfd` | `test-graph_shortcut_gsd.R` 135; `test-RcppExports.R` 65 (2 pre-existing gMCPLite skips); unchanged: `test-calc_power_gsd.R` 37, `test-objective_function_gsd.R` 18, `test-optimisation_gsd.R` 71 | orchestrator read the diff and re-ran the gate from a clean build; no separate review agent this session |
+| Q1 Rule object | `69fe6f4` | `test-stopping_rule_gsd.R` 107; unchanged: `test-trial_success_gsd.R` 133 | orchestrator read the diff and re-ran the gate from a clean build; no separate review agent this session |
+| Q3 Gain symbol `s` | `8d8f9d2` | `test-trial_success_gsd.R` 178; `test-trial_success.R` 117; consumers unchanged | orchestrator read the diff and re-ran the gate from a clean build; no separate review agent this session |
+| Q2 Consumers | `e5dd92f` | `test-check_gsd.R` 56, `test-calc_power_gsd.R` 65, `test-objective_function_gsd.R` 21, `test-post_optim_processing_gsd.R` 21, `test-optimisation_gsd.R` 79 (Figure 3b block ran), `test-gsd_guards.R` 11, `test-graph_optimal.R` 27, `test-calc_power.R` 53, `test-optimisation.R` 91, `test-stopping_rule_gsd.R` 107, `test-trial_success_gsd.R` 178, `test-graph_shortcut_gsd.R` 135, `test-RcppExports.R` 65 (2 skips); `dev/gsd_identity_check.R`: every component identical except `trial_success$func` | orchestrator read the diff and re-ran the gate from a clean build; no separate review agent this session |
+| Q4 Display | `f3b3ed7` | `test-graph_optimal.R` 33, `test-optimisation_gsd.R` 79, `test-optimisation.R` 91, `test-plot_graph_optimal.R` 44; existing `graph_optimal_example` snapshots byte-identical | orchestrator read the diff and re-ran the gate from a clean build; no separate review agent this session |
+| Q5 Documentation | last commit on the branch | `devtools::document()` clean, a second run a no-op; `pkgdown::check_pkgdown()` "No problems found" (run on a scratch copy with the `.qmd` articles renamed `.Rmd`: the `quarto` R package is not installed, see below); no code changed | orchestrator read the diff and re-ran the gate from a clean build; no separate review agent this session |
+
+### What was built
+
+- **Q0, kernel** (`src/graph_shortcut_gsd.cpp`, `R/RcppExports.R`, `src/RcppExports.cpp`,
+  `R/check_gsd.R`). `graph_shortcut_gsd()` and `graph_shortcut_gsd_parallel()` take a trailing
+  `Nullable<LogicalMatrix> stop_rule = R_NilValue`, validated by a shared `resolve_stop_rule()`
+  (`NULL` or zero columns: no rule; otherwise `2^m` rows, `K - 1` columns, and `m <= 30` so
+  `1 << m` cannot overflow), and return `stop_look` beside `rejected` and `time`. After the
+  cascade at an interim the trial stops if the table entry for the cumulative rejection
+  bitmask is `TRUE`; a trial that rejects every hypothesis stops at that look with or without a
+  rule; otherwise `stop_look` is K. `.gsd_stop_table(conditions, m, K)` in `R/check_gsd.R`
+  evaluates the conditions in R on every rejection set (row `mask + 1`, hypothesis i at bit
+  i - 1), aborts on a non-logical, non-scalar or `NA` result naming the interim and the set,
+  caps `m` at 16 (about 2.5 s to build at `m = 16`) and returns a `2^m` by 0 matrix at `K = 1`.
+  Tests: no-rule output identical to the committed kernel's saved output
+  (`tests/testthat/data/gsd_kernel_reference.rds`, 18 KB); K = 1 identity with
+  `graph_shortcut()`; with a rule, the time matrix identical to the decision-time edit of the
+  user-testing prototype and to `gsd_ref_test()`, a reference that really stops trials, on
+  every cell; parallel identical to serial. Verbatim copies of the user-testing reference are
+  in `tests/testthat/helper-gsd_stopping.R`.
+- **Q1, rule object** (`R/stopping_rule_gsd.R`, `man/stopping_rule_gsd.Rd`, `NAMESPACE`,
+  `tests/testthat/test-stopping_rule_gsd.R`, `tests/testthat/_snaps/stopping_rule_gsd.md`).
+  Exported `stopping_rule_gsd()`, `print()` and `summary()` methods; internal
+  `is_stopping_rule_gsd()`, `check_stopping_rule_gsd()`, `.gsd_check_stopping_rule_dims()` and
+  the capture, parsing and validation helpers (call flow:
+  `dev/callflows/stopping_rule_gsd.md`). Accepts an expression, a string, `list(...)`, a
+  literal `c("...")` of strings, or an injected list or character vector. `document()` also
+  repaired a missing brace in `man/trial_success.Rd` and moved `Config/roxygen2/version` in
+  `DESCRIPTION` from 8.1.0 to 8.1.1.
+- **Q3, gain symbol `s`** (`R/trial_success_gsd.R`, `man/trial_success_gsd.Rd`,
+  `tests/testthat/test-trial_success_gsd.R`, `tests/testthat/_snaps/trial_success_gsd.md`).
+  `s` in comparisons, arithmetic and `d(s)`; reserved as a table name; the compiled signature
+  is `double powerFunc(IntegerMatrix t, IntegerVector s = IntegerVector::create())` (Rcpp's
+  wrapper shows the default as `as.integer(c())`), with a length check on `s` only when the
+  gain uses it; `uses_s` on the object and in `print()`/`summary()`; new `.gsd_gain_ast()` so
+  `uses_s` is read from the tree that is translated. The signature line changed in every
+  `cpp_code` snapshot.
+- **Q2, consumers** (`R/optimisation_gsd.R`, `R/objective_function_gsd.R`,
+  `R/post_optim_processing_gsd.R`, `R/calc_power_gsd.R`, `R/check_gsd.R`, `R/graph_optimal.R`,
+  their `man/` pages and tests, new `tests/testthat/test-check_gsd.R`). `stopping_rule = NULL`
+  on `graph_optimise_gsd()` and `calc_power_pvals_gsd()`; the rule is settled and tabulated
+  once on the public path and the table passed to the closure, the drivers, the pruning and the
+  reporter; the gain is called with `(time, stop_look)` everywhere; a plain `custom_power`
+  function receives `(time_row, stop_look)`; new fields `stop_distribution` and
+  `mean_stop_look`; the result carries `stopping_rule` when supplied. `.gsd_check_graph_dims()`
+  checks the graph's `m` against the p-values in R first (review fix). The reporter is split
+  into the public `calc_power_pvals_gsd()` and the internal `.calc_power_pvals_gsd_core()`.
+  `test-check_gsd.R` tests every helper in `R/check_gsd.R` directly.
+- **Q4, display** (`R/graph_optimal.R`, `tests/testthat/test-graph_optimal.R`,
+  `tests/testthat/_snaps/graph_optimal.md`). `summarise_power_object()` prints power by
+  analysis, the decision-time distribution, the stopping-look distribution and the mean
+  stopping look when present; `print()` lists the rule's conditions and `summary()` summarises
+  it after the gain. Bug fixed: `power_object$local_power` partially matched
+  `local_power_by_analysis` on a list without `local_power`; now `[[`.
+- **Q5, documentation.** `R/stopping_rule_gsd.R` (one roxygen sentence on the 16-hypothesis
+  cap) and `man/stopping_rule_gsd.Rd`; `_pkgdown.yml` (a "Group sequential designs" reference
+  section; `trial_success_gsd` moved out of "Inputs"); `vignettes/articles/trial_success.qmd`
+  ("Stopping for efficacy", a pointer to `s` under "Decision times", and a warning callout on a
+  rule without a value for stopping); `NEWS.md` (two new-functionality bullets, one bug fix);
+  `dev/gsd_design_record.md` (new 4.11, amendments to 4.3, 4.6, 4.7 and 4.10, section 10 item
+  14); `dev/review/gsd_user_testing/README.md` (section 8 items 1 and 2 marked closed);
+  `dev/callflows/graph_optimise_gsd.md` and `dev/callflows/trial_success_gsd.md` (updated),
+  `dev/callflows/stopping_rule_gsd.md` (new); this entry.
+
+### Decisions applied (user decisions, 2026-10-13)
+
+- **A. `s` is a second argument of the compiled gain**, not an appended column of the time
+  matrix. The time matrix stays N by m, every reported field and every gain that does not use
+  `s` is unchanged, and no N by (m + 1) matrix is built per evaluation. Consequence: every
+  `cpp_code` snapshot changed (signature line), and every call site passes two arguments.
+- **B. A trial that rejects every hypothesis stops at that analysis, with or without a rule**;
+  otherwise S = K. Consequence: without a rule `stop_distribution` is not all on analysis K
+  and `d(s)` is not the constant `d(K)` in those trials (3.3% of trials in the article's
+  example).
+- **C. A plain `custom_power` function always receives `(time_row, stop_look)`.** A
+  one-argument function written for the P4 contract now errors; there is no arity sniffing.
+- **D. Toolchain installed in-session, no `air`.** Formatting by hand; see "Environment"
+  below.
+
+### Where the implementation diverged from the brief
+
+- Phase order Q0, Q1, Q3, Q2, Q4, Q5: Q3 (the gain signature) before Q2 (the consumers), so the
+  gain call sites were rewired once.
+- The reporter is split into a validating `calc_power_pvals_gsd()` and an internal
+  `.calc_power_pvals_gsd_core()`, so the stopping table is built once per public call;
+  pruning and the drivers no longer re-run `is_graph_valid()` through the public function.
+  `graph_optimise_gsd()` still calls the public function once for the final graph, so the
+  table is built twice per optimisation.
+- `.gsd_check_graph_dims()` uses an explicit `cli::qty()` per number so that `m = 1` reads
+  "hypothesis".
+- The Q2 tests needed shapes the brief did not give: test (c) uses
+  `trial_success(r1 + r2 + r3)` (its `m` must match the p-values) and test (d)
+  `d(s) + 0 * (r1 + r2 + r3)` (a gain must name at least one `r<i>` or `t<i>`).
+- Q0: the `r1 && (r2 || r3)` fixture never fires at look 1 (13 trials reject H1 there), so the
+  test also asserts at look 2 (475 trials). The kernel refuses `m > 30`. Reference outputs of
+  the committed kernel are saved in `tests/testthat/data/gsd_kernel_reference.rds` and the
+  user-testing reference is copied verbatim into `tests/testthat/helper-gsd_stopping.R`.
+- Q1: the `r<i>` pattern is `^r[1-9][0-9]*$` (`r0`, `r01` refused); `list(r1)` has
+  `n_interim = 1` and is not recycled; `TRUE` alone is refused; `K = 1` returns an empty
+  condition list.
+- Q3: a gain using only `s` is refused because at least one `r<i>`/`t<i>` is still required
+  (spec S4); `d(t1) + d(t2) + d(t3) + 0.1 * (s == 1)` is the supported shape.
+- Q5: a roxygen sentence on the 16-hypothesis cap was added to `stopping_rule_gsd()` (the cap
+  was enforced but not documented); a one-paragraph `[Rev 2026-10-13]` note was added to
+  record section 4.10 (a second exception to "no existing file is edited":
+  `R/graph_optimal.R`), besides the amendments the brief named.
+- No `air`: formatting by hand; `lintr` clean on every touched file apart from pre-existing
+  `backport_linter` warnings on `%||%`.
+
+### What was not verified
+
+No `R CMD check`; no `test_package()`; the vignette was not rendered (the new chunks are
+`eval: false`, and their printed output was produced by running the code with
+`devtools::load_all()` on this branch); the kernel's NA-as-TRUE path for a hand-built table has
+no test (unreachable through the public API, since `.gsd_stop_table()` never emits `NA`); only
+serial, 2- and 4-thread parallel closures were tested; `pkgdown::check_pkgdown()` could not
+run on the repository itself (it needs the `quarto` R package to read the `.qmd` articles)
+and was run on a copy with the articles renamed; `dev/gsd_identity_check.R` was last run after
+Q2, not after Q4.
+
+### What the brief did not anticipate
+
+1. An NA in a hand-built stopping table reads as `TRUE` in the kernel; `.gsd_stop_table()`
+   never emits one. Errors raised inside a condition are not wrapped.
+2. The `quarto` R package is needed for `pkgdown::check_pkgdown()` on this repository.
+3. `NEWS.md` has no entry for the group sequential family itself (the wording proposed in
+   record section 9 was never added), so the new bullets refer to functions the development
+   NEWS does not introduce. Left for the user; out of the Q5 brief.
+4. `mean_decision_look` is still not printed by `summary()` (record section 10 item 14).
+5. The bare-table-name error of `trial_success_gsd()` still says a table "must be applied to a
+   decision time, e.g. `d(t1)`" without mentioning `d(s)`; R code, not changed in Q5.
+6. `devtools::document()` must run under `LC_ALL=C.UTF-8`: under the POSIX locale it corrupts
+   `man/multigrain-package.Rd`.
+
+### Environment
+
+Ubuntu 24.04, R 4.3.3; packages installed from CRAN source this session (Posit Package Manager
+binaries were blocked by the proxy; `libuv1-dev` and `libtiff-dev` added with apt); roxygen2
+8.1.1; `cyclocomp` installed so `lintr` runs fully; `air` unavailable; pkgdown installed,
+`quarto` (R package) not installed.
+
+### Withdrawal of `s` (2026-10-13)
+
+**Decision (user, the same day).** The gain symbol `s` added in Q3 (`8d8f9d2`) is withdrawn:
+valuing the stop inside the gain was judged too complex. Everything else on the branch stays:
+the rule object, the kernel's `stop_look`, `stop_distribution`, `mean_stop_look`, the display
+and the graph-dimension check. Phase R1; design record 4.11 `[Rev 2026-10-13b]` and section 10
+item 15. Decisions A and C above are superseded.
+
+- The compiled gain is `double powerFunc(IntegerMatrix t)` again, called as `func(time)` by the
+  objective closure, both optimiser drivers and the reporter; no `uses_s`, no length check.
+- The grammar is that of 4.6: a bare `s` is an un-injected symbol (the generic error with the
+  `!!` hint) and a table may be named `s`. A plain `custom_power` function is called as
+  `f(time_row)`.
+- The stopping rule still refuses `s`, now through the generic unknown-symbol message.
+- `R/trial_success_gsd.R`, `man/trial_success_gsd.Rd`, `tests/testthat/test-trial_success_gsd.R`
+  (apart from one new test) and `tests/testthat/_snaps/trial_success_gsd.md` are as at
+  `69fe6f4`; `dev/callflows/trial_success_gsd.md` is as at `69fe6f4` except the comments of the
+  example C++, which now match the generated code.
+
+Files touched: `R/trial_success_gsd.R`, `R/calc_power_gsd.R`, `R/objective_function_gsd.R`,
+`R/optimisation_gsd.R`, `R/stopping_rule_gsd.R`; `man/trial_success_gsd.Rd`,
+`man/calc_power_pvals_gsd.Rd`, `man/stopping_rule_gsd.Rd`; `tests/testthat/test-trial_success_gsd.R`
+(the `s` tests removed; one new test that `s` is an un-injected symbol and a valid table name),
+`tests/testthat/_snaps/trial_success_gsd.md`, `tests/testthat/test-calc_power_gsd.R` (plain
+function back to one argument; the `d(s)` test replaced by a discounted gain checked by hand on
+the stopped and unstopped time matrices), `tests/testthat/test-objective_function_gsd.R`,
+`tests/testthat/test-optimisation_gsd.R`, `tests/testthat/test-post_optim_processing_gsd.R`,
+`tests/testthat/test-stopping_rule_gsd.R`; `NEWS.md`; `vignettes/articles/trial_success.qmd`
+(the `s` pointer and the `s` paragraph removed, the gain of the end-to-end example is
+`d(t1) + d(t2) + d(t3)`, the warning callout replaced by the note "A stopping rule changes which
+graph is optimal"); `dev/gsd_design_record.md`; `dev/callflows/trial_success_gsd.md`,
+`dev/callflows/graph_optimise_gsd.md`, `dev/callflows/stopping_rule_gsd.md`; this entry.
+
+Gate (orchestrator, clean build, NOT_CRAN=true): `test-trial_success_gsd.R` 138, `test-trial_success.R` 117, `test-calc_power_gsd.R` 65, `test-objective_function_gsd.R` 21, `test-post_optim_processing_gsd.R` 21, `test-optimisation_gsd.R` 79, `test-stopping_rule_gsd.R` 107, `test-check_gsd.R` 56, `test-graph_optimal.R` 33, `test-gsd_guards.R` 11, `test-graph_shortcut_gsd.R` 135, all 0 fail, 0 skip; `R/trial_success_gsd.R`, `man/trial_success_gsd.Rd` and the gain snapshots identical to `gsd-build`; `devtools::document()` a no-op afterwards. The prompt for the follow-on spending-function job is `dev/implement_hsd_opt.md`.

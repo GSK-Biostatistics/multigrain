@@ -817,10 +817,10 @@ double powerFunc(IntegerMatrix t) {
     double total = 0.0;
 
     for (int i = 0; i < n; i++) {
-        total += (0.4 * d_pfs_tab[t(i, 0)] + 0.6 * d_os_tab[t(i, 1)]);
+        total += (0.4 * d_pfs_tab[t(i, 0)] + 0.6 * d_os_tab[t(i, 1)]); // gain of simulated trial i from its decision times
     }
 
-    return total / n;
+    return total / n; // Return the mean
 }
 ```
 

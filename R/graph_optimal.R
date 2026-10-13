@@ -40,7 +40,8 @@ graph_optimal <- function(
     control = NULL,
     global_output = NULL,
     local_output = NULL,
-    start_graph = NULL
+    start_graph = NULL,
+    stopping_rule = NULL
 ) {
     check_double(hyp_weight)
     check_double_matrix(trans_matrix)
@@ -56,6 +57,7 @@ graph_optimal <- function(
     check_control(control, allow_null = TRUE)
     check_ga(global_output, allow_null = TRUE)
     check_nloptr(local_output, allow_null = TRUE)
+    check_stopping_rule_gsd(stopping_rule, allow_null = TRUE)
 
     # remove some elements from the GA and nloptr outputs as they bloat the
     # graph_optimal object
@@ -68,7 +70,7 @@ graph_optimal <- function(
     local_output$nloptr_environment <- NULL
     local_output$eval_f <- NULL
 
-    new_graph_optimal(
+    out <- new_graph_optimal(
         hyp_weight = hyp_weight,
         trans_matrix = trans_matrix,
         constraints = constraints,
@@ -81,6 +83,14 @@ graph_optimal <- function(
         local_output = local_output,
         start_graph = start_graph
     )
+
+    # a group sequential result records its stopping rule; without one (and
+    # for every fixed-sample result) the object is unchanged
+    if (!is.null(stopping_rule)) {
+        out$stopping_rule <- stopping_rule
+    }
+
+    out
 }
 
 
@@ -124,9 +134,10 @@ summarise_power_object <- function(power_object) {
         ":"
     )
 
-    if (!is.null(power_object$local_power)) {
+    # exact match: `$` would partially match `local_power_by_analysis`
+    if (!is.null(power_object[["local_power"]])) {
         cli::cat_line("Power for each hypothesis:")
-        print(round(power_object$local_power, 4))
+        print(round(power_object[["local_power"]], 4))
     }
 
     if (!is.null(power_object$exp_rejections)) {
@@ -147,6 +158,26 @@ summarise_power_object <- function(power_object) {
         cli::cat_line(
             "Probability of rejecting all hypotheses: ",
             round(power_object$conj_power, 4)
+        )
+    }
+
+    # group sequential fields; a fixed-sample power list has none of them
+    if (!is.null(power_object$local_power_by_analysis)) {
+        cli::cat_line("Power by analysis:")
+        print(round(power_object$local_power_by_analysis, 4))
+    }
+
+    if (!is.null(power_object$time_distribution)) {
+        cli::cat_line("Decision-time distribution:")
+        print(round(power_object$time_distribution, 4))
+    }
+
+    if (!is.null(power_object$stop_distribution)) {
+        cli::cat_line("Stopping-look distribution:")
+        print(round(power_object$stop_distribution, 4))
+        cli::cat_line(
+            "Mean stopping look: ",
+            round(power_object$mean_stop_look, 4)
         )
     }
 }
@@ -204,6 +235,11 @@ print.multigrain_graph_optimal <- function(x, ...) {
     cli::cat_line("\nTrial success function:")
     cli::cat_line(x$trial_success$objective)
 
+    if (!is.null(x$stopping_rule)) {
+        cli::cat_line("\nStopping rule:")
+        .gsd_rule_cat_detail(x$stopping_rule)
+    }
+
     if (!is.null(x$power) && !is.null(x$power$trial_success)) {
         cli::cat_line("\nValue of trial success measure:")
         cli::cat_line(format(round(x$power$trial_success, 4)))
@@ -234,6 +270,10 @@ summary.multigrain_graph_optimal <- function(object, ...) {
     print(round(object$trans_matrix, 4))
 
     summary(object$trial_success)
+
+    if (!is.null(object$stopping_rule)) {
+        summary(object$stopping_rule)
+    }
 
     summarise_power_object(object$power)
 
