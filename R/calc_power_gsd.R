@@ -29,9 +29,8 @@
 #'   - a fixed-sample `multigrain_trial_success` object from [trial_success()]
 #'     is evaluated on the logical matrix of rejections, so a rejection-only
 #'     gain reports the same number here as [calc_power_pvals()] would;
-#'   - a plain function is called once per simulated trial with two
-#'     arguments: that trial's integer vector of decision times and its
-#'     stopping look, and the results are averaged.
+#'   - a plain function is called once per simulated trial with that trial's
+#'     integer vector of decision times, and the results are averaged.
 #'
 #'   If the list has no names, the measures are reported as `"func1"`,
 #'   `"func2"`, and so on.
@@ -265,7 +264,6 @@ calc_power_pvals_gsd <- function(
             custom_power,
             res$rejected,
             res$time,
-            res$stop_look,
             call = call
         )
     )
@@ -381,28 +379,25 @@ calc_power_pvals_gsd <- function(
 
 # Evaluate each entry in a normalised custom_power list. The matrix an entry
 # receives depends on its class, never on inheritance: a group sequential gain
-# scores the decision times and the stopping looks, a fixed-sample gain the
-# rejection indicators, and a plain R function is called once per trial on its
-# row of decision times and its stopping look (design record, section 4.7
-# [Rev 2026-09-18]). A compiled gain that does not use `s` ignores the second
-# argument.
+# scores the decision times, a fixed-sample gain the rejection indicators, and
+# a plain R function is called once per trial on its row of decision times
+# (design record, section 4.7 [Rev 2026-09-18]).
 .eval_custom_power_gsd <- function(
     custom_power,
     rejected,
     time,
-    stop_look,
     call = rlang::caller_env()
 ) {
     lapply(custom_power, function(item) {
         if (is_trial_success_gsd(item)) {
-            item$func(time, stop_look)
+            item$func(time)
         } else if (is_trial_success(item)) {
             item$func(rejected)
         } else if (is.function(item)) {
             mean(
                 vapply(
                     seq_len(nrow(time)),
-                    \(i) item(time[i, ], stop_look[i]),
+                    \(i) item(time[i, ]),
                     FUN.VALUE = numeric(1L)
                 )
             )

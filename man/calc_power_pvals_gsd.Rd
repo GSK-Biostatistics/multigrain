@@ -45,9 +45,8 @@ times (simulations by hypotheses, \code{0} for never rejected);
 \item a fixed-sample \code{multigrain_trial_success} object from \code{\link[=trial_success]{trial_success()}}
 is evaluated on the logical matrix of rejections, so a rejection-only
 gain reports the same number here as \code{\link[=calc_power_pvals]{calc_power_pvals()}} would;
-\item a plain function is called once per simulated trial with two
-arguments: that trial's integer vector of decision times and its
-stopping look, and the results are averaged.
+\item a plain function is called once per simulated trial with that trial's
+integer vector of decision times, and the results are averaged.
 }
 
 If the list has no names, the measures are reported as \code{"func1"},

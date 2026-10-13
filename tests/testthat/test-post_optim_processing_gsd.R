@@ -208,7 +208,7 @@ test_that("prune_graph_gsd() with a stopping table never lowers the gain", {
         pp_pvals_gsd$K
     )
     gain <- trial_success_gsd(
-        d(t1) + d(t2) + d(t3) + 0.1 * (s == 1),
+        d(t1) + d(t2) + d(t3),
         d = c(1, 0.8),
         verbose = "silent"
     )

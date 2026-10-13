@@ -155,9 +155,8 @@ It dispatches on the node:
   validated recursively.
 - **Symbol**: `.gsd_rule_validate_symbol()`. A symbol matching
   `^r[1-9][0-9]*$` passes (so `r0` and `r01` do not). `t<i>` aborts with
-  "decision times are not available to a stopping rule"; `s` aborts with
-  "the stopping look is what the rule determines"; anything else aborts as an
-  un-injected variable with a `!!` hint.
+  "decision times are not available to a stopping rule"; anything else
+  (including `s`) aborts as an un-injected variable with a `!!` hint.
 - **Numeric or logical value**: must have length 1; a vector aborts with a
   hint to give one condition per interim in a `list()` instead.
 - **Anything else** aborts.

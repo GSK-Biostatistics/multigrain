@@ -19,8 +19,7 @@
 #'
 #' Every condition must refer to at least one `r<i>`. Decision times (`t1`,
 #' ...) and discount tables, which a group sequential gain can use (see
-#' [trial_success_gsd()]), are not available to a stopping rule, and nor is
-#' the stopping look, which is what the rule determines.
+#' [trial_success_gsd()]), are not available to a stopping rule.
 #'
 #' @param condition The stopping condition, or one condition per interim
 #'   analysis. To inject values from your R session, use rlang's injection
@@ -459,9 +458,8 @@ gsd_rule_arith_ops <- c("+", "-", "*", "/")
     invisible(NULL)
 }
 
-# A bare symbol must be `r<i>`. The decision times and the stopping look of
-# the gain grammar get their own messages; anything else is an un-injected
-# variable.
+# A bare symbol must be `r<i>`. The decision times of the gain grammar get
+# their own message; anything else is an un-injected variable.
 .gsd_rule_validate_symbol <- function(expr, call) {
     txt <- as.character(expr)
     if (grepl("^r[1-9][0-9]*$", txt)) {
@@ -472,17 +470,6 @@ gsd_rule_arith_ops <- c("+", "-", "*", "/")
             c(
                 "Symbol {.code {txt}} cannot be used in a stopping condition: \\
                 decision times are not available to a stopping rule.",
-                i = "A condition is evaluated at each interim analysis on the \\
-                rejection indicators {.code r1}, {.code r2}, ..."
-            ),
-            call = call
-        )
-    }
-    if (identical(txt, "s")) {
-        cli::cli_abort(
-            c(
-                "Symbol {.code s} cannot be used in a stopping condition: the \\
-                stopping look is what the rule determines.",
                 i = "A condition is evaluated at each interim analysis on the \\
                 rejection indicators {.code r1}, {.code r2}, ..."
             ),

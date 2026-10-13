@@ -8,8 +8,8 @@ trial_success_gsd(objective, ..., K = NULL, verbose = multigrain_verbosity())
 }
 \arguments{
 \item{objective}{An expression or string encoding the trial-success utility
-\eqn{\psi} over \verb{r1, r2, ...}, \verb{t1, t2, ...} and \code{s}. To inject values
-from your R session, use rlang's injection operator -
+\eqn{\psi} over \verb{r1, r2, ...} and \verb{t1, t2, ...}. To inject values from
+your R session, use rlang's injection operator -
 \code{\link[rlang:injection-operator]{!!}} - (see Examples). Use \verb{!!} only inside
 \code{objective}; it has a different meaning in ordinary arguments (see
 \strong{Common mistakes}).}
@@ -18,8 +18,7 @@ from your R session, use rlang's injection operator -
 value per analysis). Supply only the values for analyses 1 through \code{K};
 the value for "never rejected" (\code{ti = 0}) is always \code{0} and is supplied
 automatically — do not include it yourself (see \strong{Common mistakes}).
-Every table must be named; the names are used as functions in \code{objective}
-and must not be \code{s}, \code{r1}, ..., \code{t1}, ..., \code{and} or \code{or}.}
+Every table must be named; the names are used as functions in \code{objective}.}
 
 \item{K}{An optional whole number giving the number of analyses. When
 discount tables are supplied \code{K} is inferred from their common length and,
@@ -43,9 +42,7 @@ A \code{multigrain_trial_success_gsd} object (which also inherits from
 \itemize{
 \item \code{func}: compiled function that evaluates \eqn{\psi} row-wise on an
 integer matrix of decision times (simulations by hypotheses, \code{0} for
-never rejected) and returns the mean utility. Its optional second
-argument is the integer vector of stopping looks, one per row; it is
-required when \code{uses_s} is \code{TRUE} and ignored otherwise.
+never rejected) and returns the mean utility.
 \item \code{m}: number of hypotheses implied by the largest index among the
 \verb{r<i>} and \verb{t<i>} symbols.
 \item \code{K}: number of analyses, or \code{NULL} if unknown.
@@ -54,7 +51,6 @@ required when \code{uses_s} is \code{TRUE} and ignored otherwise.
 the exact values).
 \item \code{cpp_code}: the generated C++ source.
 \item \code{tables}: the discount tables, as supplied.
-\item \code{uses_s}: \code{TRUE} when \code{objective} refers to the stopping look \code{s}.
 }
 }
 \description{
@@ -73,15 +69,12 @@ rejected at any analysis;
 \item \verb{t1, t2, ..., tm}: the analysis ("look") at which \eqn{H_i} was rejected,
 an integer from \code{1} to \code{K}, or \code{0} if it was never rejected. \code{ri} is the
 same as \code{ti > 0};
-\item \code{s}: the analysis at which the trial stopped, an integer from \code{1} to \code{K};
-see \code{\link[=stopping_rule_gsd]{stopping_rule_gsd()}};
 \item arithmetic (\verb{+ - * /}), logical operators (\code{&&}, \code{||}, or the words \code{and},
 \code{or} in a string) between logical terms, comparisons (\verb{== != < <= > >=}),
 and parentheses;
 \item discount tables: any numeric vector of length \code{K} passed by name through
-\code{...} can be applied to a decision time as \code{name(ti)} or to the stopping
-look as \code{name(s)}. The result is the \code{ti}-th (or \code{s}-th) element of the
-table, or \code{0} when \code{ti} is \code{0} (never rejected).
+\code{...} can be applied to a decision time as \code{name(ti)}. The result is the
+\code{ti}-th element of the table, or \code{0} when \code{ti} is \code{0} (never rejected).
 \subsection{Decision times}{
 
 Each \code{ti} records the analysis at which the graphical procedure \emph{declared}
@@ -106,16 +99,7 @@ include a leading zero yourself. For a two-analysis design where a
 rejection at the final analysis is worth 75\% of one at the interim, write
 \code{d = c(1, 0.75)}. Element names on the vector are ignored; only the
 argument name matters (the name you use to apply it in \code{objective}, e.g.
-\code{d(t1)} or \code{d(s)}).
-}
-
-\subsection{The stopping look}{
-
-\code{s} is the analysis at which the trial stopped. Without a stopping rule
-every trial runs to analysis \code{K} unless it rejects every hypothesis
-earlier, so \code{s == K} and \code{d(s)} is the constant \code{d(K)} except in those
-trials. \code{s} only varies with a rule (see \code{\link[=stopping_rule_gsd]{stopping_rule_gsd()}}) passed to
-\code{\link[=graph_optimise_gsd]{graph_optimise_gsd()}} or \code{\link[=calc_power_pvals_gsd]{calc_power_pvals_gsd()}}.
+\code{d(t1)}).
 }
 
 \subsection{Operator precedence}{
@@ -208,12 +192,6 @@ trial_success_gsd((t1 == 1 && t2 == 1) + 0.5 * (t1 == 2 && t2 == 2))
 
 # Rejection indicators work as in trial_success()
 trial_success_gsd(r1 + r2, K = 2)
-
-# A bonus for stopping at the interim analysis
-trial_success_gsd(d(t1) + d(t2) + 0.1 * (s == 1), d = c(1, 0.8))
-
-# Every claim discounted by the look at which the trial stopped
-trial_success_gsd((r1 + r2) * d(s), d = c(1, 0.75))
 }
 }
 \seealso{

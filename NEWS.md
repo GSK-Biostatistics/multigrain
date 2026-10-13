@@ -13,12 +13,6 @@
   trials stopping at each analysis, and `mean_stop_look`. A trial that rejects
   every hypothesis stops at that analysis with or without a rule. Stopping only
   removes rejections, so error control is unaffected.
-* `trial_success_gsd()` gains the symbol `s`, the analysis at which the trial
-  stopped, for use in comparisons (`0.1 * (s == 1)`) and discount tables
-  (`d(s)`). Without a stopping rule `s` is `K` except in trials that rejected
-  every hypothesis earlier. A plain function in the `custom_power` argument of
-  `calc_power_pvals_gsd()` is now called with each trial's decision times and
-  its stopping look.
 
 ## Bug fixes
 

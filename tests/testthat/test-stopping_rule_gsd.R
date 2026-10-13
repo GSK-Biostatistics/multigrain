@@ -125,14 +125,15 @@ test_that("an injected list is read like list()", {
 
 # --- the grammar rejects ----------------------------------------------------
 
-test_that("decision times, the stopping look and tables are refused", {
+test_that("decision times, unknown symbols such as s and tables are refused", {
     expect_error(
         stopping_rule_gsd(r1 && t1 == 1),
         "decision times are not available to a stopping rule"
     )
     expect_error(
         stopping_rule_gsd(s == 1 && r1),
-        "the stopping look is what the rule determines"
+        "Symbol `s` in a stopping condition is not a rejection indicator",
+        fixed = TRUE
     )
     expect_error(
         stopping_rule_gsd(d(r1)),

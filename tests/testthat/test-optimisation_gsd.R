@@ -123,7 +123,7 @@ test_that("a result without a stopping rule has no stopping_rule element", {
 test_that("a stopping rule runs through the whole pipeline", {
     rule <- stopping_rule_gsd(r1 && (r2 || r3))
     gain <- trial_success_gsd(
-        d(t1) + d(t2) + d(t3) + 0.1 * (s == 1),
+        d(t1) + d(t2) + d(t3),
         d = c(1, 0.8),
         verbose = "silent"
     )

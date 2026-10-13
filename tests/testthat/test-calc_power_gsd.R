@@ -182,72 +182,79 @@ test_that("with a stopping rule every field is the stopped trials'", {
 test_that("every kind of custom measure sees the stopped trials", {
     stopped <- cp_time(cp_pvals_gsd, stop_rule = cp_table)
 
-    gain_s <- trial_success_gsd(
-        d(t1) + d(t2) + d(t3) + 0.1 * (s == 1),
+    gain <- trial_success_gsd(
+        d(t1) + d(t2) + d(t3),
         d = c(1, 0.8),
         verbose = "silent"
     )
     # a fixed-sample gain must be defined over all three hypotheses
     fixed_gain <- trial_success(r1 + r2 + r3, verbose = "silent")
-    early_stop <- function(x, s) as.numeric(s == 1L)
+    h2_final <- function(x) as.numeric(x[2L] == 2L)
 
     out <- calc_power_pvals_gsd(
         cp_pvals_gsd,
         cp_w,
         cp_g,
         custom_power = list(
-            gain_s = gain_s,
+            gain = gain,
             fixed = fixed_gain,
-            early_stop = early_stop
+            h2_final = h2_final
         ),
         stopping_rule = cp_rule
     )
 
     disc <- c(1, 0.8)
     tau <- stopped$time
-    per_trial <- rowSums(ifelse(tau > 0L, disc[pmax(tau, 1L)], 0)) +
-        0.1 * (stopped$stop_look == 1L)
-    expect_equal(out$gain_s, mean(per_trial), tolerance = 1e-12)
-    expect_identical(out$gain_s, gain_s$func(tau, stopped$stop_look))
+    per_trial <- rowSums(ifelse(tau > 0L, disc[pmax(tau, 1L)], 0))
+    expect_equal(out$gain, mean(per_trial), tolerance = 1e-12)
+    expect_identical(out$gain, gain$func(tau))
 
     expect_identical(out$fixed, fixed_gain$func(stopped$rejected))
 
-    expect_identical(
-        out$early_stop,
-        out$stop_distribution[["analysis 1"]]
-    )
+    expect_identical(out$h2_final, mean(as.numeric(tau[, 2L] == 2L)))
+    # not vacuous: the rule removes some final-analysis rejections of H2
+    expect_lt(out$h2_final, mean(cp_time(cp_pvals_gsd)$time[, 2L] == 2L))
 })
 
 
-test_that("d(s) is the discount of the stopping look", {
-    # `d(s)` alone refers to no hypothesis; the zero term fixes m = 3
-    gain_ds <- trial_success_gsd(
-        d(s) + 0 * (r1 + r2 + r3),
-        d = c(1, 0.75),
+test_that("a discounted gain is scored on the stopped decision times", {
+    d <- c(1, 0.75)
+    gain_d <- trial_success_gsd(
+        d(t1) + d(t2) + d(t3),
+        d = d,
         verbose = "silent"
     )
-    disc <- c(1, 0.75)
+    unstopped <- cp_time(cp_pvals_gsd)$time
+    stopped <- cp_time(cp_pvals_gsd, stop_rule = cp_table)$time
 
     no_rule <- calc_power_pvals_gsd(
         cp_pvals_gsd,
         cp_w,
         cp_g,
-        custom_power = list(gain = gain_ds)
+        custom_power = list(gain = gain_d)
     )
     ruled <- calc_power_pvals_gsd(
         cp_pvals_gsd,
         cp_w,
         cp_g,
-        custom_power = list(gain = gain_ds),
+        custom_power = list(gain = gain_d),
         stopping_rule = cp_rule
     )
 
-    # a mean against a weighted sum of proportions: equal to floating point
+    # not vacuous: the rule changes the decision times
+    expect_true(any(stopped != unstopped))
+
+    # a compiled running mean against an R mean: equal to floating point
     # nolint start: expect_identical_linter
-    expect_equal(no_rule$gain, sum(disc * no_rule$stop_distribution))
-    expect_equal(ruled$gain, sum(disc * ruled$stop_distribution))
+    expect_equal(
+        ruled$gain,
+        sum(c(0, d)[stopped + 1L]) / nrow(stopped)
+    )
+    expect_equal(
+        no_rule$gain,
+        sum(c(0, d)[unstopped + 1L]) / nrow(unstopped)
+    )
     # nolint end
-    expect_gt(ruled$gain, no_rule$gain)
 })
 
 
@@ -374,7 +381,7 @@ test_that("a GSD gain is scored on the decision times", {
         custom_power = list(gain = cp_gain)
     )
 
-    expect_identical(out$gain, cp_gain$func(res$time, res$stop_look))
+    expect_identical(out$gain, cp_gain$func(res$time))
 })
 
 
@@ -408,9 +415,9 @@ test_that("a fixed-sample gain is scored on the rejection indicators", {
 })
 
 
-test_that("a plain function receives the decision-time row and the look", {
+test_that("a plain function receives the decision-time row", {
     res <- cp_time(cp_pvals_gsd)
-    early <- function(x, s) as.numeric(x[1L] == 1L)
+    early <- function(x) as.numeric(x[1L] == 1L)
 
     out <- calc_power_pvals_gsd(
         cp_pvals_gsd,
@@ -436,18 +443,6 @@ test_that("a plain function receives the decision-time row and the look", {
             "time_distribution", "stop_distribution", "mean_stop_look",
             "func1"
         )
-    )
-
-    # a one-argument function is refused: every plain function receives the
-    # stopping look as its second argument
-    expect_error(
-        calc_power_pvals_gsd(
-            cp_pvals_gsd,
-            cp_w,
-            cp_g,
-            custom_power = list(old = function(x) x[1L])
-        ),
-        "unused argument"
     )
 })
 
