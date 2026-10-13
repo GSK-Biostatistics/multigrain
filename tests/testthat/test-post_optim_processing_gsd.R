@@ -197,3 +197,55 @@ test_that(".try_prune_gsd() reports acceptance on the gain", {
     expect_false(rejected$accepted)
     expect_identical(rejected$power_best, value + 1)
 })
+
+
+test_that("prune_graph_gsd() with a stopping table never lowers the gain", {
+    gc <- graph_constraint_free(3)
+    rule <- stopping_rule_gsd(r1 && (r2 || r3))
+    stop_rule <- .gsd_stop_table(
+        .gsd_check_stopping_rule_dims(rule, pp_pvals_gsd),
+        pp_pvals_gsd$m,
+        pp_pvals_gsd$K
+    )
+    gain <- trial_success_gsd(
+        d(t1) + d(t2) + d(t3) + 0.1 * (s == 1),
+        d = c(1, 0.8),
+        verbose = "silent"
+    )
+
+    value <- function(w, trans) {
+        .calc_power_pvals_gsd_core(
+            pp_pvals_gsd,
+            hyp_weight = w,
+            trans_matrix = trans,
+            alpha = pp_pvals_gsd$alpha,
+            custom_power = gain,
+            stop_rule = stop_rule
+        )$custom_power
+    }
+
+    for (i in seq_along(pp_graphs)) {
+        g <- pp_graphs[[i]]
+        before <- value(g$w, g$trans)
+
+        pruned <- prune_graph_gsd(
+            pvals = pp_pvals_gsd,
+            hyp_weight = g$w,
+            trans_matrix = g$trans,
+            trial_success = gain,
+            graph_constraint = gc,
+            alpha = pp_pvals_gsd$alpha,
+            gamma = 1,
+            verbose = "silent",
+            stop_rule = stop_rule
+        )
+
+        after <- value(pruned$hyp_weight, pruned$trans_matrix)
+
+        expect_gte(after, before)
+        expect_true(
+            is_graph_valid(pruned$hyp_weight, pruned$trans_matrix),
+            label = paste("graph", i)
+        )
+    }
+})

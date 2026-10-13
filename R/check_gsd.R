@@ -144,6 +144,32 @@ check_trial_success_gsd <- function(
     alpha
 }
 
+# The graph must be defined over the hypotheses of the p-values. Before this
+# check a mismatch surfaced only as the kernel's C++ error "G must be an m x m
+# matrix" (review finding), which names neither argument. `what` is a
+# preformatted string such as "{.arg graph_constraint}" or "{.arg hyp_weight}".
+.gsd_check_graph_dims <- function(
+    m_graph,
+    pvals,
+    what,
+    call = rlang::caller_env()
+) {
+    if (m_graph != pvals$m) {
+        cli::cli_abort(
+            c(
+                paste(what, "and {.arg pvals} disagree on the number of \\
+                hypotheses."),
+                x = paste(what, "describes {cli::qty(m_graph)}m = {m_graph} \\
+                hypothes{?is/es}, but the p-values hold \\
+                {cli::qty(pvals$m)}m = {pvals$m}.")
+            ),
+            call = call
+        )
+    }
+
+    invisible(NULL)
+}
+
 # The `dim<-` reshape of section 4.1: column (k - 1) * m + i is hypothesis i
 # at analysis k, which R's column-major layout gives without a rearrangement.
 # This is also the single `anyNA()` assertion of section 10 item 11: the

@@ -40,7 +40,8 @@ graph_optimal <- function(
     control = NULL,
     global_output = NULL,
     local_output = NULL,
-    start_graph = NULL
+    start_graph = NULL,
+    stopping_rule = NULL
 ) {
     check_double(hyp_weight)
     check_double_matrix(trans_matrix)
@@ -56,6 +57,7 @@ graph_optimal <- function(
     check_control(control, allow_null = TRUE)
     check_ga(global_output, allow_null = TRUE)
     check_nloptr(local_output, allow_null = TRUE)
+    check_stopping_rule_gsd(stopping_rule, allow_null = TRUE)
 
     # remove some elements from the GA and nloptr outputs as they bloat the
     # graph_optimal object
@@ -68,7 +70,7 @@ graph_optimal <- function(
     local_output$nloptr_environment <- NULL
     local_output$eval_f <- NULL
 
-    new_graph_optimal(
+    out <- new_graph_optimal(
         hyp_weight = hyp_weight,
         trans_matrix = trans_matrix,
         constraints = constraints,
@@ -81,6 +83,14 @@ graph_optimal <- function(
         local_output = local_output,
         start_graph = start_graph
     )
+
+    # a group sequential result records its stopping rule; without one (and
+    # for every fixed-sample result) the object is unchanged
+    if (!is.null(stopping_rule)) {
+        out$stopping_rule <- stopping_rule
+    }
+
+    out
 }
 
 
