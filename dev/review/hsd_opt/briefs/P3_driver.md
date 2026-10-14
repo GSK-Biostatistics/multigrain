@@ -20,6 +20,16 @@ commit.** Complete files, not diffs.
   gated on `multigrain_verbosity() != "silent"` — the one allowed edit to P1's file).
 - Profile COBYLA budget: same `local_opt` as the main pass (no profile-specific `maxeval`).
 
+
+## House rule: no `<<-` (user decision, 2026-10-14)
+
+Do not use `<<-` anywhere. Any state a closure must mutate (a working matrix, an archive,
+a counter, a cache) lives in one explicit environment created inside the factory body
+(`state <- new.env(parent = emptyenv()); state$x <- …`) and is updated with ordinary `<-`
+(`state$x[i] <- v`). d03 showed that assignment through an environment never copies a
+matrix, the same as `<<-`; a matrix must still be built inside the factory and never bound
+to a second name. Add a test that greps your new R files for `<<-` and expects none.
+
 ## Read first (~60 minutes; do not skip)
 
 1. `dev/hsd_opt_build_plan.md` §1 (rows 2, 4, 5, 6, 9, 10, 11 bind you), §4 "P3" in full.

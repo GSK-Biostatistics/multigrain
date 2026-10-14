@@ -4,6 +4,16 @@ Branch `gsd-build-spending`, repo `/home/user/multigrain-spending`. You implemen
 `dev/hsd_opt_build_plan.md`. P1–P4 are committed; no code changes in this phase except
 roxygen comments and the one P1 default noted below. **Report, do not commit.** Complete files.
 
+
+## House rule: no `<<-` (user decision, 2026-10-14)
+
+Do not use `<<-` anywhere. Any state a closure must mutate (a working matrix, an archive,
+a counter, a cache) lives in one explicit environment created inside the factory body
+(`state <- new.env(parent = emptyenv()); state$x <- …`) and is updated with ordinary `<-`
+(`state$x[i] <- v`). d03 showed that assignment through an environment never copies a
+matrix, the same as `<<-`; a matrix must still be built inside the factory and never bound
+to a second name. Add a test that greps your new R files for `<<-` and expects none.
+
 ## Read first (~60 minutes)
 
 1. `dev/hsd_opt_build_plan.md` §4 "P5" (the deliverable list is binding), §1 (every
