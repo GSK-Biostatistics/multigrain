@@ -1,11 +1,10 @@
-Building the boundary table of sec = -3.5 (3 of 21)
+Building the boundary table of sec = -3.25 (4 of 21)
 Building the boundary table of sec = -2.75 (6 of 21)
 Building the boundary table of sec = -1.75 (10 of 21)
 Building the boundary table of sec = -1 (13 of 21)
 Building the boundary table of sec = 0 (17 of 21)
-Building the boundary table of sec = 0.75 (20 of 21)
 Building the boundary table of sec = 1 (21 of 21)
-spec built in 19 s
+spec built in 18.7 s
 
 <multigrain_pvals_gsd_spec>
 10000 simulation(s), 3 hypothes(es), 2 analys(es); alpha = 0.025
@@ -23,7 +22,7 @@ Spending parameters:
 sec: bounds [-4, 1], step 0.25, 21 nodes, start -1.5
 Boundary tables built: 21
 
-optimiser: 40.4 s
+optimiser: 42.1 s
 
 <multigrain_graph_optimal>
 Optimal graph found (given user-defined constraints on graph and computational resources):
@@ -40,6 +39,13 @@ H3 0.4574 0.5426 0.0000
 
 Trial success function:
 r1 + r2 + r3
+
+Spending functions:
+  H1: gsDesign::sfLDOF
+  H2: sfHSD(param = -4)   [optimised: sec, bounds -4 to 1, step 0.25]
+  H3: sfHSD(param = -4)   [optimised: sec]
+Gain profile in sec (graph re-optimised at each value):
+  within 5e-4 of the maximum on [-4, -4]; fixed-graph plateau [-4, -4]
 
 Stopping rule:
 Every interim: r1
@@ -65,6 +71,31 @@ H3 0.4574 0.5426 0.0000
 Trial success function (group sequential):
 r1 + r2 + r3
 Analyses (K): not set
+
+Spending-parameter profile (sec):
+ value   gain gain_fixed_graph   diff     se n_eval
+ -4.00 2.3986           2.3986 0.0000 0.0000     87
+ -3.75 2.3961           2.3953 0.0025 0.0011     80
+ -3.50 2.3935           2.3929 0.0051 0.0010     91
+ -3.25 2.3909           2.3897 0.0077 0.0013    112
+ -3.00 2.3881           2.3861 0.0105 0.0017     84
+ -2.75 2.3852           2.3824 0.0134 0.0018     92
+ -2.50 2.3808           2.3772 0.0178 0.0021     79
+ -2.25 2.3764           2.3734 0.0222 0.0022    100
+ -2.00 2.3719           2.3690 0.0267 0.0030     99
+ -1.75 2.3664           2.3635 0.0322 0.0032     90
+ -1.50 2.3607           2.3563 0.0379 0.0033     84
+ -1.25 2.3539           2.3498 0.0447 0.0036     88
+ -1.00 2.3467           2.3429 0.0519 0.0039    102
+ -0.75 2.3389           2.3353 0.0597 0.0041     86
+ -0.50 2.3348           2.3285 0.0638 0.0038    109
+ -0.25 2.3241           2.3186 0.0745 0.0039     90
+  0.00 2.3180           2.3097 0.0806 0.0043    105
+  0.25 2.3063           2.3004 0.0923 0.0045    118
+  0.50 2.2968           2.2926 0.1018 0.0048     87
+  0.75 2.2866           2.2818 0.1120 0.0049     92
+  1.00 2.2746           2.2692 0.1240 0.0053     88
+GA visited 21 of 21 nodes
 
 Stopping rule (group sequential):
 Every interim: r1
