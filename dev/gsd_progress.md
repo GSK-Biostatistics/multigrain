@@ -802,3 +802,138 @@ graph is optimal"); `dev/gsd_design_record.md`; `dev/callflows/trial_success_gsd
 `dev/callflows/graph_optimise_gsd.md`, `dev/callflows/stopping_rule_gsd.md`; this entry.
 
 Gate (orchestrator, clean build, NOT_CRAN=true): `test-trial_success_gsd.R` 138, `test-trial_success.R` 117, `test-calc_power_gsd.R` 65, `test-objective_function_gsd.R` 21, `test-post_optim_processing_gsd.R` 21, `test-optimisation_gsd.R` 79, `test-stopping_rule_gsd.R` 107, `test-check_gsd.R` 56, `test-graph_optimal.R` 33, `test-gsd_guards.R` 11, `test-graph_shortcut_gsd.R` 135, all 0 fail, 0 skip; `R/trial_success_gsd.R`, `man/trial_success_gsd.Rd` and the gain snapshots identical to `gsd-build`; `devtools::document()` a no-op afterwards. The prompt for the follow-on spending-function job is `dev/implement_hsd_opt.md`.
+
+## Spending-parameter optimisation (2026-10-14)
+
+Branch `gsd-build-spending`, from `gsd-build` at `3e55fb5`. Joint optimisation of
+Hwang-Shih-DeCani spending parameters with the graph (`dev/implement_hsd_opt.md`; design
+`dev/hsd_opt_design_revised.md`; build plan `dev/hsd_opt_build_plan.md`; design record section
+4.12). Phase D ran straight through by user decision and fixed its defaults by the plan's own
+rules (`dev/review/hsd_opt_discovery.md`, "Decisions"); one Opus implementation agent per phase,
+reporting rather than committing; the orchestrator re-ran every gate from `devtools::clean_dll()`
+and a clean `devtools::install(quick = TRUE)` (or `load_all()` while a measurement battery held
+the installed library) with `NOT_CRAN=true` before committing. Phase order D-a, P1, D-b, P2, P3,
+P4, P5. Counts below are 0 fail, 0 warn, 0 skip.
+
+### Status
+
+| Phase | Commit | Gate (re-run before acceptance) | Review verdict |
+|---|---|---|---|
+| Prerequisite | `2cc39d2` | baselines `test-transform_pvalues_gsd.R` 66, `test-optimisation_gsd.R` 79, `test-graph_optimal.R` 33, `test-check_gsd.R` 56, `test-objective_function_gsd.R` 21; `dev/gsd_identity_check.R` green | n/a |
+| D-a (d01, d03) | `c3cf03f` | scripts run end to end; no node of `seq(-10, 2, 0.25)` on four schedules or either corner fails well-ordering or invertibility; column copy 8 % of a kernel call | orchestrator read the scripts and outputs |
+| P1 spec class | `2e37fce` | `test-transform_pvalues_gsd_opt.R` 168; baselines unchanged; lintr; `document()` no-op; identity green | orchestrator read the diff and re-ran the gate from a clean recompile |
+| D-b (d02, d04, d05, report) | `849ba71` | scripts run end to end; report complete; warm-start gate PASS on M0, M1 and the section 2 design; no pause condition | orchestrator read the Decisions and the gap tables |
+| P2 objective and bank | `6f9e7e9` | `test-objective_function_gsd_opt.R` 812 (node oracle `identical()` at every node and node pair, with a stopping rule, with two threads); baselines unchanged; no `<<-`; lintr; identity green | orchestrator read the closure, verified the copy claim with `tracemem()` itself, re-ran the gate |
+| P3 driver | `74f0425` | `test-optimisation_gsd_opt.R` 115; `test-optimisation_gsd.R` 79 (Figure 3b ran), `test-graph_optimal.R` 33 with its snapshot byte-identical, `test-choose_graph.R` 11, `test-optimisation.R` 91, the P1/P2 files; lintr; `document()` no-op; identity green; `gate_p3_benchmarks.R` at nsim 1e5: six checks PASS | orchestrator read the diff, fixed two things (below), re-ran the gate from a clean install |
+| P4 display | `db1ce3f` | `test-graph_optimal_hsd_opt.R` 20 in its own snapshot file; `test-graph_optimal.md` byte-identical; `test-plot_graph_optimal.R` 44; lintr; identity green | orchestrator read the diff and re-ran the gate |
+| P5 documentation | `996824b` | every GSD and fixed-sample test file at its count; lintr; `document()` no-op; `pkgdown::check_pkgdown()` "No problems found" on a scratch copy with the `.qmd` articles renamed `.Rmd`; identity green | orchestrator read NEWS, 4.12, the call flow and the lay note |
+| Verification | `594cddd`, `4680d9f` | `dev/review/hsd_opt/gsd_fixed_path_identity.R` PASS (untagged transform `identical()`; result identical in every component but the compiled pointer; no new field on a fixed-path result); `dev/review/hsd_opt/acceptance_m3.R` PASS (section 2 design, shared parameter, stopping rule, nsim 1e4: spec 19 s, optimiser 42 s, power `identical()` to `calc_power_pvals_gsd()` on the resolved object) | orchestrator |
+
+### What was built
+
+- **P1, spec class** (`R/transform_pvalues_gsd_opt.R`, touchpoints in `R/transform_pvalues_gsd.R`
+  and `R/check_gsd.R`, `tests/testthat/helper-hsd_opt.R`, `test-transform_pvalues_gsd_opt.R`
+  and its snapshot). `sf_hsd_opt()` (exported) tags a hypothesis; `transform_pvalues_gsd()`
+  hands a tagged `spending` to `.transform_pvalues_gsd_spec()`, which transforms fixed and
+  short-circuited hypotheses as today, builds one boundary table per (schedule, lattice node)
+  with the well-ordering check and a new invertibility check, and returns a
+  `multigrain_pvals_gsd_spec` (raw draws under `raw`, never `pvals`; no inheritance).
+  `resolve_pvalues_gsd()` (exported) inverts the stored tables into a `multigrain_pvals_gsd`
+  `identical()` to the fixed path's. `.gsd_spend()` aborts if a tagged function ever reaches
+  the fixed transform; `check_pvals_gsd()` refuses a spec with a hint.
+- **P2, objective and bank** (`R/objective_function_gsd_opt.R`, `test-objective_function_gsd_opt.R`
+  and its snapshot). `create_obj_func_gsd_opt()`: parameter genes appended to the graph genes,
+  clamped and mapped to nodes; the decode-and-penalise block of `create_obj_func_gsd()`
+  duplicated verbatim; per-node slices copied into the working kernel matrix only for groups
+  whose node moved; an archive of the best graph per node. All mutable state in one environment
+  created inside the factory; the matrix is updated by take-out/put-back.
+- **P3, driver** (`R/optimisation_gsd_opt.R`, dispatch in `R/optimisation_gsd.R`, `spending =`
+  on `graph_optimal()`, a progress bar in `.hsd_node_tables()`, `test-optimisation_gsd_opt.R`,
+  `dev/review/hsd_opt/gate_p3_benchmarks.R` with its output). Stage G: `GA::ga()` with the fixed
+  driver's options on the bank, popSize `min(max(40 (m + d), 200), 500)` unless user-set. Stage
+  L: `idx_local` drawn once and pinned; COBYLA on the graph at the GA's node; a warm-started
+  profile along each axis from three candidate starts, with the paired batch-means difference
+  and standard error; rounds for d >= 2; stale axes recomputed once against the final optimum.
+  `choose_graph()`, `prune_graph_gsd()` and `calc_power_pvals_gsd()` unchanged on the resolved
+  object.
+- **P4, display** (`R/graph_optimal.R` two guarded calls, display helpers appended to
+  `R/optimisation_gsd_opt.R`, `test-graph_optimal_hsd_opt.R` and its own snapshot file).
+- **P5, documentation** (roxygen in four `R/` files and the regenerated `man/` pages,
+  `_pkgdown.yml`, `NEWS.md`, `vignettes/articles/trial_success.qmd` "Optimising the spending
+  parameter", `dev/gsd_design_record.md` 4.12 / 4.10 / 4.5 / section 10 item 16,
+  `dev/callflows/graph_optimise_gsd_opt.md` new and `graph_optimise_gsd.md` amended,
+  `dev/hsd_opt_explained.md`, `dev/review/hsd_opt/article_example.R` with its output).
+- **Phase D** (`dev/review/hsd_opt/d01`-`d05`, `d_helpers.R`, `dev/review/hsd_opt_discovery.md`):
+  table cost 0.71-0.88 ms per `gsBound1()` call at K = 2; eager tables 16-19 s per default
+  spec; copy 8 % of a kernel call; warm-start gaps 2.1e-5 / 2.3e-5 / 3.7e-4; the parameter
+  gene costs 0.90-0.98 of the generations; lattice loss 2.1e-5 at step 0.25; E_C 23-128.
+
+### Decisions applied (user decisions, 2026-10-14)
+
+- **A. Phase D runs straight through**, resolving its defaults by the plan's rules: step 0.25;
+  full 21-node profile; popSize constant 40; Stage L as designed; a verbosity-gated progress
+  indicator on table building; the same `local_opt` at profile nodes. Consequence: no pause
+  between discovery and P1-P5; the numbers are in the discovery report and record 4.12.
+- **B. Implementers on Opus, one per phase, reporting not committing**; the orchestrator gates
+  and commits. Consequence: every phase has a brief under `dev/review/hsd_opt/briefs/`.
+- **C. No `<<-` anywhere.** Mutable closure state lives in one explicit environment created
+  inside the factory and is updated with ordinary `<-`. Consequence: P2 measured that
+  `state$mat[, cols] <- v` inside a function copies the matrix (the d03 probe was at top
+  level), so the matrix is updated by take-out/put-back; a test greps every `_opt` file for
+  `<<-`.
+
+### Where the implementation diverged from the design
+
+The eleven reconciliations of `dev/hsd_opt_build_plan.md` section 1 (the two-argument wrapper
+per node and the invertibility check; genes appended and the decode block duplicated; `raw` not
+`pvals`; dispatch before `check_pvals_gsd()`; popSize adjusted in the driver, not in
+`control_prepare_dims()`; `idx_local` pinned and step 1 as `.hsd_refine_node()`; labels;
+display insertion points; warm starts never from `.build_start_matrix()[1, ]`; `spending =` on
+`graph_optimal()`; `choose_graph()` unchanged), plus: no `allow_opt` flag (an internal abort in
+`.gsd_spend()` instead); `spending_recycled` passed from `transform_pvalues_gsd()`; a progress
+bar after two seconds instead of a progress step (a step at default verbosity leaked into
+snapshots); an axis whose own sweep improved the optimum is recomputed once against the final
+optimum with no refinement at the optimum's own node, so S, the profile and the reported gain
+agree exactly at theta* (the orchestrator's fix after P4 found a 5e-4 gap on the fixture);
+`spending_step` and `spending_group` attached beyond the design's seven fields (the
+orchestrator's fix so the display need not infer the hypothesis-to-parameter map).
+
+### What was not verified
+
+- The article does not render (the `quarto` R package and binary are absent); its output is
+  pasted from `dev/review/hsd_opt/article_example.R`.
+- `num_threads >= 2` on the new path is exercised by the P2 oracle, the acceptance run and the
+  benchmarks, not by the P3 tests. `density = 2` (every second node) is kept in the code but
+  not exposed or tested. The bank memory guard is exercised with synthetic byte counts only.
+- d >= 3 and tagged designs with more than two active hypotheses were not run.
+- The benchmark's section 2 run took 8.0 min against the design's 3.5-6.5 min projection
+  (within the 2x pause threshold); the article's M1 run took 77 s plus 20 s for the spec.
+
+### What the brief did not anticipate
+
+1. The "fewer than two distinct positive boundaries" abort lives in `.gsd_invert()`, not in
+   the table builder, so the spec builder needs its own invertibility check.
+2. A direct assignment through an environment copies a matrix inside a function; only the
+   take-out/put-back form (or `<<-`, now forbidden) does not.
+3. The popSize rule `40 (m + d)` is inert on every benchmark design (m + d <= 5 gives 200);
+   it bites first at m = 4, d = 2 (240), which the tests assert.
+4. The fixed local driver re-subsamples internally, so Stage L cannot call it on pinned rows;
+   the oracle compares against a by-hand `nloptr` call and against the driver under the same
+   seed.
+5. Optimiser noise on the section 2 design is about 4e-4, close to the 5e-4 plateau tolerance;
+   and the default `bounds = c(-4, 1)` put that design's optimum on the lower bound (the gain
+   is still rising below -4). `print()` does not warn when the optimum sits on a bound.
+6. The installed library went stale between phases while agents used `load_all()`: the first
+   acceptance run showed no display block until the tree was reinstalled. The final gate
+   reinstalls before every check.
+7. The user-testing 7.4 script uses nsim 2e5; Phase D used 1e5 and re-derived the M0/M1
+   references on its own draws. The 7.5 effect reproduces qualitatively (gamma moves from -4
+   to -0.25, gain 0.6802 to 0.6930; with H2 fixed: sfLDOF 0.6709, sfLDPocock 0.6905 on the
+   article's draws).
+
+### Environment
+
+R 4.3.3, gsDesign 3.11.0, GA 3.2.5, nloptr 2.2.1, testthat 3.3.2, roxygen2 8.1.1, lintr 3.4.0,
+pkgdown 2.0.7; no `quarto`, no `air`; 4 cores, 15 GB. `document()` under `LC_ALL=C.UTF-8`.
+The session's worker restarted twice before the build began; every phase was committed as soon
+as its gate passed and every brief and report lives on the branch.
