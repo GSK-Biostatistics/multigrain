@@ -32,6 +32,7 @@ articles:
   contents:
   - articles/graph_constraint
   - articles/trial_success
+  - articles/gsd-joint-spending
 
 reference:
   - title: Inputs
