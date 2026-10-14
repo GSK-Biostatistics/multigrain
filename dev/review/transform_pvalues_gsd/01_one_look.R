@@ -38,14 +38,16 @@ cat("difference       :", boundary - a, "\n\n")
 # Build a 1-look array, transform it, and compare to the raw values.
 
 set.seed(1)
-raw <- array(runif(6), dim = c(3, 2, 1))          # nsim = 3, m = 2, K = 1
+raw <- array(runif(6), dim = c(3, 2, 1)) # nsim = 3, m = 2, K = 1
 attr(raw, "info_frac") <- matrix(1, 2, 1)
 
 tr <- transform_pvalues_gsd(raw, spending = sfLDOF)
 
-cat("raw p-values:\n"); print(raw[, , 1])
-cat("repeated p-values:\n"); print(tr$pvals[, , 1])
-cat("identical?", identical(raw[, , 1], tr$pvals[, , 1]), "\n")
+cat("raw p-values:\n")
+print(raw[,, 1])
+cat("repeated p-values:\n")
+print(tr$pvals[,, 1])
+cat("identical?", identical(raw[,, 1], tr$pvals[,, 1]), "\n")
 cat("table built for H1?", !is.null(tr$tables[[1]]$bounds), "\n\n")
 
 # --- 3. The same short-circuit fires mid-array -----------------------------
@@ -54,13 +56,14 @@ cat("table built for H1?", !is.null(tr$tables[[1]]$bounds), "\n\n")
 # single matured look. Its look-1 repeated p-value is 1 (no data); its look-2
 # value is the raw value; and a table is still not built.
 
-raw2 <- array(runif(4), dim = c(2, 1, 2))          # nsim = 2, m = 1, K = 2
-info <- matrix(c(NA, 1), nrow = 1)                 # 1 hypothesis x 2 looks: no data
-                                                   # at look 1, all of it at look 2
+raw2 <- array(runif(4), dim = c(2, 1, 2)) # nsim = 2, m = 1, K = 2
+info <- matrix(c(NA, 1), nrow = 1) # 1 hypothesis x 2 looks: no data
+# at look 1, all of it at look 2
 tr2 <- transform_pvalues_gsd(raw2, info_frac = info, spending = sfLDOF)
 
 # each printed pair below is (simulation 1, simulation 2) for the one hypothesis
-cat("info_frac:\n"); print(info)
+cat("info_frac:\n")
+print(info)
 cat("raw look 2      :", raw2[, 1, 2], "\n")
 cat("repeated look 1 :", tr2$pvals[, 1, 1], "\n")
 cat("repeated look 2 :", tr2$pvals[, 1, 2], "\n")
@@ -69,7 +72,7 @@ cat("table built?", !is.null(tr2$tables[[1]]$bounds), "\n")
 stopifnot(
     !identical(boundary, a),
     abs(boundary - a) < 1e-15,
-    identical(raw[, , 1], tr$pvals[, , 1]),
+    identical(raw[,, 1], tr$pvals[,, 1]),
     is.null(tr$tables[[1]]$bounds),
     all(tr2$pvals[, 1, 1] == 1),
     identical(tr2$pvals[, 1, 2], raw2[, 1, 2])

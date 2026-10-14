@@ -30,7 +30,11 @@ per hypothesis). A spending function takes a level and a vector of
 information fractions and returns the cumulative level spent, either as a
 plain numeric vector or as an object with a \code{spend} element (as the
 \code{gsDesign} spending functions do). It must spend the whole level by full
-information.}
+information. Any entry may instead be \code{\link[=sf_hsd_opt]{sf_hsd_opt()}}, which tags a
+hypothesis whose Hwang-Shih-DeCani parameter is to be optimised by
+\code{\link[=graph_optimise_gsd]{graph_optimise_gsd()}}; a single \code{sf_hsd_opt()} passed on its own is
+recycled and is one parameter shared by every hypothesis. With any tagged
+entry the transform returns a spending spec instead (see Value).}
 
 \item{alpha}{A number giving the overall one-sided significance level.
 Default is \code{0.025}.}
@@ -54,6 +58,18 @@ A \code{multigrain_pvals_gsd} object made up of:
 the analysis at which it matured, and the grid of allocated levels with
 the nominal boundaries computed at each of them.
 }
+
+When any entry of \code{spending} is \code{\link[=sf_hsd_opt]{sf_hsd_opt()}}, a
+\code{multigrain_pvals_gsd_spec} object instead. It holds the raw p-values
+(as \code{raw}, not \code{pvals}), the hypotheses with fixed spending already
+transformed, the lattice of each spending parameter and one boundary
+table per lattice node, each checked for well ordering when the spec is
+built. It is not a \code{multigrain_pvals_gsd} object and cannot be passed to
+\code{\link[=calc_power_pvals_gsd]{calc_power_pvals_gsd()}}: pass it to \code{\link[=graph_optimise_gsd]{graph_optimise_gsd()}} to optimise
+the parameters with the graph, or to \code{\link[=resolve_pvalues_gsd]{resolve_pvalues_gsd()}} to obtain
+the transformed p-values at chosen values. If every tagged hypothesis has
+a single analysis at full information, where spending has no effect, an
+ordinary \code{multigrain_pvals_gsd} object is returned with a message.
 }
 \description{
 \code{transform_pvalues_gsd()} converts an array of nominal (raw) p-values from a

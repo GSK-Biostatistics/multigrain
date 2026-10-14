@@ -119,16 +119,33 @@ run_driver <- function(lib, tag) {
 # step fails: `on.exit()` at the top level of a script never fires.
 build_and_run <- function() {
     cat("Creating a worktree of", main_ref, "...\n")
-    system2("git", shQuote(c(
-        "-C", repo, "worktree", "add", "--detach", worktree, main_ref
-    )))
+    system2(
+        "git",
+        shQuote(c(
+            "-C",
+            repo,
+            "worktree",
+            "add",
+            "--detach",
+            worktree,
+            main_ref
+        ))
+    )
 
     on.exit(
         {
             cat("Removing the worktree ...\n")
-            system2("git", shQuote(c(
-                "-C", repo, "worktree", "remove", "--force", worktree
-            )))
+            system2(
+                "git",
+                shQuote(c(
+                    "-C",
+                    repo,
+                    "worktree",
+                    "remove",
+                    "--force",
+                    worktree
+                ))
+            )
         },
         add = TRUE
     )
@@ -168,8 +185,11 @@ if (!same_object) {
             logical(1L)
         )
     ]
-    cat("Top-level components that are not identical():",
-        toString(differing), "\n")
+    cat(
+        "Top-level components that are not identical():",
+        toString(differing),
+        "\n"
+    )
 
     report <- function(label, x, y) {
         cat(sprintf(

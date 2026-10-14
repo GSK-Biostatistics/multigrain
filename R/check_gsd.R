@@ -21,6 +21,19 @@ check_pvals_gsd <- function(
         if (allow_null && is.null(pvals)) {
             return(invisible(NULL))
         }
+
+        if (inherits(pvals, "multigrain_pvals_gsd_spec")) {
+            cli::cli_abort(
+                c(
+                    "{.arg {arg}} is a spending spec, not a transformed \\
+                    p-value object.",
+                    i = "Pass it to {.fn graph_optimise_gsd} to optimise the \\
+                    spending parameters, or call {.fn resolve_pvalues_gsd} \\
+                    with chosen values."
+                ),
+                call = call
+            )
+        }
     }
 
     rlang::stop_input_type(
@@ -157,11 +170,17 @@ check_trial_success_gsd <- function(
     if (m_graph != pvals$m) {
         cli::cli_abort(
             c(
-                paste(what, "and {.arg pvals} disagree on the number of \\
-                hypotheses."),
-                x = paste(what, "describes {cli::qty(m_graph)}m = {m_graph} \\
+                paste(
+                    what,
+                    "and {.arg pvals} disagree on the number of \\
+                hypotheses."
+                ),
+                x = paste(
+                    what,
+                    "describes {cli::qty(m_graph)}m = {m_graph} \\
                 hypothes{?is/es}, but the p-values hold \\
-                {cli::qty(pvals$m)}m = {pvals$m}.")
+                {cli::qty(pvals$m)}m = {pvals$m}."
+                )
             ),
             call = call
         )

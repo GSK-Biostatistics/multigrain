@@ -1,0 +1,12 @@
+14:41:03 [counts] transform sfLDOF: 2.33 s
+14:47:02 [counts] seed 1, global_search = TRUE: staged 185.7 s, one-call 172.7 s, identical hyp_weight TRUE, gain 2.448070
+14:50:50 [counts] seed 2, global_search = TRUE: staged 227.8 s (one-call check skipped for wall time)
+14:50:51 [counts] seed 1, global_search = FALSE: staged 0.8 s, one-call 0.9 s, identical hyp_weight TRUE, gain 2.448120
+14:50:51 [counts] E_C start graph: d02 S2 profile optimum at gamma -2
+14:50:55 [counts] E_C node -2.00: 95 evaluations, 0.7 s
+14:50:58 [counts] E_C node -2.25: 107 evaluations, 0.6 s
+14:51:01 [counts] E_C node -1.75: 124 evaluations, 0.7 s
+14:51:05 [counts] E_C node -3.00: 103 evaluations, 0.7 s
+14:51:09 [counts] E_C node -1.00: 104 evaluations, 0.6 s
+14:51:13 [counts] E_C node -4.00: 93 evaluations, 0.4 s
+14:51:16 [counts] E_C node 1.00: 127 evaluations, 0.8 s

@@ -6,7 +6,6 @@
 # once by the caller).
 # `.redistribute_mass()` and `.marginal_violated()` are reused unchanged.
 
-
 #' Evaluate a candidate group sequential graph and accept if it improves on
 #' the current best
 #'

@@ -48,8 +48,12 @@ test_that("supplement dual-primary gain with same-look bonus matches R", {
     dd <- c(0, 1, delta)
 
     ts <- trial_success_gsd(
-        !!nu1 * d(t1) + !!nu2 * d(t2) +
-            !!nu12 * ((t1 == 1 && t2 == 1) + !!delta12 * (t1 == 2 && t2 == 2)),
+        !!nu1 *
+            d(t1) +
+            !!nu2 *
+                d(t2) +
+                !!nu12 *
+                    ((t1 == 1 && t2 == 1) + !!delta12 * (t1 == 2 && t2 == 2)),
         d = c(1, delta),
         verbose = "silent"
     )
@@ -57,7 +61,9 @@ test_that("supplement dual-primary gain with same-look bonus matches R", {
     t1 <- tm[, 1]
     t2 <- tm[, 2]
     expected <- mean_double(
-        nu1 * dd[t1 + 1] + nu2 * dd[t2 + 1] +
+        nu1 *
+            dd[t1 + 1] +
+            nu2 * dd[t2 + 1] +
             nu12 * ((t1 == 1 & t2 == 1) + delta12 * (t1 == 2 & t2 == 2))
     )
     expect_identical(ts$func(tm), expected)
@@ -92,7 +98,8 @@ test_that("supplement PFS and OS gain matches R", {
     b3 <- 0.2
 
     ts <- trial_success_gsd(
-        (t2 == 1) * (!!a1 + !!b1 * (t1 == 1)) +
+        (t2 == 1) *
+            (!!a1 + !!b1 * (t1 == 1)) +
             (t2 == 2) * (!!a2 + !!b2 * (t1 == 1) + !!c2 * (t1 == 2)) +
             (t2 == 0) * (t1 == 1) * !!b3,
         K = 2,
@@ -103,7 +110,8 @@ test_that("supplement PFS and OS gain matches R", {
     t1 <- tm[, 1]
     t2 <- tm[, 2]
     expected <- mean_double(
-        (t2 == 1) * (a1 + b1 * (t1 == 1)) +
+        (t2 == 1) *
+            (a1 + b1 * (t1 == 1)) +
             (t2 == 2) * (a2 + b2 * (t1 == 1) + c2 * (t1 == 2)) +
             (t2 == 0) * (t1 == 1) * b3
     )
@@ -581,7 +589,9 @@ test_that("a leading zero gets the shifted-by-one hint", {
         trial_success_gsd(d(t1), d = c(0, 1, 0.75), verbose = "silent"),
         warning = function(cnd) conditionMessage(cnd)
     )
-    expect_true(grepl("increases from analysis 1 (0) to analysis 2 (1)", w,
+    expect_true(grepl(
+        "increases from analysis 1 (0) to analysis 2 (1)",
+        w,
         fixed = TRUE
     ))
     expect_true(grepl("shifts every value by one analysis", w, fixed = TRUE))
