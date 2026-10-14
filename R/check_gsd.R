@@ -21,6 +21,19 @@ check_pvals_gsd <- function(
         if (allow_null && is.null(pvals)) {
             return(invisible(NULL))
         }
+
+        if (inherits(pvals, "multigrain_pvals_gsd_spec")) {
+            cli::cli_abort(
+                c(
+                    "{.arg {arg}} is a spending spec, not a transformed \\
+                    p-value object.",
+                    i = "Pass it to {.fn graph_optimise_gsd} to optimise the \\
+                    spending parameters, or call {.fn resolve_pvalues_gsd} \\
+                    with chosen values."
+                ),
+                call = call
+            )
+        }
     }
 
     rlang::stop_input_type(
