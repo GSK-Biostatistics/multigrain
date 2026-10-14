@@ -1,0 +1,114 @@
+Building the boundary table of sec = -3.5 (3 of 21)
+Building the boundary table of sec = -2.75 (6 of 21)
+Building the boundary table of sec = -1.75 (10 of 21)
+Building the boundary table of sec = -1 (13 of 21)
+Building the boundary table of sec = 0 (17 of 21)
+Building the boundary table of sec = 0.75 (20 of 21)
+Building the boundary table of sec = 1 (21 of 21)
+spec built in 19 s
+
+<multigrain_pvals_gsd_spec>
+10000 simulation(s), 3 hypothes(es), 2 analys(es); alpha = 0.025
+Information fractions (NA = no data at that analysis):
+   analysis 1 analysis 2
+H1        0.5          1
+H2        0.5          1
+H3        0.5          1
+Look-back: H1 = FALSE, H2 = FALSE, H3 = FALSE
+Spending:
+H1: gsDesign::sfLDOF
+H2: sfHSD(param = sec in [-4, 1])
+H3: sfHSD(param = sec in [-4, 1])
+Spending parameters:
+sec: bounds [-4, 1], step 0.25, 21 nodes, start -1.5
+Boundary tables built: 21
+
+optimiser: 40.4 s
+
+<multigrain_graph_optimal>
+Optimal graph found (given user-defined constraints on graph and computational resources):
+
+Hypothesis weights:
+    H1     H2     H3 
+0.0209 0.6295 0.3496 
+
+Transition matrix:
+       H1     H2     H3
+H1 0.0000 0.4044 0.5956
+H2 0.4438 0.0000 0.5562
+H3 0.4574 0.5426 0.0000
+
+Trial success function:
+r1 + r2 + r3
+
+Stopping rule:
+Every interim: r1
+Hypotheses referenced: up to r1
+
+Value of trial success measure:
+2.3986
+
+Optimisation summary
+
+Optimisation results:
+
+Hypothesis weights:
+    H1     H2     H3 
+0.0209 0.6295 0.3496 
+
+Transition matrix:
+       H1     H2     H3
+H1 0.0000 0.4044 0.5956
+H2 0.4438 0.0000 0.5562
+H3 0.4574 0.5426 0.0000
+
+Trial success function (group sequential):
+r1 + r2 + r3
+Analyses (K): not set
+
+Stopping rule (group sequential):
+Every interim: r1
+Hypotheses referenced: up to r1
+
+Value of trial success measure:
+2.3986
+
+Power metrics:
+Power for each hypothesis:
+[1] 0.8308 0.8203 0.7475
+Expected number of rejections: 2.4
+Probability of at least one rejection: 0.9671
+Probability of rejecting all hypotheses: 0.5733
+Power by analysis:
+   analysis 1 analysis 2
+H1     0.0357     0.8308
+H2     0.2182     0.8203
+H3     0.1494     0.7475
+Decision-time distribution:
+    never analysis 1 analysis 2
+H1 0.1692     0.0357     0.7951
+H2 0.1797     0.2182     0.6021
+H3 0.2525     0.1494     0.5981
+Stopping-look distribution:
+analysis 1 analysis 2 
+    0.0357     0.9643 
+Mean stopping look: 1.9643
+
+Graph constraints:
+Constraints on hypothesis weights:
+H1 H2 H3 
+NA NA NA 
+
+Constraints on transition matrix:
+   H1 H2 H3
+H1  0 NA NA
+H2 NA  0 NA
+H3 NA NA  0
+
+Solution source:
+Local optimisation (nloptr)
+
+identical(res$power, calc_power_pvals_gsd(resolve(...))): TRUE 
+spending_param on the lattice: TRUE 
+profile rows: 21  converged: TRUE 
+VERDICT: PASS 
