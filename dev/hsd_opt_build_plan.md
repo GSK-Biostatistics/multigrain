@@ -132,6 +132,15 @@ alpha 0.025, values (0.6,0.4), `d = c(1,0.8)`, full-recycling G, seed 20261007; 
 - **Table building:** if eager-table time at m=3, K=2, M=21, G=1024 > 25 % of the d04 default run (also check K=3 and a two-schedule spec), the spec builder reports a `cli::cli_progress_step()` per node gated on verbosity; default `grid_size` unchanged; roxygen quotes the D2 error for `grid_size = 512`.
 - **COBYLA budget:** same `local_opt` for profile nodes (oracle holds); no profile-specific `maxeval`.
 
+**Resolved 2026-10-14 by Phase D (`dev/review/hsd_opt_discovery.md` "Decisions"):** default
+`step` 0.25 (d05 loss 2.12e-5 at 0.25, 1.31e-4 at 0.5); full 21-node profile by default (6–8 % of
+the GA stage); popSize constant 40 stands (gene cost 0.90–0.98× the generations); warm-start gate
+PASS on M0, M1 and the §2 design (in-plateau gaps 2.1e-5, 2.3e-5, 3.7e-4) so Stage L is as
+designed; progress step per node table, verbosity-gated (two schedules at K = 3: 30 % of a run);
+same `local_opt` at profile nodes (E_C 23–128, 2.6 % of `maxeval`). No pause condition fired.
+Noted for P3/P5: optimiser noise on the §2 design is ≈ 4e-4, close to the 5e-4 plateau tolerance;
+the default bounds put the §2 optimum on the lower bound (gain still rising below −4).
+
 Report also has "Pre-existing issues" (reconciliation 9 with both file:line refs; the two older
 ones from `implement_gsd.md` restated). **Gate D:** every script runs end to end from a clean
 build; one table per item of design §4.1–4.3; the Decisions section names the five defaults.

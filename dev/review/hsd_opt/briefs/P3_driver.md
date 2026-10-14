@@ -7,17 +7,11 @@ commit.** Complete files, not diffs.
 
 ## Defaults fixed by Phase D (read the Decisions section; these are binding)
 
-<!-- ORCHESTRATOR FILLS FROM dev/review/hsd_opt_discovery.md -->
-- Default `step` for `sf_hsd_opt()`: **{STEP}** (already in P1 as 0.25 — change the default
-  there only if Phase D chose otherwise, and say so).
-- Profile density: **{DENSITY}** (full sweep of every lattice node, or every second node by
-  default with `control` opt-in for the full sweep).
-- popSize rule: `min(max({POP_CONST} * (m + d), 200), 500)`.
-- Warm-start gate verdict: **{GATE}**; if it failed, the fallback (second start per node from
-  the GA archive at a coarser lattice) is part of this phase.
-- Spec table-building progress step: **{PROGRESS}** (P1's builder is silent; if Phase D says a
-  progress step is needed, add `cli::cli_progress_step()` per node in `.hsd_node_tables()`
-  gated on `multigrain_verbosity() != "silent"` — the one allowed edit to P1's file).
+- Default `step` for `sf_hsd_opt()`: **0.25** (unchanged from P1; d05 loss 2.12e-5 at Δ = 0.25, 1.31e-4 at 0.5).
+- Profile density: **full sweep of every lattice node** (no thinning, no `control` opt-in; the 21-node profile is 6–8 % of the GA stage).
+- popSize rule: `min(max(40 * (m + d), 200), 500)` (constant 40 stands; the gene cost 0.90–0.98× the generations).
+- Warm-start gate verdict: **PASS on all three designs** (max in-plateau gap 2.1e-5 / 2.3e-5 / 3.7e-4); Stage L exactly as designed, including the GA-archive third start, which the prototype lacked and which should narrow the off-plateau gap (up to 7.5e-4 on the §2 design).
+- Spec table-building progress step: **yes** — add a `cli::cli_progress_step()` per node table in `.hsd_node_tables()` (P1's file; the one allowed edit to it), gated on `multigrain_verbosity() != "silent"`, message naming the parameter, the node value and `k of M`; it must print nothing on the fixed path (two schedules at K = 3 cost 51 s = 30 % of a default run).
 - Profile COBYLA budget: same `local_opt` as the main pass (no profile-specific `maxeval`).
 
 
@@ -67,7 +61,7 @@ verbose normalisation, `.gsd_check_alpha(alpha, spec)`, `.gsd_check_graph_dims()
 `.gsd_check_gain_dims()`, `.validate_start_graphs()`, `stop_rule <- .gsd_stop_table(…)`. Then
 `user_pop <- control$global_opt$popSize`; `control <- control_prepare_dims(control, nsim =
 spec$nsim, m = spec$m, verbose)`; `if (is.null(user_pop)) control$global_opt$popSize <-
-min(max({POP_CONST}L * (spec$m + d), 200L), 500L)` (plan row 5). `d <- length(spec$param$names)`,
+min(max(40L * (spec$m + d), 200L), 500L)` (plan row 5). `d <- length(spec$param$names)`,
 `p_graph <- ncol(.build_start_matrix(graph_constraint, start_graph))`.
 Then Stage G (if `global_search`), Stage L, `choose_graph()`, final evaluation, result.
 
