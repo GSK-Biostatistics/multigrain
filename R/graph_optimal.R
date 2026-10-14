@@ -41,7 +41,8 @@ graph_optimal <- function(
     global_output = NULL,
     local_output = NULL,
     start_graph = NULL,
-    stopping_rule = NULL
+    stopping_rule = NULL,
+    spending = NULL
 ) {
     check_double(hyp_weight)
     check_double_matrix(trans_matrix)
@@ -58,6 +59,10 @@ graph_optimal <- function(
     check_ga(global_output, allow_null = TRUE)
     check_nloptr(local_output, allow_null = TRUE)
     check_stopping_rule_gsd(stopping_rule, allow_null = TRUE)
+    valid_spending <- is.list(spending) && rlang::is_named(spending)
+    if (!is.null(spending) && !valid_spending) {
+        cli::cli_abort("{.arg spending} must be a named list or {.code NULL}.")
+    }
 
     # remove some elements from the GA and nloptr outputs as they bloat the
     # graph_optimal object
@@ -88,6 +93,12 @@ graph_optimal <- function(
     # for every fixed-sample result) the object is unchanged
     if (!is.null(stopping_rule)) {
         out$stopping_rule <- stopping_rule
+    }
+
+    # an optimised-spending result records its spending fields (build plan,
+    # reconciliation 10); the fixed path never passes `spending`
+    if (!is.null(spending)) {
+        out[names(spending)] <- spending
     }
 
     out
@@ -235,6 +246,10 @@ print.multigrain_graph_optimal <- function(x, ...) {
     cli::cat_line("\nTrial success function:")
     cli::cat_line(x$trial_success$objective)
 
+    if (!is.null(x$spending_param)) {
+        .hsd_cat_print(x)
+    }
+
     if (!is.null(x$stopping_rule)) {
         cli::cat_line("\nStopping rule:")
         .gsd_rule_cat_detail(x$stopping_rule)
@@ -270,6 +285,10 @@ summary.multigrain_graph_optimal <- function(object, ...) {
     print(round(object$trans_matrix, 4))
 
     summary(object$trial_success)
+
+    if (!is.null(object$spending_param)) {
+        .hsd_cat_summary(object)
+    }
 
     if (!is.null(object$stopping_rule)) {
         summary(object$stopping_rule)

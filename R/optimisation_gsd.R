@@ -25,8 +25,70 @@
 #'   only the rejections made before the trial stopped; a trial that rejects
 #'   every hypothesis stops at that analysis in any case.
 #'
+#'   **Optimised spending parameters.** When `pvals` is a spending spec, from
+#'   [transform_pvalues_gsd()] with one or more [sf_hsd_opt()] entries, the
+#'   Hwang-Shih-DeCani parameter of each tagged group is chosen jointly with
+#'   the graph. Every value the search can try is a node of the parameter's
+#'   lattice (the multiples of `step` inside `bounds`), and every node's
+#'   boundary table was built and checked for well ordering when the spec was
+#'   created, so the chosen design controls the error rate as any fixed choice
+#'   would. The search has two stages:
+#'
+#'   * the global stage runs the genetic algorithm on the graph genes with one
+#'     gene per spending parameter appended, each mapped to a lattice node, on
+#'     the `nsim_global` subsample. The repeated p-values of that subsample are
+#'     computed once at every node. The default population size counts each
+#'     parameter as one more hypothesis;
+#'   * the local stage refines the graph by COBYLA at the genetic algorithm's
+#'     parameter values, then walks each parameter's lattice outward from
+#'     there and re-optimises the graph at every node, starting COBYLA from
+#'     the best of the current optimum's graph, the previous node's graph and
+#'     the best graph the genetic algorithm found at that node (a
+#'     *warm-started profile*). It moves to the best node; with two or more
+#'     parameters the sweep is repeated until no parameter moves, at most
+#'     three rounds. Every gain of this stage is computed on one ordering of
+#'     the simulated trials, so differences between nodes are paired.
+#'
+#'   The profile is returned as `spending_profile`: for every node of each
+#'   parameter, with the other parameters held at their chosen values, the
+#'   gain with the graph re-optimised (`gain`), the gain of the chosen graph
+#'   kept fixed (`gain_fixed_graph`), the paired difference from the optimum
+#'   (`diff`) and its batch-means standard error over 100 blocks of trials
+#'   (`se`). At the chosen value `gain` equals `gain_fixed_graph` and `diff`
+#'   and `se` are 0. `print()` condenses the profile to two *plateaus*: the
+#'   connected run of nodes around the chosen value whose `diff` is at most
+#'   `5e-4`, and the same run for the fixed-graph gain, measured from its
+#'   largest value. A wide plateau means the parameter hardly matters for this
+#'   design within that range; the fixed-graph plateau is narrower when the
+#'   best graph depends on the parameter. `summary()` prints the table and
+#'   the number of nodes the genetic algorithm visited.
+#'
+#'   As on the fixed path, the better of the two stages' graphs is kept, each
+#'   scored on the full sample at its own parameter values. If the genetic
+#'   algorithm's graph is kept, its parameter values are reported and the
+#'   profile is still the local stage's, which started from them. Unlike the
+#'   fixed path, a `start_graph` is honoured when `global_search = FALSE`.
+#'
+#'   The parameters and the graph are chosen on the same simulated trials that
+#'   score them, so the reported gain is optimistic (the winner's curse), a
+#'   little more so than for the graph alone. To check the design, simulate
+#'   fresh p-values, build a spec from them with the same `spending`, and
+#'   evaluate the chosen graph with [calc_power_pvals_gsd()] on
+#'   `resolve_pvalues_gsd(new_spec, result$spending_param)`.
+#'
+#'   The boundary tables are the main cost of building a spec: about 0.9 s per
+#'   lattice node at the default `grid_size = 1024` with two analyses, about
+#'   20 s for the default 21-node lattice. `grid_size = 512` halves this; in
+#'   the package's measurements its largest relative interpolation error
+#'   against `grid_size = 1024` was `8.2e-6`. A spec can be reused across
+#'   gains and stopping rules on the same draws.
+#'
 #' @param pvals A `multigrain_pvals_gsd` object of repeated (or, per
-#'   hypothesis, sequential) p-values, created with [transform_pvalues_gsd()].
+#'   hypothesis, sequential) p-values, created with [transform_pvalues_gsd()],
+#'   or a `multigrain_pvals_gsd_spec` object, created by
+#'   [transform_pvalues_gsd()] when one or more spending functions are
+#'   [sf_hsd_opt()], to optimise those spending parameters with the graph (see
+#'   Details).
 #' @param graph_constraint A `multigrain_graph_constraint` object containing
 #'   constraints on the graph's weights and transition matrix. Created with
 #'   [graph_constraint()].
@@ -91,6 +153,34 @@
 #' * `start_graph`: Initial starting values used in the optimisation.
 #' * `stopping_rule`: the rule, when one was supplied.
 #'
+#' When `pvals` is a spending spec, also:
+#'
+#' * `spending_param`: the chosen value of each spending parameter (named
+#'   numeric vector; the names are the `id`s of [sf_hsd_opt()], else `gamma`,
+#'   or `gamma1`, `gamma2`, ... when there are several).
+#' * `hyp_spending_param`: the value per hypothesis, `NA` for a hypothesis
+#'   with fixed spending or one whose single analysis at full information
+#'   makes spending irrelevant.
+#' * `spending`: a spending label per hypothesis, such as
+#'   `sfHSD(param = -0.25)` for a tagged one.
+#' * `spending_bounds`, `spending_step`: the bounds (a matrix with one row per
+#'   parameter) and the lattice step of each parameter.
+#' * `spending_group`: the parameter of each hypothesis, an integer index into
+#'   `spending_param` (`NA` for none).
+#' * `spending_profile`: the warm-started profile (see Details), a data frame
+#'   with columns `param`, `value`, `gain`, `gain_fixed_graph`, `diff`, `se`
+#'   and `n_eval` (the number of COBYLA evaluations at that node), and the
+#'   graph of each row as the attribute `graphs`.
+#' * `spending_search`: the genetic algorithm's coverage of each lattice, a
+#'   data frame with columns `param`, `value`, `visits` and
+#'   `best_fitness_subsample`, the best gain seen at that node on the
+#'   algorithm's subsample, which is not comparable with the profile's gains.
+#'   All `NA` without a global search.
+#' * `profile_converged`: `FALSE` when, with two or more parameters, the
+#'   rounds of the profile did not settle within three, or when a node of a
+#'   final recomputed profile beats the chosen value (a negative `diff`);
+#'   the plateaus are then indicative.
+#'
 #' @seealso [graph_optimise()] for the fixed-sample version,
 #'   [transform_pvalues_gsd()] for the p-value object and
 #'   [trial_success_gsd()] for the gain.
@@ -128,6 +218,22 @@
 #'     stopping_rule = stopping_rule_gsd(r1),
 #'     num_threads = 2
 #' )
+#'
+#' # choose the spending parameter of H2 jointly with the graph
+#' spec <- transform_pvalues_gsd(
+#'     raw,
+#'     spending = list(gsDesign::sfLDOF, sf_hsd_opt(bounds = c(-4, 0))),
+#'     grid_size = 128L
+#' )
+#' result_spending <- graph_optimise_gsd(
+#'     pvals = spec,
+#'     graph_constraint = graph_constraint_free(2),
+#'     trial_success = gain,
+#'     stopping_rule = stopping_rule_gsd(r1),
+#'     num_threads = 2
+#' )
+#' result_spending$spending_param
+#' result_spending
 #' }
 graph_optimise_gsd <- function(
     pvals,
@@ -147,6 +253,22 @@ graph_optimise_gsd <- function(
     control = multigrain_control(),
     verbose = multigrain_verbosity()
 ) {
+    if (inherits(pvals, "multigrain_pvals_gsd_spec")) {
+        rlang::check_dots_empty()
+        return(.graph_optimise_gsd_opt(
+            spec = pvals,
+            graph_constraint = graph_constraint,
+            trial_success = trial_success,
+            alpha = alpha,
+            stopping_rule = stopping_rule,
+            start_graph = start_graph,
+            global_search = global_search,
+            num_threads = num_threads,
+            control = control,
+            verbose = verbose
+        ))
+    }
+
     check_pvals_gsd(pvals)
     check_graph_constraint(graph_constraint)
     check_trial_success_gsd(trial_success)

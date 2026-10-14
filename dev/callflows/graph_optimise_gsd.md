@@ -35,6 +35,20 @@ in `R/stopping_rule_gsd.R` and are described in
 `dev/callflows/stopping_rule_gsd.md`. Internally the rule travels as its truth
 table, a logical matrix called `stop_rule`, never as the object.
 
+`[Rev 2026-10-14]` Spending-parameter optimisation (design record section
+4.12) adds a dispatch as the first statement of `graph_optimise_gsd()`. When
+`pvals` is a `multigrain_pvals_gsd_spec` (returned by
+`transform_pvalues_gsd()` when a spending function is `sf_hsd_opt()`), the
+function calls `rlang::check_dots_empty()` and returns
+`.graph_optimise_gsd_opt()`, before `check_pvals_gsd()` runs. On that path
+the two drivers and `create_obj_func_gsd()`'s subsampling described below are
+replaced, while `create_obj_func_gsd()` itself, `choose_graph()`,
+`prune_graph_gsd()`, `calc_power_pvals_gsd()` and `graph_optimal()` are
+reused unchanged. For any other `pvals` the function is unchanged. The other touchpoints are a spec hint in
+`check_pvals_gsd()` and the `spending` argument and two guarded display calls
+in `R/graph_optimal.R`. The path and its helpers are described in
+`dev/callflows/graph_optimise_gsd_opt.md`.
+
 Notation follows the design record and the earlier call flows: *m* hypotheses,
 *K* analyses ("looks"). The `multigrain_pvals_gsd` object holds the
 N-by-m-by-K array of repeated (or, per hypothesis, sequential) p-values, plus

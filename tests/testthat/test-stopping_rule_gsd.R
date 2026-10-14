@@ -1,6 +1,7 @@
 # A hand-built `multigrain_pvals_gsd` carrying only the fields that
 # `.gsd_check_stopping_rule_dims()` reads
-gsd_rule_pvals <- function(m = 3L, K = 3L) { # nolint: object_name_linter.
+gsd_rule_pvals <- function(m = 3L, K = 3L) {
+    # nolint: object_name_linter.
     structure(list(m = m, K = K), class = "multigrain_pvals_gsd")
 }
 

@@ -25,13 +25,13 @@ library(gsDesign)
 library(mvtnorm)
 
 gamma <- 0.025
-t     <- c(0.5, 1)
-phi   <- sfLDOF                       # Lan-DeMets O'Brien-Fleming
+t <- c(0.5, 1)
+phi <- sfLDOF # Lan-DeMets O'Brien-Fleming
 
 # --- 1. How much alpha does each look get? ----------------------------------
 
-cum   <- phi(gamma, t)$spend           # cumulative spend at each look
-inc   <- diff(c(0, cum))               # per-look increments
+cum <- phi(gamma, t)$spend # cumulative spend at each look
+inc <- diff(c(0, cum)) # per-look increments
 cat("cumulative spend:", cum, "\n")
 cat("increments      :", inc, "\n")
 cat("sum of increments == gamma?", isTRUE(all.equal(sum(inc), gamma)), "\n\n")
@@ -42,14 +42,14 @@ cat("sum of increments == gamma?", isTRUE(all.equal(sum(inc), gamma)), "\n\n")
 # --- 2. Look 1 boundary: a one-dimensional problem --------------------------
 
 c1 <- qnorm(1 - inc[1])
-b1 <- 1 - pnorm(c1)                    # equals inc[1] by construction
+b1 <- 1 - pnorm(c1) # equals inc[1] by construction
 cat("look 1: c1 =", c1, " boundary =", b1, "\n")
 
 # --- 3. Look 2 boundary: a two-dimensional root-find ------------------------
 #
 # Find c2 such that P(Z1 <= c1, Z2 > c2) = inc[2].
 
-rho   <- sqrt(t[1] / t[2])
+rho <- sqrt(t[1] / t[2])
 Sigma <- matrix(c(1, rho, rho, 1), 2)
 
 p_cross_at_2 <- function(c2) {
