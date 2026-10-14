@@ -39,9 +39,14 @@ not commit.** Complete files, not diffs.
 - `create_obj_func_gsd_opt(spec, bank, power_criterion, hyp_constraint, trans_constraint,
   alpha, num_threads = 1L, stop_rule = NULL, p_graph, start_param)`:
   - `force()` everything as `create_obj_func_gsd()` does.
-  - Build the working matrix once: `.gsd_kernel_matrix()` of `resolve_pvalues_gsd(spec,
-    start_param)` subset to `bank$idx` rows (`drop = FALSE` on the array before `dim<-`). Fixed
-    hypotheses' columns never change afterwards.
+  - Build the working matrix once, **inside the factory body** (not passed in as an argument):
+    `.gsd_kernel_matrix()` of `resolve_pvalues_gsd(spec, start_param)` subset to `bank$idx` rows
+    (`drop = FALSE` on the array before `dim<-`). Fixed hypotheses' columns never change
+    afterwards. **Assign columns with `mat[, cols] <<- slice`** from the closure. d03 measured
+    (`dev/review/hsd_opt/d03_memory_and_copy_output.txt`): a matrix built inside the factory
+    and updated with `<<-` is never copied; a plain `<-` inside the closure copies the whole
+    matrix on every evaluation; a matrix passed in as a factory argument is copied once. Do not
+    bind the matrix to a second name anywhere.
   - Precompute for each active hypothesis the column indices `(k - 1) * m + i` for `k = 1..K`
     and its group `r`.
   - Returned closure `function(x)`: `xg <- x[seq_len(p_graph)]`; `u <- x[p_graph +
