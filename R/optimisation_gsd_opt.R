@@ -1047,3 +1047,263 @@
     value[c(lo, hi)]
 }
 
+
+# Print and summary -------------------------------------------------------
+
+# The spending block of `print.multigrain_graph_optimal()` for a result of
+# the optimised-spending path (design section 1.5; build plan,
+# reconciliation 8): one line per hypothesis, then one gain-profile block per
+# parameter with the re-optimised and the fixed-graph plateaus.
+.hsd_cat_print <- function(x) {
+    hyp_labels <- x$spending
+    m <- length(hyp_labels)
+    hyp_names <- names(x$hyp_weight)
+    named <- length(hyp_names) == m && all(nzchar(hyp_names))
+    if (!named) {
+        hyp_names <- .gsd_hyp_labels(m)
+    }
+
+    notes <- .hsd_spending_notes(x)
+    hyp_lines <- paste0("  ", hyp_names, ": ", hyp_labels)
+    has_note <- nzchar(notes$hyp)
+    hyp_lines[has_note] <- paste0(
+        hyp_lines[has_note],
+        "   ",
+        notes$hyp[has_note]
+    )
+
+    cli::cat_line("\nSpending functions:")
+    cli::cat_line(c(hyp_lines, notes$extra))
+
+    prof <- x$spending_profile
+    param_names <- names(x$spending_param)
+    for (name in param_names) {
+        rows <- prof[prof$param == name, , drop = FALSE]
+        if (nrow(rows) == 0L) {
+            next
+        }
+        at <- x$spending_param[[name]]
+        reopt_at <- if (at %in% rows$value) {
+            at
+        } else {
+            rows$value[[which.min(rows$diff)]]
+        }
+        reopt <- .hsd_plateau(rows$value, rows$diff, at = reopt_at)
+
+        # the fixed-graph plateau is measured from the largest fixed-graph
+        # gain on the axis, max(gain_fixed_graph) - gain_fixed_graph, not
+        # from the optimum's gain as the `diff` column is
+        fixed_diff <- max(rows$gain_fixed_graph) - rows$gain_fixed_graph
+        fixed_at <- if (at %in% rows$value) {
+            at
+        } else {
+            rows$value[[which.max(rows$gain_fixed_graph)]]
+        }
+        fixed <- .hsd_plateau(rows$value, fixed_diff, at = fixed_at)
+
+        cli::cat_line(
+            "Gain profile in ",
+            name,
+            " (graph re-optimised at each value):"
+        )
+        cli::cat_line(
+            "  within 5e-4 of the maximum on ",
+            .hsd_fmt_interval(reopt),
+            "; fixed-graph plateau ",
+            .hsd_fmt_interval(fixed)
+        )
+    }
+
+    if (isFALSE(x$profile_converged)) {
+        rounds <- if (length(param_names) > 1L) " in 3 rounds" else ""
+        cli::cat_line(
+            "  profile did not converge",
+            rounds,
+            "; the plateau is indicative"
+        )
+    }
+
+    invisible(x)
+}
+
+# The spending part of `summary.multigrain_graph_optimal()`: per parameter,
+# its profile rows and the GA's coverage of its lattice.
+.hsd_cat_summary <- function(object) {
+    prof <- object$spending_profile
+    coverage <- object$spending_search
+
+    for (name in names(object$spending_param)) {
+        cli::cat_line(
+            cli::style_underline(
+                paste0("\nSpending-parameter profile (", name, ")")
+            ),
+            ":"
+        )
+        rows <- prof[prof$param == name, , drop = FALSE]
+        prof_table <- data.frame(
+            value = rows$value,
+            gain = round(rows$gain, 4),
+            gain_fixed_graph = round(rows$gain_fixed_graph, 4),
+            diff = round(rows$diff, 4),
+            se = signif(rows$se, 2),
+            n_eval = rows$n_eval
+        )
+        print(prof_table, row.names = FALSE)
+
+        visits <- coverage$visits[coverage$param == name]
+        if (length(visits) == 0L || all(is.na(visits))) {
+            cli::cat_line("no global search")
+        } else {
+            cli::cat_line(sprintf(
+                "GA visited %d of %d nodes",
+                sum(visits > 0L, na.rm = TRUE),
+                length(visits)
+            ))
+        }
+    }
+
+    invisible(object)
+}
+
+# The bracketed note after each hypothesis's spending label, and a line per
+# parameter whose bounds could not go on a first member. The result does not
+# store which parameter each hypothesis uses, only its value
+# (`hyp_spending_param`), so the map is inferred by `.hsd_infer_groups()`
+# unless a `spending_group` field is present. A short-circuited tagged
+# hypothesis is one with no parameter whose label is `sfHSD(param = v)`.
+.hsd_spending_notes <- function(x) {
+    hyp_labels <- x$spending
+    m <- length(hyp_labels)
+    theta <- x$spending_param
+    param_names <- names(theta)
+    hyp_theta <- unname(as.numeric(x$hyp_spending_param))
+
+    groups <- .hsd_infer_groups(hyp_theta, unname(theta), x$spending_group)
+
+    notes <- rep("", m)
+    described <- rep(FALSE, length(theta))
+    for (i in seq_len(m)) {
+        candidates <- groups[[i]]
+        if (length(candidates) == 1L) {
+            r <- candidates[[1L]]
+            if (described[[r]]) {
+                notes[[i]] <- sprintf("[optimised: %s]", param_names[[r]])
+            } else {
+                notes[[i]] <- sprintf(
+                    "[optimised: %s, %s]",
+                    param_names[[r]],
+                    .hsd_fmt_lattice(x, r)
+                )
+                described[[r]] <- TRUE
+            }
+        } else if (length(candidates) > 1L) {
+            notes[[i]] <- sprintf(
+                "[optimised: %s]",
+                paste(param_names[candidates], collapse = " or ")
+            )
+        } else if (is.na(hyp_theta[[i]])) {
+            # nolint next: nonportable_path_linter. a regex, not a path
+            pattern <- "^sfHSD\\(param = ([^ ()]+)\\)$"
+            if (grepl(pattern, hyp_labels[[i]])) {
+                notes[[i]] <- sprintf(
+                    "[fixed at %s: one look at full information]",
+                    sub(pattern, "\\1", hyp_labels[[i]])
+                )
+            }
+        }
+    }
+
+    extra <- character()
+    for (r in which(!described)) {
+        extra <- c(
+            extra,
+            sprintf("  %s: %s", param_names[[r]], .hsd_fmt_lattice(x, r))
+        )
+    }
+
+    list(hyp = notes, extra = extra)
+}
+
+# Candidate parameters of each hypothesis: a list of integer vectors, empty
+# for a hypothesis without a parameter. With `given` (an integer group map)
+# that map is used. Otherwise every map consistent with the values is
+# enumerated, under the spec's numbering (parameters are numbered by their
+# first member, every parameter has a member); a hypothesis gets every
+# parameter some consistent map gives it, so it has one candidate whenever
+# the values settle its parameter.
+.hsd_infer_groups <- function(hyp_theta, theta, given = NULL) {
+    m <- length(hyp_theta)
+    out <- rep(list(integer()), m)
+    if (!is.null(given)) {
+        for (i in which(!is.na(given))) {
+            out[[i]] <- as.integer(given[[i]])
+        }
+        return(out)
+    }
+
+    active <- which(!is.na(hyp_theta))
+    d <- length(theta)
+    state <- new.env(parent = emptyenv())
+    state$maps <- list()
+    walk <- function(pos, opened, acc) {
+        if (pos > length(active)) {
+            if (opened == d) {
+                state$maps[[length(state$maps) + 1L]] <- acc
+            }
+            return(invisible())
+        }
+        value <- hyp_theta[[active[[pos]]]]
+        for (r in seq_len(min(opened + 1L, d))) {
+            if (isTRUE(abs(theta[[r]] - value) <= 1e-12)) {
+                walk(pos + 1L, max(opened, r), c(acc, r))
+            }
+        }
+    }
+    walk(1L, 0L, integer())
+    maps <- state$maps
+
+    for (j in seq_along(active)) {
+        i <- active[[j]]
+        out[[i]] <- if (length(maps)) {
+            sort(unique(vapply(maps, `[[`, integer(1L), j)))
+        } else {
+            which(abs(theta - hyp_theta[[i]]) <= 1e-12)
+        }
+    }
+
+    out
+}
+
+# "bounds a to b, step s" for parameter `r`; the step is the spacing of its
+# lattice in `spending_search` (the full lattice), else in the profile.
+.hsd_fmt_lattice <- function(x, r) {
+    name <- names(x$spending_param)[[r]]
+    bounds <- x$spending_bounds
+    bounds_r <- if (name %in% rownames(bounds)) {
+        bounds[name, ]
+    } else {
+        bounds[r, ]
+    }
+    out <- sprintf(
+        "bounds %s to %s",
+        format(bounds_r[[1L]], digits = 15),
+        format(bounds_r[[2L]], digits = 15)
+    )
+
+    nodes <- x$spending_search$value[x$spending_search$param == name]
+    if (length(nodes) < 2L) {
+        nodes <- x$spending_profile$value[x$spending_profile$param == name]
+    }
+    nodes <- sort(unique(nodes))
+    if (length(nodes) >= 2L) {
+        out <- paste0(out, ", step ", format(min(diff(nodes)), digits = 15))
+    }
+
+    out
+}
+
+# "[lower, upper]" with each end formatted on its own.
+.hsd_fmt_interval <- function(range) {
+    ends <- vapply(range, format, character(1L), digits = 15)
+    paste0("[", ends[[1L]], ", ", ends[[2L]], "]")
+}

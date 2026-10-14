@@ -246,6 +246,10 @@ print.multigrain_graph_optimal <- function(x, ...) {
     cli::cat_line("\nTrial success function:")
     cli::cat_line(x$trial_success$objective)
 
+    if (!is.null(x$spending_param)) {
+        .hsd_cat_print(x)
+    }
+
     if (!is.null(x$stopping_rule)) {
         cli::cat_line("\nStopping rule:")
         .gsd_rule_cat_detail(x$stopping_rule)
@@ -281,6 +285,10 @@ summary.multigrain_graph_optimal <- function(object, ...) {
     print(round(object$trans_matrix, 4))
 
     summary(object$trial_success)
+
+    if (!is.null(object$spending_param)) {
+        .hsd_cat_summary(object)
+    }
 
     if (!is.null(object$stopping_rule)) {
         summary(object$stopping_rule)
