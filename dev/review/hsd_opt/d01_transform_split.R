@@ -246,8 +246,13 @@ sweep_one <- function(r) {
         error = function(e) conditionMessage(e)
     )
     tab <- tryCatch(
-        multigrain:::.gsd_boundary_table(t_look, spending = sp, alpha = alpha,
-                                         grid_size = 1024L, hyp = 1),
+        multigrain:::.gsd_boundary_table(
+            t_look,
+            spending = sp,
+            alpha = alpha,
+            grid_size = 1024L,
+            hyp = 1
+        ),
         error = function(e) e
     )
     if (inherits(tab, "error")) {
