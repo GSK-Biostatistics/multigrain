@@ -18,16 +18,18 @@ nom_bounds <- function(gamma, t, sf) {
 
 my_transform <- function(pvals, t, sf, alpha = 0.025, G = 1024) {
     grid <- exp(seq(log(1e-14), log(alpha), length.out = G))
-    B    <- t(sapply(grid, nom_bounds, t = t, sf = sf))     # G x K
-    out  <- pvals
+    B <- t(sapply(grid, nom_bounds, t = t, sf = sf)) # G x K
+    out <- pvals
     for (k in seq_along(t)) {
-        col  <- B[, k]
+        col <- B[, k]
         keep <- !duplicated(col) & col > 0
-        p    <- pvals[, , k]
-        r    <- exp(approx(log(col[keep]), log(grid[keep]), xout = log(p), rule = 1)$y)
-        r[p >= max(col)]       <- 1
-        r[p < min(col[keep])]  <- 1e-14
-        out[, , k] <- r
+        p <- pvals[,, k]
+        r <- exp(
+            approx(log(col[keep]), log(grid[keep]), xout = log(p), rule = 1)$y
+        )
+        r[p >= max(col)] <- 1
+        r[p < min(col[keep])] <- 1e-14
+        out[,, k] <- r
     }
     out
 }
@@ -35,15 +37,18 @@ my_transform <- function(pvals, t, sf, alpha = 0.025, G = 1024) {
 # --- 2. Compare with the package on random data ----------------------------
 
 set.seed(3)
-t   <- c(1/3, 2/3, 1)
+t <- c(1 / 3, 2 / 3, 1)
 raw <- simulate_pvalues_gsd(c(0.8, 0.9), info_frac = t, nsim = 200)
 
 mine <- my_transform(raw, t, sfLDOF)
-pkg  <- transform_pvalues_gsd(raw, spending = sfLDOF)$pvals
+pkg <- transform_pvalues_gsd(raw, spending = sfLDOF)$pvals
 
 cat("max abs difference, hand vs package:", max(abs(mine - pkg)), "\n")
-cat("max rel difference (where < 1)     :",
-    max(abs(mine - pkg) / pkg, na.rm = TRUE), "\n\n")
+cat(
+    "max rel difference (where < 1)     :",
+    max(abs(mine - pkg) / pkg, na.rm = TRUE),
+    "\n\n"
+)
 
 # >>> Question: the differences are ~1e-16, i.e. floating-point only. What
 #     did the package do that my_transform() did not? (Look at the callflow
@@ -58,8 +63,8 @@ cat("max rel difference (where < 1)     :",
 
 p_look1 <- c(0.0062, 0.017, 0.009, 0.13)
 p_look2 <- c(0.0002, 0.0035, 0.002, 0.06)
-paper1  <- c(0.1141, 0.1683, 0.1316, 0.382)
-paper2  <- c(0.0024, 0.0172, 0.0117, 0.1285)
+paper1 <- c(0.1141, 0.1683, 0.1316, 0.382)
+paper2 <- c(0.0024, 0.0172, 0.0117, 0.1285)
 
 # One "simulation", four hypotheses, three looks (look 3 filled with 1s).
 mb <- array(1, dim = c(1, 4, 3))
@@ -69,8 +74,12 @@ mb[1, , 2] <- p_look2
 tr <- transform_pvalues_gsd(mb, info_frac = t, spending = sfLDOF)
 print(data.frame(
     hyp = paste0("H", 1:4),
-    raw1 = p_look1, rep1 = signif(tr$pvals[1, , 1], 4), paper1 = paper1,
-    raw2 = p_look2, rep2 = signif(tr$pvals[1, , 2], 4), paper2 = paper2
+    raw1 = p_look1,
+    rep1 = signif(tr$pvals[1, , 1], 4),
+    paper1 = paper1,
+    raw2 = p_look2,
+    rep2 = signif(tr$pvals[1, , 2], 4),
+    paper2 = paper2
 ))
 
 # >>> Question: every look-1 value, and H4 at look 2, came back as 1, while
@@ -87,11 +96,18 @@ print(data.frame(
 #     To reproduce the paper's numbers, widen the grid by passing a larger
 #     alpha. (This is only for checking; in a real design alpha = 0.025.)
 
-tr_wide <- transform_pvalues_gsd(mb, info_frac = t, spending = sfLDOF, alpha = 0.5)
+tr_wide <- transform_pvalues_gsd(
+    mb,
+    info_frac = t,
+    spending = sfLDOF,
+    alpha = 0.5
+)
 print(data.frame(
     hyp = paste0("H", 1:4),
-    rep1 = signif(tr_wide$pvals[1, , 1], 4), paper1 = paper1,
-    rep2 = signif(tr_wide$pvals[1, , 2], 4), paper2 = paper2
+    rep1 = signif(tr_wide$pvals[1, , 1], 4),
+    paper1 = paper1,
+    rep2 = signif(tr_wide$pvals[1, , 2], 4),
+    paper2 = paper2
 ))
 
 # >>> Question: H1 at look 1 has raw p = 0.0062 but repeated p = 0.114. In

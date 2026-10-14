@@ -82,8 +82,11 @@ say(
     utils::packageVersion("multigrain"),
     n_threads
 )
-say("parts: %s; d = 2 reference: %s", toString(parts),
-    if (full_grid) "all 25 pairs" else "9 pairs nearest the start node")
+say(
+    "parts: %s; d = 2 reference: %s",
+    toString(parts),
+    if (full_grid) "all 25 pairs" else "9 pairs nearest the start node"
+)
 
 d02 <- readRDS(file.path(here, "d02_warm_start_profile_results.rds"))
 
@@ -139,8 +142,11 @@ run_joint <- function(name, spec, gc, gain, rule, seed = 1) {
         "[%s] joint: gain %.6f at %s (source %s, converged %s); %.1f s",
         name,
         res$power$trial_success,
-        toString(sprintf("%s = %g", names(res$spending_param),
-                         res$spending_param)),
+        toString(sprintf(
+            "%s = %g",
+            names(res$spending_param),
+            res$spending_param
+        )),
         res$solution$opt_source,
         res$profile_converged,
         joint$secs
@@ -148,10 +154,13 @@ run_joint <- function(name, spec, gc, gain, rule, seed = 1) {
     say("[%s] profile:", name)
     prof <- res$spending_profile
     utils::capture.output(print(prof, digits = 6, row.names = FALSE)) |>
-        vapply(function(l) {
-            say("  %s", l)
-            ""
-        }, character(1)) |>
+        vapply(
+            function(l) {
+                say("  %s", l)
+                ""
+            },
+            character(1)
+        ) |>
         invisible()
     say(
         "[%s] GA visited %d of %d nodes",
@@ -199,7 +208,11 @@ run_d1 <- function(name) {
     spending <- if (name == "M1") {
         list(gsDesign::sfLDOF, sf_hsd_opt(id = "gamma"))
     } else {
-        list(gsDesign::sfLDOF, sf_hsd_opt(id = "gamma"), sf_hsd_opt(id = "gamma"))
+        list(
+            gsDesign::sfLDOF,
+            sf_hsd_opt(id = "gamma"),
+            sf_hsd_opt(id = "gamma")
+        )
     }
     built <- elapsed(transform_pvalues_gsd(raw, spending = spending))
     spec <- built$value
@@ -248,17 +261,24 @@ run_d1 <- function(name) {
     if (name == "S2") {
         say(
             "[S2] design 4.2 projection 3.5 to 6.5 min at m = 3, K = 2, nsim 1e5, d = 1: %s",
-            if (total / 60 > 2 * 6.5) "> 2x the projection: PAUSE" else "within 2x"
+            if (total / 60 > 2 * 6.5) {
+                "> 2x the projection: PAUSE"
+            } else {
+                "within 2x"
+            }
         )
     }
 
-    c(run, list(
-        spec_secs = built$secs,
-        reference = reference,
-        outer_best = outer_best,
-        profile_best = profile_best,
-        check1 = check1
-    ))
+    c(
+        run,
+        list(
+            spec_secs = built$secs,
+            reference = reference,
+            outer_best = outer_best,
+            profile_best = profile_best,
+            check1 = check1
+        )
+    )
 }
 
 
@@ -374,9 +394,16 @@ for (part in names(results)) {
 # results without the (large) optimiser outputs
 slim <- lapply(results, function(r) {
     r$result <- r$result[c(
-        "hyp_weight", "trans_matrix", "power", "solution", "spending_param",
-        "hyp_spending_param", "spending", "spending_profile",
-        "spending_search", "profile_converged"
+        "hyp_weight",
+        "trans_matrix",
+        "power",
+        "solution",
+        "spending_param",
+        "hyp_spending_param",
+        "spending",
+        "spending_profile",
+        "spending_search",
+        "profile_converged"
     )]
     r
 })

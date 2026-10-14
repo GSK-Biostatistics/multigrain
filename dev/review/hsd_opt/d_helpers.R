@@ -96,7 +96,11 @@ stop_table <- function(rule, pv) {
 
 transform_node <- function(des, g) {
     t0 <- proc.time()[["elapsed"]]
-    pv <- transform_pvalues_gsd(des$raw, spending = des$spending(g), alpha = alpha)
+    pv <- transform_pvalues_gsd(
+        des$raw,
+        spending = des$spending(g),
+        alpha = alpha
+    )
     list(pv = pv, secs = proc.time()[["elapsed"]] - t0)
 }
 
@@ -195,9 +199,19 @@ refine_node <- function(des, pv, candidates, stop_rule, local_opts) {
     secs <- proc.time()[["elapsed"]] - t0
     sol <- multigrain:::param_to_solution(nl$solution, des$gc, process = TRUE)
     sol <- multigrain:::repair_graph(sol$hyp_weight, sol$trans_matrix, des$gc)
-    refined <- eval_graph(kmat, pv$K, des$gain, sol$hyp_weight, sol$trans_matrix, stop_rule)
+    refined <- eval_graph(
+        kmat,
+        pv$K,
+        des$gain,
+        sol$hyp_weight,
+        sol$trans_matrix,
+        stop_rule
+    )
     all_vals <- c(cand_vals, refined)
-    graphs <- c(candidates, list(list(w = sol$hyp_weight, G = sol$trans_matrix)))
+    graphs <- c(
+        candidates,
+        list(list(w = sol$hyp_weight, G = sol$trans_matrix))
+    )
     pick <- which.max(all_vals)
     list(
         cand_vals = cand_vals,
@@ -218,9 +232,13 @@ plateau_of <- function(nodes, vals, tol = plateau_tol) {
     i <- which.max(vals)
     ok <- vals >= max(vals) - tol
     lo <- i
-    while (lo > 1 && ok[lo - 1]) lo <- lo - 1
+    while (lo > 1 && ok[lo - 1]) {
+        lo <- lo - 1
+    }
     hi <- i
-    while (hi < length(vals) && ok[hi + 1]) hi <- hi + 1
+    while (hi < length(vals) && ok[hi + 1]) {
+        hi <- hi + 1
+    }
     c(nodes[lo], nodes[hi])
 }
 

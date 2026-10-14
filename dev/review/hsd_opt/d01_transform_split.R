@@ -44,8 +44,14 @@ say <- function(...) {
     buffer <<- c(buffer, line)
 }
 say_table <- function(df, digits = 4) {
-    lines <- utils::capture.output(print(df, row.names = FALSE, digits = digits))
-    for (ln in lines) say(ln)
+    lines <- utils::capture.output(print(
+        df,
+        row.names = FALSE,
+        digits = digits
+    ))
+    for (ln in lines) {
+        say(ln)
+    }
 }
 
 hsd_fn <- function(g) {
@@ -56,8 +62,16 @@ elapsed <- function(expr) {
     system.time(expr)[["elapsed"]]
 }
 
-say("R ", getRversion(), "; gsDesign ", packageVersion("gsDesign"),
-    "; multigrain ", packageVersion("multigrain"), "; ", Sys.time())
+say(
+    "R ",
+    getRversion(),
+    "; gsDesign ",
+    packageVersion("gsDesign"),
+    "; multigrain ",
+    packageVersion("multigrain"),
+    "; ",
+    Sys.time()
+)
 
 # ---- (a1) boundary-table time by grid size and number of looks -------------
 # Median of n_rep builds at HSD(-2). Table time / G is the per-gsBound1() cost.
@@ -71,14 +85,18 @@ tab_time <- expand.grid(G = grid_sizes, K = c(2L, 3L))
 tab_time$table_s <- NA_real_
 for (r in seq_len(nrow(tab_time))) {
     t_look <- schedules_a[[as.character(tab_time$K[r])]]
-    times <- vapply(seq_len(n_rep), function(i) {
-        elapsed(multigrain:::.gsd_boundary_table(
-            t_look,
-            spending = sp_m2,
-            alpha = alpha,
-            grid_size = tab_time$G[r]
-        ))
-    }, numeric(1))
+    times <- vapply(
+        seq_len(n_rep),
+        function(i) {
+            elapsed(multigrain:::.gsd_boundary_table(
+                t_look,
+                spending = sp_m2,
+                alpha = alpha,
+                grid_size = tab_time$G[r]
+            ))
+        },
+        numeric(1)
+    )
     tab_time$table_s[r] <- stats::median(times)
 }
 tab_time$ms_per_gsBound1 <- 1000 * tab_time$table_s / tab_time$G
@@ -93,7 +111,9 @@ names(fit_c) <- c("2", "3")
 for (k in names(fit_c)) {
     say(sprintf(
         "K=%s: fit table_s = %.4f ms * G + %.4f s (slope = ms per gsBound1 call)",
-        k, 1000 * fit_c[[k]][["G"]], fit_c[[k]][["(Intercept)"]]
+        k,
+        1000 * fit_c[[k]][["G"]],
+        fit_c[[k]][["(Intercept)"]]
     ))
 }
 
@@ -104,8 +124,12 @@ for (k in names(fit_c)) {
 say("")
 say("== (a2) .gsd_invert() time on G = 1024 tables, median of 11 ==")
 tabs_1024 <- lapply(schedules_a, function(tl) {
-    multigrain:::.gsd_boundary_table(tl, spending = sp_m2, alpha = alpha,
-                                     grid_size = 1024L)
+    multigrain:::.gsd_boundary_table(
+        tl,
+        spending = sp_m2,
+        alpha = alpha,
+        grid_size = 1024L
+    )
 })
 inv_time <- expand.grid(N = c(1e4, 1e5), K = c(2L, 3L))
 inv_time$per_hyp_ms <- NA_real_
@@ -116,10 +140,15 @@ for (r in seq_len(nrow(inv_time))) {
     raw <- matrix(stats::runif(inv_time$N[r] * k), ncol = k)
     bm <- bench::mark(
         for (l in seq_len(k)) {
-            multigrain:::.gsd_invert(tab$bounds[, l], grid = tab$grid,
-                                     p = raw[, l])
+            multigrain:::.gsd_invert(
+                tab$bounds[, l],
+                grid = tab$grid,
+                p = raw[, l]
+            )
         },
-        iterations = 11L, check = FALSE, filter_gc = FALSE
+        iterations = 11L,
+        check = FALSE,
+        filter_gc = FALSE
     )
     inv_time$per_hyp_ms[r] <- 1000 * as.numeric(bm$median)
 }
@@ -144,10 +173,14 @@ full_s <- elapsed(
         grid_size = 1024L
     )
 )
-pred_full <- 3 * tab_time$table_s[tab_time$G == 1024L & tab_time$K == 2L] +
+pred_full <- 3 *
+    tab_time$table_s[tab_time$G == 1024L & tab_time$K == 2L] +
     3 * inv_time$per_hyp_ms[inv_time$N == 1e5 & inv_time$K == 2L] / 1000
-say(sprintf("measured %.2f s; predicted 3 tables + 3 inversions = %.2f s; brief 3.2 s",
-            full_s, pred_full))
+say(sprintf(
+    "measured %.2f s; predicted 3 tables + 3 inversions = %.2f s; brief 3.2 s",
+    full_s,
+    pred_full
+))
 rm(raw_full, pv_full)
 
 # ---- (a4) interpolation error ---------------------------------------------
@@ -157,21 +190,31 @@ rm(raw_full, pv_full)
 # boundary is the first spend; look 2: uniroot on log a). Only p-values inside
 # the table (result neither 1 nor the floor) enter.
 say("")
-say("== (a4) interpolation error, K = 2, t = (0.5, 1), 200 log-uniform p in [1e-6, 0.025] ==")
+say(
+    "== (a4) interpolation error, K = 2, t = (0.5, 1), 200 log-uniform p in [1e-6, 0.025] =="
+)
 t2 <- c(0.5, 1)
 thetas <- c(-4, -2, 1)
 bound_at <- function(a, sp) {
     cs <- sp(a, t2)
-    b <- gsDesign::gsBound1(theta = 0, I = t2, a = rep(-20, 2),
-                            probhi = diff(c(0, cs)))$b
+    b <- gsDesign::gsBound1(
+        theta = 0,
+        I = t2,
+        a = rep(-20, 2),
+        probhi = diff(c(0, cs))
+    )$b
     stats::pnorm(b, lower.tail = FALSE)
 }
 interp <- list()
 for (g in thetas) {
     sp <- hsd_fn(g)
     tabs <- lapply(grid_sizes, function(G) {
-        multigrain:::.gsd_boundary_table(t2, spending = sp, alpha = alpha,
-                                         grid_size = G)
+        multigrain:::.gsd_boundary_table(
+            t2,
+            spending = sp,
+            alpha = alpha,
+            grid_size = G
+        )
     })
     names(tabs) <- grid_sizes
     set.seed(round(1000 + 10 * g))
@@ -188,11 +231,13 @@ for (g in thetas) {
         } else {
             for (j in which(inside)) {
                 f <- function(la) log(bound_at(exp(la), sp)[2]) - log(p[j])
-                exact[j] <- exp(stats::uniroot(
-                    f,
-                    interval = log(c(multigrain:::gsd_grid_min, alpha)),
-                    tol = 1e-13
-                )$root)
+                exact[j] <- exp(
+                    stats::uniroot(
+                        f,
+                        interval = log(c(multigrain:::gsd_grid_min, alpha)),
+                        tol = 1e-13
+                    )$root
+                )
             }
         }
         for (G in grid_sizes) {
@@ -200,9 +245,14 @@ for (g in thetas) {
             vs_1024 <- abs(tr[[gk]][inside] / tr[["1024"]][inside] - 1)
             vs_exact <- abs(tr[[gk]][inside] / exact[inside] - 1)
             interp[[length(interp) + 1L]] <- data.frame(
-                theta = g, look = l, G = G, n = sum(inside),
-                max_vs_1024 = max(vs_1024), med_vs_1024 = stats::median(vs_1024),
-                max_vs_exact = max(vs_exact), med_vs_exact = stats::median(vs_exact)
+                theta = g,
+                look = l,
+                G = G,
+                n = sum(inside),
+                max_vs_1024 = max(vs_1024),
+                med_vs_1024 = stats::median(vs_1024),
+                max_vs_exact = max(vs_exact),
+                med_vs_exact = stats::median(vs_exact)
             )
         }
     }
@@ -211,7 +261,9 @@ interp <- do.call(rbind, interp)
 say_table(interp, digits = 3)
 say("Worst case over theta and look, per G:")
 interp_g <- stats::aggregate(
-    cbind(max_vs_1024, max_vs_exact) ~ G, data = interp, FUN = max
+    cbind(max_vs_1024, max_vs_exact) ~ G,
+    data = interp,
+    FUN = max
 )
 say_table(interp_g, digits = 3)
 
@@ -230,10 +282,16 @@ schedules_b <- list(
     `(0.25,0.5,0.75,1)` = c(0.25, 0.5, 0.75, 1),
     `(0.6,1)` = c(0.6, 1)
 )
-cases <- expand.grid(node = nodes, schedule = names(schedules_b),
-                     stringsAsFactors = FALSE)
-corners <- data.frame(node = c(-10, 2), schedule = c("(0.1,1)", "(0.9,1)"),
-                      stringsAsFactors = FALSE)
+cases <- expand.grid(
+    node = nodes,
+    schedule = names(schedules_b),
+    stringsAsFactors = FALSE
+)
+corners <- data.frame(
+    node = c(-10, 2),
+    schedule = c("(0.1,1)", "(0.9,1)"),
+    stringsAsFactors = FALSE
+)
 cases <- rbind(cases, corners)
 all_t <- c(schedules_b, list(`(0.1,1)` = c(0.1, 1), `(0.9,1)` = c(0.9, 1)))
 
@@ -257,39 +315,70 @@ sweep_one <- function(r) {
     )
     if (inherits(tab, "error")) {
         return(data.frame(
-            node = g, schedule = cases$schedule[r],
-            spend_check = isTRUE(spend_ok), well_ordered = FALSE,
-            message = conditionMessage(tab), min_distinct = NA_integer_,
-            invert_ok = FALSE, min_bound = NA_real_, min_pos_bound = NA_real_,
+            node = g,
+            schedule = cases$schedule[r],
+            spend_check = isTRUE(spend_ok),
+            well_ordered = FALSE,
+            message = conditionMessage(tab),
+            min_distinct = NA_integer_,
+            invert_ok = FALSE,
+            min_bound = NA_real_,
+            min_pos_bound = NA_real_,
             n_zero = NA_integer_
         ))
     }
-    distinct <- apply(tab$bounds, 2, function(col) sum(!duplicated(col) & col > 0))
-    inv <- vapply(seq_len(ncol(tab$bounds)), function(l) {
-        res <- tryCatch(
-            multigrain:::.gsd_invert(tab$bounds[, l], grid = tab$grid,
-                                     p = c(1e-12, 1e-6, 1e-3, 0.02)),
-            error = function(e) NULL
-        )
-        !is.null(res)
-    }, logical(1))
+    distinct <- apply(tab$bounds, 2, function(col) {
+        sum(!duplicated(col) & col > 0)
+    })
+    inv <- vapply(
+        seq_len(ncol(tab$bounds)),
+        function(l) {
+            res <- tryCatch(
+                multigrain:::.gsd_invert(
+                    tab$bounds[, l],
+                    grid = tab$grid,
+                    p = c(1e-12, 1e-6, 1e-3, 0.02)
+                ),
+                error = function(e) NULL
+            )
+            !is.null(res)
+        },
+        logical(1)
+    )
     data.frame(
-        node = g, schedule = cases$schedule[r],
-        spend_check = isTRUE(spend_ok), well_ordered = TRUE, message = "",
-        min_distinct = min(distinct), invert_ok = all(inv),
+        node = g,
+        schedule = cases$schedule[r],
+        spend_check = isTRUE(spend_ok),
+        well_ordered = TRUE,
+        message = "",
+        min_distinct = min(distinct),
+        invert_ok = all(inv),
         min_bound = min(tab$bounds),
         min_pos_bound = min(tab$bounds[tab$bounds > 0]),
         n_zero = sum(tab$bounds <= 0)
     )
 }
 t_sweep <- elapsed(
-    sweep <- do.call(rbind, parallel::mclapply(
-        seq_len(nrow(cases)), sweep_one, mc.cores = n_cores
-    ))
+    sweep <- do.call(
+        rbind,
+        parallel::mclapply(
+            seq_len(nrow(cases)),
+            sweep_one,
+            mc.cores = n_cores
+        )
+    )
 )
-sweep$pass <- sweep$spend_check & sweep$well_ordered & sweep$invert_ok &
-    !is.na(sweep$min_distinct) & sweep$min_distinct >= 2L
-say(sprintf("%d tables built in %.1f s on %d cores", nrow(sweep), t_sweep, n_cores))
+sweep$pass <- sweep$spend_check &
+    sweep$well_ordered &
+    sweep$invert_ok &
+    !is.na(sweep$min_distinct) &
+    sweep$min_distinct >= 2L
+say(sprintf(
+    "%d tables built in %.1f s on %d cores",
+    nrow(sweep),
+    t_sweep,
+    n_cores
+))
 
 main <- sweep[sweep$schedule %in% names(schedules_b), ]
 pass_mat <- matrix(
@@ -299,25 +388,53 @@ pass_mat <- matrix(
 )
 mindist_mat <- matrix(main$min_distinct, nrow = length(nodes),
                       dimnames = list(format(nodes), names(schedules_b)))
-say("Pass/fail (node x schedule) and min over columns of distinct positive boundaries:")
+say(
+    "Pass/fail (node x schedule) and min over columns of distinct positive boundaries:"
+)
 both <- matrix(paste0(pass_mat, " ", mindist_mat), nrow = length(nodes),
                dimnames = dimnames(pass_mat))
-for (ln in utils::capture.output(print(noquote(both)))) say(ln)
+for (ln in utils::capture.output(print(noquote(both)))) {
+    say(ln)
+}
 say("Corners:")
-say_table(sweep[!sweep$schedule %in% names(schedules_b),
-                c("node", "schedule", "pass", "min_distinct", "min_bound",
-                  "min_pos_bound")], digits = 3)
-say("Per schedule: smallest distinct count, smallest boundary, smallest positive boundary:")
-say_table(stats::aggregate(
-    cbind(min_distinct, min_bound, min_pos_bound) ~ schedule,
-    data = sweep, FUN = min
-), digits = 3)
+say_table(
+    sweep[
+        !sweep$schedule %in% names(schedules_b),
+        c(
+            "node",
+            "schedule",
+            "pass",
+            "min_distinct",
+            "min_bound",
+            "min_pos_bound"
+        )
+    ],
+    digits = 3
+)
+say(
+    "Per schedule: smallest distinct count, smallest boundary, smallest positive boundary:"
+)
+say_table(
+    stats::aggregate(
+        cbind(min_distinct, min_bound, min_pos_bound) ~ schedule,
+        data = sweep,
+        FUN = min
+    ),
+    digits = 3
+)
 say(sprintf("Boundaries <= 0 anywhere: %d", sum(sweep$n_zero, na.rm = TRUE)))
 fails <- sweep[!sweep$pass, ]
 if (nrow(fails) > 0) {
     say("FAILING cases:")
-    say_table(fails[, c("node", "schedule", "spend_check", "well_ordered",
-                        "invert_ok", "min_distinct", "message")])
+    say_table(fails[, c(
+        "node",
+        "schedule",
+        "spend_check",
+        "well_ordered",
+        "invert_ok",
+        "min_distinct",
+        "message"
+    )])
 }
 
 # ---- (b2) sfHSD identities ------------------------------------------------
@@ -326,31 +443,50 @@ if (nrow(fails) > 0) {
 # spend(0.025)/0.025, worst relative difference over all nodes and schedules.
 say("")
 say("== (b2) sfHSD identities ==")
-p0 <- tryCatch(gsDesign::sfHSD(0.025, c(0.5, 1), 0)$spend,
-               error = function(e) conditionMessage(e))
+p0 <- tryCatch(gsDesign::sfHSD(0.025, c(0.5, 1), 0)$spend, error = function(e) {
+    conditionMessage(e)
+})
 say("sfHSD(0.025, c(0.5, 1), 0)$spend = ", toString(format(p0, digits = 15)))
-ident <- do.call(rbind, lapply(nodes, function(g) {
-    do.call(rbind, lapply(names(all_t), function(s) {
-        t_look <- all_t[[s]]
-        h <- gsDesign::sfHSD(1, t_look, g)$spend
-        closed <- if (g == 0) t_look else (1 - exp(-g * t_look)) / (1 - exp(-g))
-        lo <- gsDesign::sfHSD(1e-14, t_look, g)$spend / 1e-14
-        hi <- gsDesign::sfHSD(0.025, t_look, g)$spend / 0.025
-        data.frame(
-            node = g, schedule = s,
-            h_vs_closed = max(abs(h / closed - 1)),
-            prop_rel_diff = max(abs(lo / hi - 1)),
-            min_increment_1e14 = min(diff(c(0, lo * 1e-14)))
+ident <- do.call(
+    rbind,
+    lapply(nodes, function(g) {
+        do.call(
+            rbind,
+            lapply(names(all_t), function(s) {
+                t_look <- all_t[[s]]
+                h <- gsDesign::sfHSD(1, t_look, g)$spend
+                closed <- if (g == 0) {
+                    t_look
+                } else {
+                    (1 - exp(-g * t_look)) / (1 - exp(-g))
+                }
+                lo <- gsDesign::sfHSD(1e-14, t_look, g)$spend / 1e-14
+                hi <- gsDesign::sfHSD(0.025, t_look, g)$spend / 0.025
+                data.frame(
+                    node = g,
+                    schedule = s,
+                    h_vs_closed = max(abs(h / closed - 1)),
+                    prop_rel_diff = max(abs(lo / hi - 1)),
+                    min_increment_1e14 = min(diff(c(0, lo * 1e-14)))
+                )
+            })
         )
-    }))
-}))
-say(sprintf("max |sfHSD(1,t,g) / closed form - 1| = %.3g", max(ident$h_vs_closed)))
-say(sprintf("max |[spend(1e-14)/1e-14] / [spend(0.025)/0.025] - 1| = %.3g",
-            max(ident$prop_rel_diff)))
-say(sprintf("smallest spend increment at level 1e-14 = %.3g (node %g, schedule %s)",
-            min(ident$min_increment_1e14),
-            ident$node[which.min(ident$min_increment_1e14)],
-            ident$schedule[which.min(ident$min_increment_1e14)]))
+    })
+)
+say(sprintf(
+    "max |sfHSD(1,t,g) / closed form - 1| = %.3g",
+    max(ident$h_vs_closed)
+))
+say(sprintf(
+    "max |[spend(1e-14)/1e-14] / [spend(0.025)/0.025] - 1| = %.3g",
+    max(ident$prop_rel_diff)
+))
+say(sprintf(
+    "smallest spend increment at level 1e-14 = %.3g (node %g, schedule %s)",
+    min(ident$min_increment_1e14),
+    ident$node[which.min(ident$min_increment_1e14)],
+    ident$schedule[which.min(ident$min_increment_1e14)]
+))
 
 # ---- verdict, header, save ------------------------------------------------
 n_main_fail <- sum(!main$pass)
@@ -358,10 +494,15 @@ n_corner_fail <- sum(!sweep$pass) - n_main_fail
 verdict <- if (sum(!sweep$pass) == 0) {
     "VERDICT: no node in [-10, 2] fails (well-ordering and invertibility, all 4 schedules and both corners)."
 } else {
-    sprintf(paste0(
-        "!!! PAUSE CONDITION: %d node x schedule case(s) FAIL (%d on the four ",
-        "schedules, %d at the corners); see 'FAILING cases' below. !!!"
-    ), sum(!sweep$pass), n_main_fail, n_corner_fail)
+    sprintf(
+        paste0(
+            "!!! PAUSE CONDITION: %d node x schedule case(s) FAIL (%d on the four ",
+            "schedules, %d at the corners); see 'FAILING cases' below. !!!"
+        ),
+        sum(!sweep$pass),
+        n_main_fail,
+        n_corner_fail
+    )
 }
 runtime <- (proc.time() - t_script)[["elapsed"]]
 say("")
@@ -376,12 +517,21 @@ header <- c(
 writeLines(c(header, buffer), out_txt)
 saveRDS(
     list(
-        table_time = tab_time, fit_c = fit_c, invert_time = inv_time,
-        full_transform_s = full_s, full_transform_pred_s = pred_full,
-        interp = interp, interp_by_G = interp_g, sweep = sweep,
-        pass_matrix = pass_mat, min_distinct_matrix = mindist_mat,
-        param0_spend = p0, identities = ident, verdict = verdict,
-        runtime_s = runtime, session = utils::sessionInfo()
+        table_time = tab_time,
+        fit_c = fit_c,
+        invert_time = inv_time,
+        full_transform_s = full_s,
+        full_transform_pred_s = pred_full,
+        interp = interp,
+        interp_by_G = interp_g,
+        sweep = sweep,
+        pass_matrix = pass_mat,
+        min_distinct_matrix = mindist_mat,
+        param0_spend = p0,
+        identities = ident,
+        verdict = verdict,
+        runtime_s = runtime,
+        session = utils::sessionInfo()
     ),
     out_rds
 )

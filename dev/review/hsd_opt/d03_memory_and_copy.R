@@ -37,12 +37,26 @@ say <- function(...) {
     buffer <<- c(buffer, line)
 }
 say_table <- function(df, digits = 4) {
-    lines <- utils::capture.output(print(df, row.names = FALSE, digits = digits))
-    for (ln in lines) say(ln)
+    lines <- utils::capture.output(print(
+        df,
+        row.names = FALSE,
+        digits = digits
+    ))
+    for (ln in lines) {
+        say(ln)
+    }
 }
 
-say("R ", getRversion(), "; multigrain ", packageVersion("multigrain"),
-    "; profmem capability ", capabilities("profmem"), "; ", Sys.time())
+say(
+    "R ",
+    getRversion(),
+    "; multigrain ",
+    packageVersion("multigrain"),
+    "; profmem capability ",
+    capabilities("profmem"),
+    "; ",
+    Sys.time()
+)
 
 # ---- design: README section 2 (m = 3, K = 2, sfLDOF), subset to N_GA -------
 alpha <- 0.025
@@ -93,8 +107,16 @@ invisible(gc())
 say(sprintf("Working matrix: %d x %d, storage %s", nrow(x), ncol(x), typeof(x)))
 
 kernel <- function(mat) {
-    multigrain:::graph_shortcut_gsd_parallel(mat, alpha, w, G, K, n_threads,
-                                             -1L, NULL)
+    multigrain:::graph_shortcut_gsd_parallel(
+        mat,
+        alpha,
+        w,
+        G,
+        K,
+        n_threads,
+        -1L,
+        NULL
+    )
 }
 
 # ---- 1. tracemem ----------------------------------------------------------
@@ -174,7 +196,11 @@ make_closure_local <- function(mat) {
 }
 cl_c <- make_closure_local(x + 0)
 invisible(cl_c$trace())
-log_c <- utils::capture.output(for (i in 1:3) cl_c$eval(bank_slice))
+log_c <- utils::capture.output(
+    for (i in 1:3) {
+        cl_c$eval(bank_slice)
+    }
+)
 cl_c$untrace()
 probes$closure_local_assign_3_evals <- log_c
 
@@ -182,10 +208,12 @@ probes$closure_local_assign_3_evals <- log_c
 env_d <- new.env()
 env_d$mat <- x + 0
 invisible(tracemem(env_d$mat))
-log_d <- utils::capture.output(for (i in 1:3) {
-    env_d$mat[, cols] <- bank_slice
-    kernel(env_d$mat)
-})
+log_d <- utils::capture.output(
+    for (i in 1:3) {
+        env_d$mat[, cols] <- bank_slice
+        kernel(env_d$mat)
+    }
+)
 untracemem(env_d$mat)
 probes$env_assign_3_evals <- log_d
 
@@ -212,15 +240,27 @@ for (nm in names(probes)) {
         say(nm, ": ", paste(probes[[nm]], collapse = " | "))
     }
 }
-tracemem_verdict <- if (copy_tab$copies[copy_tab$probe == "kernel_call"] == 0 &&
-    copy_tab$copies[copy_tab$probe == "assign_top_level_after_kernel"] == 0 &&
-    sum(copy_tab$copies[grepl("^closure_superassign_eval_", copy_tab$probe)]) <= 1 &&
-    all(copy_tab$copies[grepl("^closure_built_inside", copy_tab$probe)] == 0)) {
+tracemem_verdict <- if (
+    copy_tab$copies[copy_tab$probe == "kernel_call"] == 0 &&
+        copy_tab$copies[copy_tab$probe == "assign_top_level_after_kernel"] ==
+            0 &&
+        sum(copy_tab$copies[grepl(
+            "^closure_superassign_eval_",
+            copy_tab$probe
+        )]) <=
+            1 &&
+        all(
+            copy_tab$copies[grepl("^closure_built_inside", copy_tab$probe)] == 0
+        )
+) {
     paste0(
         "TRACEMEM: no per-evaluation copy - the kernel call never copies; a K-column ",
         "assignment with <<- copies at most once in total when the matrix arrived as a ",
         "factory argument (",
-        sum(copy_tab$copies[grepl("^closure_superassign_eval_", copy_tab$probe)]),
+        sum(copy_tab$copies[grepl(
+            "^closure_superassign_eval_",
+            copy_tab$probe
+        )]),
         " copy over 3 evaluations), never when it is built inside the closure ",
         "factory, and on every evaluation with a plain <- inside the closure."
     )
@@ -233,7 +273,9 @@ say(tracemem_verdict)
 # 200 K-column assignments vs 200 kernel calls, each timed individually with
 # bench::hires_time(); medians reported. Interleaved so that drift hits both.
 say("")
-say("== 2. K-column assignment vs kernel call, N_GA = 5e4, m = 3, K = 2, 2 threads ==")
+say(
+    "== 2. K-column assignment vs kernel call, N_GA = 5e4, m = 3, K = 2, 2 threads =="
+)
 n_iter <- 200L
 x_t <- x + 0
 slices <- list(bank_slice, x[, cols])
@@ -256,56 +298,97 @@ for (i in seq_len(n_iter)) {
     t_cl[i] <- t3 - t2
 }
 timing <- data.frame(
-    operation = c("assign K = 2 columns (top level)", "kernel call",
-                  "closure eval (<<- assign + kernel)"),
-    median_ms = 1000 * c(stats::median(t_assign), stats::median(t_kernel),
-                         stats::median(t_cl)),
-    p90_ms = 1000 * c(stats::quantile(t_assign, 0.9), stats::quantile(t_kernel, 0.9),
-                      stats::quantile(t_cl, 0.9))
+    operation = c(
+        "assign K = 2 columns (top level)",
+        "kernel call",
+        "closure eval (<<- assign + kernel)"
+    ),
+    median_ms = 1000 *
+        c(
+            stats::median(t_assign),
+            stats::median(t_kernel),
+            stats::median(t_cl)
+        ),
+    p90_ms = 1000 *
+        c(
+            stats::quantile(t_assign, 0.9),
+            stats::quantile(t_kernel, 0.9),
+            stats::quantile(t_cl, 0.9)
+        )
 )
 say_table(timing)
 ratio <- stats::median(t_assign) / stats::median(t_kernel)
 closure_overhead <- (stats::median(t_cl) - stats::median(t_kernel)) /
     stats::median(t_kernel)
-say(sprintf("copy / kernel = %.1f %% (threshold 15 %%): %s", 100 * ratio,
-            if (ratio > 0.15) "ABOVE - C++ column copier warranted" else
-                "below - no C++ column copier needed"))
-say(sprintf("closure eval overhead over a bare kernel call = %.1f %%",
-            100 * closure_overhead))
+say(sprintf(
+    "copy / kernel = %.1f %% (threshold 15 %%): %s",
+    100 * ratio,
+    if (ratio > 0.15) {
+        "ABOVE - C++ column copier warranted"
+    } else {
+        "below - no C++ column copier needed"
+    }
+))
+say(sprintf(
+    "closure eval overhead over a bare kernel call = %.1f %%",
+    100 * closure_overhead
+))
 # Per tagged hypothesis count: the bank closure assigns K columns per active
 # tagged hypothesis, so the cost scales with m_act.
 for (m_act in c(1, 2, 4)) {
-    say(sprintf("  projected at m_act = %d: %.1f %% of a kernel call", m_act,
-                100 * m_act * ratio))
+    say(sprintf(
+        "  projected at m_act = %d: %.1f %% of a kernel call",
+        m_act,
+        100 * m_act * ratio
+    ))
 }
 
 # ---- 3. memory ------------------------------------------------------------
 say("")
 say("== 3. memory ==")
-say(sprintf("object.size(working matrix) = %s (%.0f bytes; 8 * N_GA * mK = %.0f)",
-            format(object.size(x), units = "MB"), as.numeric(object.size(x)),
-            8 * n_ga * m * K))
+say(sprintf(
+    "object.size(working matrix) = %s (%.0f bytes; 8 * N_GA * mK = %.0f)",
+    format(object.size(x), units = "MB"),
+    as.numeric(object.size(x)),
+    8 * n_ga * m * K
+))
 bank <- expand.grid(M = c(21L, 41L, 97L), m_act = c(1L, 2L, 4L), K = c(2L, 3L))
 bank$MB <- 8 * bank$K * n_ga * bank$M * bank$m_act / 1e6
-bank_wide <- stats::reshape(bank, idvar = c("K", "M"), timevar = "m_act",
-                            direction = "wide")
+bank_wide <- stats::reshape(
+    bank,
+    idvar = c("K", "M"),
+    timevar = "m_act",
+    direction = "wide"
+)
 names(bank_wide) <- sub("MB.", "MB_m_act_", names(bank_wide), fixed = TRUE)
-say("Projected bank bytes 8 * K * N_GA * M * m_act, N_GA = 5e4, in MB (1e6 bytes):")
+say(
+    "Projected bank bytes 8 * K * N_GA * M * m_act, N_GA = 5e4, in MB (1e6 bytes):"
+)
 say_table(bank_wide[order(bank_wide$K, bank_wide$M), ], digits = 5)
 
 runtime <- (proc.time() - t_script)[["elapsed"]]
 say("")
 say(sprintf("Script runtime: %.1f s", runtime))
 
-writeLines(c("# d03_memory_and_copy.R output", tracemem_verdict, "", buffer),
-           out_txt)
+writeLines(
+    c("# d03_memory_and_copy.R output", tracemem_verdict, "", buffer),
+    out_txt
+)
 saveRDS(
     list(
-        copies = copy_tab, tracemem_logs = probes, tracemem_verdict = tracemem_verdict,
-        timing = timing, t_assign = t_assign, t_kernel = t_kernel,
-        t_closure = t_cl, ratio = ratio, closure_overhead = closure_overhead,
-        object_size = as.numeric(object.size(x)), bank = bank,
-        runtime_s = runtime, session = utils::sessionInfo()
+        copies = copy_tab,
+        tracemem_logs = probes,
+        tracemem_verdict = tracemem_verdict,
+        timing = timing,
+        t_assign = t_assign,
+        t_kernel = t_kernel,
+        t_closure = t_cl,
+        ratio = ratio,
+        closure_overhead = closure_overhead,
+        object_size = as.numeric(object.size(x)),
+        bank = bank,
+        runtime_s = runtime,
+        session = utils::sessionInfo()
     ),
     out_rds
 )

@@ -14,12 +14,16 @@ suppressMessages(devtools::load_all(quiet = TRUE))
 library(gsDesign)
 
 alpha <- 0.025
-t     <- c(0.5, 1)
+t <- c(0.5, 1)
 
 # --- 1. Build the table with the package's own helper -----------------------
 
 tab <- multigrain:::.gsd_boundary_table(
-    t_look = t, spending = sfLDOF, alpha = alpha, grid_size = 128, hyp = 1
+    t_look = t,
+    spending = sfLDOF,
+    alpha = alpha,
+    grid_size = 128,
+    hyp = 1
 )
 str(tab)
 
@@ -42,13 +46,25 @@ print(cbind(level = tab$grid[(n - 4):n], tab$bounds[(n - 4):n, ]))
 
 keep1 <- tab$bounds[, 1] > 1e-80
 if (interactive()) {
-    plot(tab$grid, tab$bounds[, 2], log = "xy", type = "l", lwd = 2,
-         xlab = "allocated level gamma", ylab = "nominal boundary",
-         main = "Boundary table, LDOF, t = (0.5, 1)")
+    plot(
+        tab$grid,
+        tab$bounds[, 2],
+        log = "xy",
+        type = "l",
+        lwd = 2,
+        xlab = "allocated level gamma",
+        ylab = "nominal boundary",
+        main = "Boundary table, LDOF, t = (0.5, 1)"
+    )
     lines(tab$grid[keep1], tab$bounds[keep1, 1], lwd = 2, col = "steelblue")
     abline(0, 1, lty = 3)
-    legend("topleft", c("look 2", "look 1", "boundary = level"),
-           col = c("black", "steelblue", "black"), lty = c(1, 1, 3), lwd = c(2, 2, 1))
+    legend(
+        "topleft",
+        c("look 2", "look 1", "boundary = level"),
+        col = c("black", "steelblue", "black"),
+        lty = c(1, 1, 3),
+        lwd = c(2, 2, 1)
+    )
 } else {
     cat("\n(run interactively to see the plot)\n")
 }
@@ -67,15 +83,22 @@ cat("look 2 non-decreasing:", !is.unsorted(tab$bounds[, 2]), "\n")
 # transform must refuse it rather than silently produce nonsense.
 
 bad_sf <- function(a, t) {
-    early <- pmin(a, 0.002 * (1 - a / 0.025))   # decreasing in a
+    early <- pmin(a, 0.002 * (1 - a / 0.025)) # decreasing in a
     ifelse(t >= 1, a, early)
 }
-cat("\nbad_sf look-1 spend at a = 0.005, 0.015, 0.025:",
-    bad_sf(c(0.005, 0.015, 0.025), 0.5), "\n")
+cat(
+    "\nbad_sf look-1 spend at a = 0.005, 0.015, 0.025:",
+    bad_sf(c(0.005, 0.015, 0.025), 0.5),
+    "\n"
+)
 
 res <- tryCatch(
     multigrain:::.gsd_boundary_table(
-        t_look = t, spending = bad_sf, alpha = alpha, grid_size = 64, hyp = 1
+        t_look = t,
+        spending = bad_sf,
+        alpha = alpha,
+        grid_size = 64,
+        hyp = 1
     ),
     error = function(e) e
 )

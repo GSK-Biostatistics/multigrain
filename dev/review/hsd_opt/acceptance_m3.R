@@ -25,8 +25,11 @@ spec <- transform_pvalues_gsd(
         sf_hsd_opt(id = "sec")
     )
 )
-cat("spec built in", round(as.numeric(Sys.time() - t0, units = "secs"), 1),
-    "s\n\n")
+cat(
+    "spec built in",
+    round(as.numeric(Sys.time() - t0, units = "secs"), 1),
+    "s\n\n"
+)
 print(spec)
 
 gain <- trial_success_gsd(r1 + r2 + r3, verbose = "silent")
@@ -65,10 +68,21 @@ on_lattice <- all(vapply(
     },
     logical(1L)
 ))
-cat("\nidentical(res$power, calc_power_pvals_gsd(resolve(...))):",
-    identical(res$power, check), "\n")
+cat(
+    "\nidentical(res$power, calc_power_pvals_gsd(resolve(...))):",
+    identical(res$power, check),
+    "\n"
+)
 cat("spending_param on the lattice:", on_lattice, "\n")
-cat("profile rows:", nrow(res$spending_profile),
-    " converged:", res$profile_converged, "\n")
-cat("VERDICT:",
-    if (identical(res$power, check) && on_lattice) "PASS" else "FAIL", "\n")
+cat(
+    "profile rows:",
+    nrow(res$spending_profile),
+    " converged:",
+    res$profile_converged,
+    "\n"
+)
+cat(
+    "VERDICT:",
+    if (identical(res$power, check) && on_lattice) "PASS" else "FAIL",
+    "\n"
+)

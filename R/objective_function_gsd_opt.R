@@ -7,7 +7,8 @@
 # interval of width 1 / M of the gene, so every node has the same prior mass
 # under a uniform gene; `u = 1` would be node `M + 1` and is mapped to node
 # `M`. Genes outside [0, 1] are clamped first. Vectorised over `u` and `M`.
-.hsd_node_index <- function(u, M) { # nolint: object_name_linter.
+.hsd_node_index <- function(u, M) {
+    # nolint: object_name_linter.
     u <- pmin(pmax(u, 0), 1)
 
     as.integer(pmin(M, 1L + floor(u * M)))
