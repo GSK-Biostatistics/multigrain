@@ -370,7 +370,7 @@ test_that("mismatched dimensions and gain classes abort", {
     )
     expect_error(
         graph_optimise_gsd(
-            opt_pvals_gsd$pvals[, , 1L],
+            opt_pvals_gsd$pvals[,, 1L],
             graph_constraint_free(3),
             opt_gain_gsd,
             verbose = "silent"
@@ -443,7 +443,8 @@ test_that("Figure 3b: the gain at the paper's optimum is a grid maximum", {
     gain_curve <- function(r, delta) {
         v_pfs <- 1 / (1 + r)
         v_os <- r / (1 + r)
-        v_pfs * (p_pfs[[1L]] + delta * p_pfs[[2L]]) +
+        v_pfs *
+            (p_pfs[[1L]] + delta * p_pfs[[2L]]) +
             v_os * (p_os[[1L]] + delta * p_os[[2L]])
     }
 

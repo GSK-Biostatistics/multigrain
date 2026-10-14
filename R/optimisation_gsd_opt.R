@@ -11,7 +11,6 @@
 # (the warm-started profile). All gains of Stage L are on one pinned row
 # order, `idx_local`, so they are paired by simulated trial.
 
-
 # Driver ------------------------------------------------------------------
 
 #' Optimise a graph and its spending parameters
@@ -688,7 +687,12 @@
     # definition: no refinement there, so S_r, the profile and the
     # reported gain agree exactly at theta* (design 2.5)
     rows[[at]] <- .hsd_profile_node(
-        r, at, current, prev = NULL, ctx = ctx, refine = !final
+        r,
+        at,
+        current,
+        prev = NULL,
+        ctx = ctx,
+        refine = !final
     )
     walks <- list(keep[keep > at], rev(keep[keep < at]))
     for (walk in walks) {

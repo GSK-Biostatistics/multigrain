@@ -21,7 +21,7 @@ suppressMessages(devtools::load_all(quiet = TRUE))
 library(gsDesign)
 
 alpha <- 0.025
-t     <- c(1/3, 2/3, 1)
+t <- c(1 / 3, 2 / 3, 1)
 
 nom_bounds <- function(gamma, t, sf = sfLDOF) {
     inc <- diff(c(0, sf(gamma, t)$spend))
@@ -42,28 +42,34 @@ p_draw <- 10^runif(n_p, -7, log10(0.3))
 a_draw <- 10^runif(n_a, -6, log10(alpha))
 
 raw <- array(1, dim = c(n_p, 1, 3))
-for (k in 1:3) raw[, 1, k] <- p_draw
+for (k in 1:3) {
+    raw[, 1, k] <- p_draw
+}
 pr <- transform_pvalues_gsd(raw, info_frac = t, spending = sfLDOF)$pvals[, 1, ]
 
 # boundaries at each drawn allocation: n_a x K
 B_at_a <- t(sapply(a_draw, nom_bounds, t = t))
 
-disagree <- 0L; total <- 0L; close_calls <- 0L
+disagree <- 0L
+total <- 0L
+close_calls <- 0L
 for (ia in seq_len(n_a)) {
     for (k in 1:3) {
-        direct   <- p_draw <= B_at_a[ia, k]
-        via_rep  <- pr[, k] <= a_draw[ia]
+        direct <- p_draw <= B_at_a[ia, k]
+        via_rep <- pr[, k] <= a_draw[ia]
         d <- direct != via_rep
         disagree <- disagree + sum(d)
-        total    <- total + length(d)
+        total <- total + length(d)
         # how many decisions sit within interpolation error of the threshold?
         close_calls <- close_calls + sum(abs(pr[, k] / a_draw[ia] - 1) < 1e-5)
     }
 }
 cat(sprintf("decisions compared: %d\n", total))
 cat(sprintf("disagreements     : %d\n", disagree))
-cat(sprintf("within 1e-5 of the threshold (the only place interpolation could bite): %d\n\n",
-            close_calls))
+cat(sprintf(
+    "within 1e-5 of the threshold (the only place interpolation could bite): %d\n\n",
+    close_calls
+))
 
 # >>> Question: if there were a disagreement, where could it come from?
 #     (Only from interpolation error, and only when p^r is within ~1e-6
@@ -81,18 +87,33 @@ set.seed(7)
 nsim <- 2e5
 # power_nominal = alpha means "no effect": the noncentrality is zero.
 null <- simulate_pvalues_gsd(alpha, info_frac = t, nsim = nsim)
-prn  <- transform_pvalues_gsd(null, spending = sfLDOF)$pvals[, 1, ]
+prn <- transform_pvalues_gsd(null, spending = sfLDOF)$pvals[, 1, ]
 
 reject_any <- apply(prn <= alpha, 1, any)
 rate <- mean(reject_any)
-se   <- sqrt(alpha * (1 - alpha) / nsim)
+se <- sqrt(alpha * (1 - alpha) / nsim)
 cat(sprintf("nominal alpha        : %.4f\n", alpha))
 cat(sprintf("simulated FWER       : %.4f  (MC s.e. %.4f)\n", rate, se))
-cat(sprintf("rejections by look   : %s\n",
-            paste(sprintf("%.4f", colMeans(prn <= alpha & !t(apply(cbind(FALSE, prn[, -3] <= alpha), 1, cummax)))), collapse = ", ")))
-cat("(the by-look rates should sum to the FWER and match the LDOF increments)\n")
-cat(sprintf("LDOF increments      : %s\n\n",
-            paste(sprintf("%.4f", diff(c(0, sfLDOF(alpha, t)$spend))), collapse = ", ")))
+cat(sprintf(
+    "rejections by look   : %s\n",
+    paste(
+        sprintf(
+            "%.4f",
+            colMeans(
+                prn <= alpha &
+                    !t(apply(cbind(FALSE, prn[, -3] <= alpha), 1, cummax))
+            )
+        ),
+        collapse = ", "
+    )
+))
+cat(
+    "(the by-look rates should sum to the FWER and match the LDOF increments)\n"
+)
+cat(sprintf(
+    "LDOF increments      : %s\n\n",
+    paste(sprintf("%.4f", diff(c(0, sfLDOF(alpha, t)$spend))), collapse = ", ")
+))
 
 # --- 3. And with the naive (wrong) approach ----------------------------------
 #

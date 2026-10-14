@@ -121,15 +121,32 @@ run_driver <- function(lib, tag) {
 
 build_and_run <- function() {
     cat("Creating a worktree of", base_ref, "...\n")
-    system2("git", shQuote(c(
-        "-C", repo, "worktree", "add", "--detach", worktree, base_ref
-    )))
+    system2(
+        "git",
+        shQuote(c(
+            "-C",
+            repo,
+            "worktree",
+            "add",
+            "--detach",
+            worktree,
+            base_ref
+        ))
+    )
     on.exit(
         {
             cat("Removing the worktree ...\n")
-            system2("git", shQuote(c(
-                "-C", repo, "worktree", "remove", "--force", worktree
-            )))
+            system2(
+                "git",
+                shQuote(c(
+                    "-C",
+                    repo,
+                    "worktree",
+                    "remove",
+                    "--force",
+                    worktree
+                ))
+            )
         },
         add = TRUE
     )
@@ -151,7 +168,11 @@ b <- runs$branch
 cat("\n== group sequential fixed-path identity check ==\n")
 cat("base    :", a$version, "at", a$lib, "\n")
 cat("branch  :", b$version, "at", b$lib, "\n")
-cat("identical(transform_pvalues_gsd() object):", identical(a$pvals, b$pvals), "\n")
+cat(
+    "identical(transform_pvalues_gsd() object):",
+    identical(a$pvals, b$pvals),
+    "\n"
+)
 cat("identical(.Random.seed):", identical(a$seed, b$seed), "\n")
 
 differing <- names(a$result)[
@@ -162,27 +183,46 @@ differing <- names(a$result)[
     )
 ]
 cat("Result components that are not identical():", toString(differing), "\n")
-cat("Result components present on the branch only:",
-    toString(setdiff(names(b$result), names(a$result))), "\n")
+cat(
+    "Result components present on the branch only:",
+    toString(setdiff(names(b$result), names(a$result))),
+    "\n"
+)
 
-for (nm in c("hyp_weight", "trans_matrix", "power", "solution",
-             "stopping_rule")) {
-    cat(sprintf("  %-16s identical: %s\n", nm,
-                identical(a$result[[nm]], b$result[[nm]])))
+for (nm in c(
+    "hyp_weight",
+    "trans_matrix",
+    "power",
+    "solution",
+    "stopping_rule"
+)) {
+    cat(sprintf(
+        "  %-16s identical: %s\n",
+        nm,
+        identical(a$result[[nm]], b$result[[nm]])
+    ))
 }
-cat(sprintf("  %-16s identical: %s\n", "global@solution",
-            identical(a$result$global_output@solution,
-                      b$result$global_output@solution)))
+cat(sprintf(
+    "  %-16s identical: %s\n",
+    "global@solution",
+    identical(a$result$global_output@solution, b$result$global_output@solution)
+))
 
 ts_a <- a$result$trial_success
 ts_b <- b$result$trial_success
 cat("\n`trial_success`, field by field:\n")
 for (nm in c("m", "objective", "cpp_code")) {
-    cat(sprintf("  %-16s identical: %s\n", nm,
-                identical(ts_a[[nm]], ts_b[[nm]])))
+    cat(sprintf(
+        "  %-16s identical: %s\n",
+        nm,
+        identical(ts_a[[nm]], ts_b[[nm]])
+    ))
 }
-cat(sprintf("  %-16s identical: %s  (external pointer; may differ)\n",
-            "func", identical(ts_a$func, ts_b$func)))
+cat(sprintf(
+    "  %-16s identical: %s  (external pointer; may differ)\n",
+    "func",
+    identical(ts_a$func, ts_b$func)
+))
 
 ok <- identical(a$pvals, b$pvals) &&
     identical(a$seed, b$seed) &&

@@ -142,12 +142,20 @@ staged_run <- function(pv, gc, gain, seed, global_search = TRUE) {
 run_counts <- function() {
     des <- make_design("S2")
     t0 <- elapsed()
-    pv <- transform_pvalues_gsd(des$raw, spending = gsDesign::sfLDOF, alpha = alpha)
+    pv <- transform_pvalues_gsd(
+        des$raw,
+        spending = gsDesign::sfLDOF,
+        alpha = alpha
+    )
     tr_secs <- elapsed() - t0
     stamp("[counts] transform sfLDOF: %.2f s", tr_secs)
 
     d6 <- list()
-    for (cfg in list(list(seed = 1, gs = TRUE, one_call = TRUE), list(seed = 2, gs = TRUE, one_call = FALSE), list(seed = 1, gs = FALSE, one_call = TRUE))) {
+    for (cfg in list(
+        list(seed = 1, gs = TRUE, one_call = TRUE),
+        list(seed = 2, gs = TRUE, one_call = FALSE),
+        list(seed = 1, gs = FALSE, one_call = TRUE)
+    )) {
         lab <- sprintf("seed %d, global_search = %s", cfg$seed, cfg$gs)
         t0 <- elapsed()
         st <- staged_run(pv, des$gc, des$gain, cfg$seed, cfg$gs)
@@ -161,7 +169,11 @@ run_counts <- function() {
                 identical_hyp_weight = NA,
                 identical_graph = NA
             )
-            stamp("[counts] %s: staged %.1f s (one-call check skipped for wall time)", lab, staged_secs)
+            stamp(
+                "[counts] %s: staged %.1f s (one-call check skipped for wall time)",
+                lab,
+                staged_secs
+            )
             saveRDS(list(d6 = d6), part_file("counts_partial"))
             next
         }
@@ -184,7 +196,10 @@ run_counts <- function() {
             staged_secs = staged_secs,
             one_secs = one_secs,
             one_gain = one$power$trial_success,
-            identical_hyp_weight = identical(unname(one$hyp_weight), unname(st$hyp_weight)),
+            identical_hyp_weight = identical(
+                unname(one$hyp_weight),
+                unname(st$hyp_weight)
+            ),
             identical_graph = same
         )
         stamp(
@@ -207,7 +222,13 @@ run_counts <- function() {
     } else {
         tn <- transform_node(des, -2)
         set.seed(1)
-        r2 <- graph_optimise_gsd(tn$pv, des$gc, des$gain, num_threads = n_threads, verbose = "silent")
+        r2 <- graph_optimise_gsd(
+            tn$pv,
+            des$gc,
+            des$gain,
+            num_threads = n_threads,
+            verbose = "silent"
+        )
         g2 <- list(w = unname(r2$hyp_weight), G = unname(r2$trans_matrix))
         g2_source <- "default run at gamma -2, seed 1"
     }
@@ -229,11 +250,22 @@ run_counts <- function() {
             gain = r$gain,
             ms_per_eval = 1000 * r$cobyla_secs / r$n_eval
         )
-        stamp("[counts] E_C node %.2f: %d evaluations, %.1f s", g, as.integer(r$n_eval), r$cobyla_secs)
+        stamp(
+            "[counts] E_C node %.2f: %d evaluations, %.1f s",
+            g,
+            as.integer(r$n_eval),
+            r$cobyla_secs
+        )
     }
     d7 <- do.call(rbind, d7)
     saveRDS(
-        list(d6 = d6, d7 = d7, g2 = g2, g2_source = g2_source, transform_ldof_s = tr_secs),
+        list(
+            d6 = d6,
+            d7 = d7,
+            g2 = g2,
+            g2_source = g2_source,
+            transform_ldof_s = tr_secs
+        ),
         part_file("counts")
     )
     unlink(part_file("counts_partial"))
@@ -244,7 +276,16 @@ run_counts <- function() {
 # Prototype bank closure. The decode/penalty block is copied from
 # create_obj_func_gsd(); the working matrix is built inside the factory (d03:
 # then a column assignment with <<- does not copy the matrix).
-make_bank_obj <- function(gc, gain, fixed_kmat, bank, opt_cols, p_graph, K, stop_rule) {
+make_bank_obj <- function(
+    gc,
+    gain,
+    fixed_kmat,
+    bank,
+    opt_cols,
+    p_graph,
+    K,
+    stop_rule
+) {
     hyp_constraint <- gc$hyp_constraint
     trans_constraint <- gc$trans_constraint
     power_criterion <- gain$func
@@ -262,7 +303,10 @@ make_bank_obj <- function(gc, gain, fixed_kmat, bank, opt_cols, p_graph, K, stop
         q <- min(M, 1L + floor(u * M))
 
         theta <- multigrain:::split_theta(xg, hyp_constraint)
-        hyp_weight <- multigrain:::recover_full_weights(theta$w_pars, hyp_constraint)
+        hyp_weight <- multigrain:::recover_full_weights(
+            theta$w_pars,
+            hyp_constraint
+        )
         trans_matrix <- multigrain:::recover_full_trans_matrix(
             theta$g_pars,
             trans_constraint
@@ -301,7 +345,9 @@ make_bank_obj <- function(gc, gain, fixed_kmat, bank, opt_cols, p_graph, K, stop
         val <- power_criterion(res$time)
         archive$n_kernel <- archive$n_kernel + 1
         archive$visits[[q]] <- archive$visits[[q]] + 1L
-        if (val > archive$best[[q]]) archive$best[[q]] <- val
+        if (val > archive$best[[q]]) {
+            archive$best[[q]] <- val
+        }
         val
     }
     attr(fn, "archive") <- archive
@@ -329,11 +375,23 @@ run_bank <- function(name) {
     bank <- lapply(kfull, function(km) km[idx_ga, opt_cols, drop = FALSE])
     fixed_kmat <- kfull[[1]][idx_ga, , drop = FALSE]
     bank_secs <- elapsed() - t0
-    fixed_same <- all(vapply(kfull, function(km) identical(km[, -opt_cols], kfull[[1]][, -opt_cols]), logical(1)))
-    stamp("[bank %s] bank built %.2f s; fixed columns identical across nodes: %s", name, bank_secs, fixed_same)
+    fixed_same <- all(vapply(
+        kfull,
+        function(km) identical(km[, -opt_cols], kfull[[1]][, -opt_cols]),
+        logical(1)
+    ))
+    stamp(
+        "[bank %s] bank built %.2f s; fixed columns identical across nodes: %s",
+        name,
+        bank_secs,
+        fixed_same
+    )
 
     gc <- des$gc
-    x0 <- multigrain:::.build_start_matrix(gc, list(list(hyp_weight = NULL, trans_matrix = NULL)))
+    x0 <- multigrain:::.build_start_matrix(
+        gc,
+        list(list(hyp_weight = NULL, trans_matrix = NULL))
+    )
     p_graph <- ncol(x0)
     q_start <- match(-2, nodes)
     u_start <- (q_start - 0.5) / M
@@ -346,7 +404,16 @@ run_bank <- function(name) {
     pop_rule <- min(max(40L * (m + 1L), 200L), 500L)
 
     run_gene <- function(seed, pop) {
-        fit <- make_bank_obj(gc, des$gain, fixed_kmat, bank, opt_cols, p_graph, K, stop_rule)
+        fit <- make_bank_obj(
+            gc,
+            des$gain,
+            fixed_kmat,
+            bank,
+            opt_cols,
+            p_graph,
+            K,
+            stop_rule
+        )
         immutable <- list(
             type = "real-valued",
             fitness = fit,
@@ -370,8 +437,19 @@ run_bank <- function(name) {
         sol <- ga@solution[1, ]
         u <- min(max(sol[[p_graph + 1L]], 0), 1)
         q <- min(M, 1L + floor(u * M))
-        gr <- multigrain:::param_to_solution(sol[seq_len(p_graph)], gc, process = TRUE)
-        full <- eval_graph(kfull[[q]], K, des$gain, gr$hyp_weight, gr$trans_matrix, stop_rule)
+        gr <- multigrain:::param_to_solution(
+            sol[seq_len(p_graph)],
+            gc,
+            process = TRUE
+        )
+        full <- eval_graph(
+            kfull[[q]],
+            K,
+            des$gain,
+            gr$hyp_weight,
+            gr$trans_matrix,
+            stop_rule
+        )
         arc <- attr(fit, "archive")
         list(
             config = sprintf("gene, popSize %d", pop),
@@ -427,7 +505,11 @@ run_bank <- function(name) {
     runs <- list()
     for (s in bank_seeds) {
         for (kind in c("gene", "plain")) {
-            r <- if (kind == "gene") run_gene(s, base_opts$popSize) else run_plain(s)
+            r <- if (kind == "gene") {
+                run_gene(s, base_opts$popSize)
+            } else {
+                run_plain(s)
+            }
             runs[[length(runs) + 1L]] <- r
             stamp(
                 "[bank %s] %s seed %d: iter %d, evals %d, %.1f s, node %.2f, best %.6f, full %.6f",
@@ -441,7 +523,10 @@ run_bank <- function(name) {
                 r$best_fitness,
                 r$full_gain
             )
-            saveRDS(list(runs = runs), part_file(paste0("bank_", name, "_partial")))
+            saveRDS(
+                list(runs = runs),
+                part_file(paste0("bank_", name, "_partial"))
+            )
         }
     }
     for (s in bank_seeds_pop300) {
@@ -493,13 +578,20 @@ report <- function() {
         format(Sys.time()),
         n_threads
     ))
-    cat("tracemem()/copy numbers: not repeated, d03 is in (see d03_memory_and_copy_output.txt)\n")
+    cat(
+        "tracemem()/copy numbers: not repeated, d03 is in (see d03_memory_and_copy_output.txt)\n"
+    )
     out <- list()
     if (file.exists(part_file("counts"))) {
         cn <- readRDS(part_file("counts"))
         out$counts <- cn
-        cat("\n== Table D6: section-2 design (sfLDOF x 3), drivers in graph_optimise_gsd() order ==\n")
-        cat(sprintf("transform (sfLDOF, G = 1024): %.2f s\n", cn$transform_ldof_s))
+        cat(
+            "\n== Table D6: section-2 design (sfLDOF x 3), drivers in graph_optimise_gsd() order ==\n"
+        )
+        cat(sprintf(
+            "transform (sfLDOF, G = 1024): %.2f s\n",
+            cn$transform_ldof_s
+        ))
         for (lab in names(cn$d6)) {
             x <- cn$d6[[lab]]
             tab <- x$st$table
@@ -509,7 +601,11 @@ report <- function() {
             cat(sprintf(
                 "staged total %.1f s; one-call graph_optimise_gsd() %s s; identical(hyp_weight) %s; identical(trans_matrix too) %s\n",
                 x$staged_secs,
-                if (is.na(x$one_secs)) "not run" else sprintf("%.1f", x$one_secs),
+                if (is.na(x$one_secs)) {
+                    "not run"
+                } else {
+                    sprintf("%.1f", x$one_secs)
+                },
                 x$identical_hyp_weight,
                 x$identical_graph
             ))
@@ -518,7 +614,11 @@ report <- function() {
                 x$st$gain,
                 if (is.na(x$one_gain)) "-" else sprintf("%.6f", x$one_gain),
                 x$st$source,
-                if (is.na(x$st$local_ga[["ga"]])) "-" else sprintf("%.6f", x$st$local_ga[["ga"]]),
+                if (is.na(x$st$local_ga[["ga"]])) {
+                    "-"
+                } else {
+                    sprintf("%.6f", x$st$local_ga[["ga"]])
+                },
                 x$st$local_ga[["local"]]
             ))
             ga_row <- tab[tab$stage == "GA", ]
@@ -530,12 +630,18 @@ report <- function() {
                 ))
             }
         }
-        cat("\n== Table D7: warm-started COBYLA counts E_C, section-2 design, from the gamma = -2 optimum ==\n")
+        cat(
+            "\n== Table D7: warm-started COBYLA counts E_C, section-2 design, from the gamma = -2 optimum ==\n"
+        )
         cat("start graph:", cn$g2_source, "\n")
         d7 <- cn$d7
         d7p <- d7
-        for (cc in c("gain_start", "gain_refined", "gain")) d7p[[cc]] <- sprintf("%.6f", d7[[cc]])
-        for (cc in c("cobyla_s", "node_s", "transform_s", "ms_per_eval")) d7p[[cc]] <- sprintf("%.2f", d7[[cc]])
+        for (cc in c("gain_start", "gain_refined", "gain")) {
+            d7p[[cc]] <- sprintf("%.6f", d7[[cc]])
+        }
+        for (cc in c("cobyla_s", "node_s", "transform_s", "ms_per_eval")) {
+            d7p[[cc]] <- sprintf("%.2f", d7[[cc]])
+        }
         print(d7p, row.names = FALSE)
         ec <- d7$evals[d7$node != -2]
         cat(sprintf(
@@ -549,10 +655,15 @@ report <- function() {
     d02 <- if (file.exists(d02_file)) readRDS(d02_file) else NULL
     for (nm in c("M0", "M1")) {
         f <- part_file(paste0("bank_", nm))
-        if (!file.exists(f)) next
+        if (!file.exists(f)) {
+            next
+        }
         b <- readRDS(f)
         out[[paste0("bank_", nm)]] <- b
-        cat(sprintf("\n== Table D8 (%s): GA with and without the parameter gene ==\n", nm))
+        cat(sprintf(
+            "\n== Table D8 (%s): GA with and without the parameter gene ==\n",
+            nm
+        ))
         cat(sprintf(
             "21 transforms %.1f s; bank (21 x 5e4 x 2 slices) %.2f s; fixed H1 columns identical across nodes: %s\n",
             b$transform_s,
@@ -578,35 +689,68 @@ report <- function() {
                 pl[2]
             ))
         }
-        df <- do.call(rbind, lapply(b$runs, function(r) {
-            data.frame(
-                config = r$config,
-                seed = r$seed,
-                generations = r$iter,
-                evals = r$evals,
-                wall_s = round(r$secs, 1),
-                node = r$node,
-                w1 = round(r$w1, 4),
-                best_fitness_sub = sprintf("%.6f", r$best_fitness),
-                full_gain = sprintf("%.6f", r$full_gain),
-                nodes_visited = r$nodes_visited
-            )
-        }))
+        df <- do.call(
+            rbind,
+            lapply(b$runs, function(r) {
+                data.frame(
+                    config = r$config,
+                    seed = r$seed,
+                    generations = r$iter,
+                    evals = r$evals,
+                    wall_s = round(r$secs, 1),
+                    node = r$node,
+                    w1 = round(r$w1, 4),
+                    best_fitness_sub = sprintf("%.6f", r$best_fitness),
+                    full_gain = sprintf("%.6f", r$full_gain),
+                    nodes_visited = r$nodes_visited
+                )
+            })
+        )
         print(df, row.names = FALSE)
-        agg <- do.call(rbind, lapply(split(b$runs, vapply(b$runs, `[[`, character(1), "config")), function(rs) {
-            data.frame(
-                config = rs[[1]]$config,
-                n = length(rs),
-                median_generations = stats::median(vapply(rs, `[[`, numeric(1), "iter")),
-                median_evals = stats::median(vapply(rs, `[[`, numeric(1), "evals")),
-                median_wall_s = round(stats::median(vapply(rs, `[[`, numeric(1), "secs")), 1),
-                nodes_found = paste(sprintf("%.2f", vapply(rs, `[[`, numeric(1), "node")), collapse = " "),
-                max_full_gain = sprintf("%.6f", max(vapply(rs, `[[`, numeric(1), "full_gain")))
+        agg <- do.call(
+            rbind,
+            lapply(
+                split(b$runs, vapply(b$runs, `[[`, character(1), "config")),
+                function(rs) {
+                    data.frame(
+                        config = rs[[1]]$config,
+                        n = length(rs),
+                        median_generations = stats::median(vapply(
+                            rs,
+                            `[[`,
+                            numeric(1),
+                            "iter"
+                        )),
+                        median_evals = stats::median(vapply(
+                            rs,
+                            `[[`,
+                            numeric(1),
+                            "evals"
+                        )),
+                        median_wall_s = round(
+                            stats::median(vapply(rs, `[[`, numeric(1), "secs")),
+                            1
+                        ),
+                        nodes_found = paste(
+                            sprintf(
+                                "%.2f",
+                                vapply(rs, `[[`, numeric(1), "node")
+                            ),
+                            collapse = " "
+                        ),
+                        max_full_gain = sprintf(
+                            "%.6f",
+                            max(vapply(rs, `[[`, numeric(1), "full_gain"))
+                        )
+                    )
+                }
             )
-        }))
+        )
         cat("\nsummary:\n")
         print(agg, row.names = FALSE)
-        gen_gene <- agg$median_generations[agg$config == sprintf("gene, popSize %d", b$popSize_default)]
+        gen_gene <- agg$median_generations[
+            agg$config == sprintf("gene, popSize %d", b$popSize_default)
+        ]
         gen_plain <- agg$median_generations[grepl("^no gene", agg$config)]
         cat(sprintf(
             "generation ratio gene / no gene at popSize %d (medians): %.2f (rule threshold 1.5)\n",

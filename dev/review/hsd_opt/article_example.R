@@ -59,10 +59,13 @@ raw <- simulate_pvalues_gsd(
     nsim = 1e5
 )
 
-spec <- timed("transform_pvalues_gsd() spec", transform_pvalues_gsd(
-    raw,
-    spending = list(gsDesign::sfLDOF, sf_hsd_opt())
-))
+spec <- timed(
+    "transform_pvalues_gsd() spec",
+    transform_pvalues_gsd(
+        raw,
+        spending = list(gsDesign::sfLDOF, sf_hsd_opt())
+    )
+)
 show("spec", spec)
 
 # ---- chunk 2: optimise graph and parameter jointly ---------------------------
@@ -74,13 +77,16 @@ gain <- trial_success_gsd(
 )
 rule <- stopping_rule_gsd(r1)
 
-result <- timed("graph_optimise_gsd() on the spec", graph_optimise_gsd(
-    spec,
-    graph_constraint_free(2),
-    gain,
-    stopping_rule = rule,
-    num_threads = 2
-))
+result <- timed(
+    "graph_optimise_gsd() on the spec",
+    graph_optimise_gsd(
+        spec,
+        graph_constraint_free(2),
+        gain,
+        stopping_rule = rule,
+        num_threads = 2
+    )
+)
 show("print(result)", result)
 cat("\n## summary(result)\n")
 summary(result)
@@ -90,8 +96,10 @@ show("result$spending_param", result$spending_param)
 show("result$hyp_spending_param", result$hyp_spending_param)
 show("result$spending", result$spending)
 show("round(result$hyp_weight, 3)", round(result$hyp_weight, 3))
-show("round(result$power$trial_success, 4)",
-     round(result$power$trial_success, 4))
+show(
+    "round(result$power$trial_success, 4)",
+    round(result$power$trial_success, 4)
+)
 show("result$solution$opt_source", result$solution$opt_source)
 show("result$profile_converged", result$profile_converged)
 cat("\n## result$spending_profile (digits 6)\n")
@@ -102,10 +110,13 @@ w1_by_node <- vapply(
     function(g) g$hyp_weight[[1L]],
     double(1L)
 )
-print(data.frame(
-    value = result$spending_profile$value,
-    w1 = round(w1_by_node, 3)
-), row.names = FALSE)
+print(
+    data.frame(
+        value = result$spending_profile$value,
+        w1 = round(w1_by_node, 3)
+    ),
+    row.names = FALSE
+)
 show("result$spending_search", result$spending_search)
 
 # ---- chunk 3: the same draws with fixed spending on H2 -----------------------
@@ -115,13 +126,16 @@ fixed_run <- function(label, h2_spending) {
         raw,
         spending = list(gsDesign::sfLDOF, h2_spending)
     )
-    res <- timed(paste("graph_optimise_gsd(), H2", label), graph_optimise_gsd(
-        pv,
-        graph_constraint_free(2),
-        gain,
-        stopping_rule = rule,
-        num_threads = 2
-    ))
+    res <- timed(
+        paste("graph_optimise_gsd(), H2", label),
+        graph_optimise_gsd(
+            pv,
+            graph_constraint_free(2),
+            gain,
+            stopping_rule = rule,
+            num_threads = 2
+        )
+    )
     cat(sprintf(
         "[fixed] H2 %s: gain %.6f, w1 %.3f\n",
         label,
@@ -136,16 +150,22 @@ fixed_pocock <- fixed_run("sfLDPocock", gsDesign::sfLDPocock)
 cat("\n## fixed spending on H2 vs the joint optimum (same draws)\n")
 comparison <- data.frame(
     H2_spending = c("sfLDOF", "sfLDPocock", result$spending[[2L]]),
-    w1 = round(c(
-        fixed_ldof$hyp_weight[[1L]],
-        fixed_pocock$hyp_weight[[1L]],
-        result$hyp_weight[[1L]]
-    ), 3),
-    gain = round(c(
-        fixed_ldof$power$trial_success,
-        fixed_pocock$power$trial_success,
-        result$power$trial_success
-    ), 4)
+    w1 = round(
+        c(
+            fixed_ldof$hyp_weight[[1L]],
+            fixed_pocock$hyp_weight[[1L]],
+            result$hyp_weight[[1L]]
+        ),
+        3
+    ),
+    gain = round(
+        c(
+            fixed_ldof$power$trial_success,
+            fixed_pocock$power$trial_success,
+            result$power$trial_success
+        ),
+        4
+    )
 )
 print(comparison, row.names = FALSE)
 
@@ -158,10 +178,13 @@ raw_new <- simulate_pvalues_gsd(
     info_frac = c(0.5, 1),
     nsim = 1e5
 )
-spec_new <- timed("transform_pvalues_gsd() fresh spec", transform_pvalues_gsd(
-    raw_new,
-    spending = list(gsDesign::sfLDOF, sf_hsd_opt())
-))
+spec_new <- timed(
+    "transform_pvalues_gsd() fresh spec",
+    transform_pvalues_gsd(
+        raw_new,
+        spending = list(gsDesign::sfLDOF, sf_hsd_opt())
+    )
+)
 pv_new <- resolve_pvalues_gsd(spec_new, result$spending_param)
 show("pv_new$spending", pv_new$spending)
 check <- calc_power_pvals_gsd(

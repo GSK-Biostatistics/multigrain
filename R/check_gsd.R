@@ -170,11 +170,17 @@ check_trial_success_gsd <- function(
     if (m_graph != pvals$m) {
         cli::cli_abort(
             c(
-                paste(what, "and {.arg pvals} disagree on the number of \\
-                hypotheses."),
-                x = paste(what, "describes {cli::qty(m_graph)}m = {m_graph} \\
+                paste(
+                    what,
+                    "and {.arg pvals} disagree on the number of \\
+                hypotheses."
+                ),
+                x = paste(
+                    what,
+                    "describes {cli::qty(m_graph)}m = {m_graph} \\
                 hypothes{?is/es}, but the p-values hold \\
-                {cli::qty(pvals$m)}m = {pvals$m}.")
+                {cli::qty(pvals$m)}m = {pvals$m}."
+                )
             ),
             call = call
         )

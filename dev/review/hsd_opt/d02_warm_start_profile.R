@@ -64,7 +64,10 @@ run_design <- function(name) {
     # to seeds 1 and 2 for wall time; see the discovery report). A partial
     # file from an interrupted run is resumed: finished (node, seed) runs are
     # kept, not repeated.
-    seeds <- as.integer(strsplit(Sys.getenv(paste0("D02_SEEDS_", name), "1,2,3"), ",")[[1]])
+    seeds <- as.integer(strsplit(
+        Sys.getenv(paste0("D02_SEEDS_", name), "1,2,3"),
+        ","
+    )[[1]])
     outer <- list()
     pf <- part_file(paste0(name, "_partial"))
     if (file.exists(pf)) {
@@ -75,7 +78,9 @@ run_design <- function(name) {
     for (g in outer_nodes) {
         j <- match(g, nodes)
         for (s in seeds) {
-            if (paste(g, s) %in% done) next
+            if (paste(g, s) %in% done) {
+                next
+            }
             set.seed(s)
             t0 <- proc.time()[["elapsed"]]
             res <- graph_optimise_gsd(
@@ -132,7 +137,13 @@ run_design <- function(name) {
     node_secs <- numeric(length(nodes))
 
     t0 <- proc.time()[["elapsed"]]
-    prof[[j0]] <- refine_node(des, pv[[j0]], list(start_graph), stop_rule, local_opts)
+    prof[[j0]] <- refine_node(
+        des,
+        pv[[j0]],
+        list(start_graph),
+        stop_rule,
+        local_opts
+    )
     node_secs[[j0]] <- proc.time()[["elapsed"]] - t0
     overall <- prof[[j0]]$graph
     S <- rep(NA_real_, length(nodes))
@@ -171,8 +182,12 @@ run_design <- function(name) {
             )
         }
     }
-    if (j0 < length(nodes)) walk(seq(j0 + 1L, length(nodes)))
-    if (j0 > 1L) walk(seq(j0 - 1L, 1L))
+    if (j0 < length(nodes)) {
+        walk(seq(j0 + 1L, length(nodes)))
+    }
+    if (j0 > 1L) {
+        walk(seq(j0 - 1L, 1L))
+    }
 
     profile_df <- data.frame(
         node = nodes,
@@ -199,7 +214,10 @@ run_design <- function(name) {
         graphs = graphs,
         overall = overall,
         local_opts = local_opts,
-        seeds = list(sim = if (name == "S2") 1 else 20261007, outer = sort(unique(outer_df$seed))),
+        seeds = list(
+            sim = if (name == "S2") 1 else 20261007,
+            outer = sort(unique(outer_df$seed))
+        ),
         secs = proc.time()[["elapsed"]] - t_design
     )
     saveRDS(out, part_file(name))
@@ -212,7 +230,9 @@ report <- function() {
     options(width = 200)
     designs <- c("M0", "M1", "S2")
     have <- designs[file.exists(vapply(designs, part_file, character(1)))]
-    res <- lapply(stats::setNames(have, have), function(nm) readRDS(part_file(nm)))
+    res <- lapply(stats::setNames(have, have), function(nm) {
+        readRDS(part_file(nm))
+    })
     cat("# d02_warm_start_profile.R output\n")
     cat(sprintf(
         "R %s; multigrain %s; %s; num_threads = %d; nsim = 1e5\n",
@@ -233,7 +253,9 @@ report <- function() {
             r$seeds$sim,
             r$start_node
         ))
-        cat("\n-- outer-loop reference (full default graph_optimise_gsd per node and seed) --\n")
+        cat(
+            "\n-- outer-loop reference (full default graph_optimise_gsd per node and seed) --\n"
+        )
         o_print <- o
         o_print$gain <- sprintf("%.6f", o$gain)
         o_print$w1 <- sprintf("%.4f", o$w1)
@@ -246,7 +268,11 @@ report <- function() {
             P_tilde = sprintf("%.6f", p$P),
             S_fixed_graph = sprintf("%.6f", p$S),
             P_minus_S = sprintf("%.2e", p$P - p$S),
-            start = c("seed1", "prev", "overall")[ifelse(p$node == r$start_node, 1, p$start_from + 1)],
+            start = c("seed1", "prev", "overall")[ifelse(
+                p$node == r$start_node,
+                1,
+                p$start_from + 1
+            )],
             w1 = sprintf("%.4f", p$w1),
             n_eval = p$n_eval,
             transform_s = sprintf("%.2f", p$transform_s),
@@ -268,23 +294,33 @@ report <- function() {
         ))
 
         cat("\n-- Table D4: gate --\n")
-        d4 <- do.call(rbind, lapply(outer_nodes, function(g) {
-            u <- o$gain[o$node == g]
-            us <- o$seed[o$node == g]
-            data.frame(
-                node = g,
-                P_tilde = p$P[p$node == g],
-                S = p$S[p$node == g],
-                U_seed1 = if (1 %in% us) u[us == 1] else NA_real_,
-                U_seed2 = if (2 %in% us) u[us == 2] else NA_real_,
-                U_seed3 = if (3 %in% us) u[us == 3] else NA_real_,
-                max_U = max(u),
-                gap = max(u) - p$P[p$node == g],
-                in_plateau = g >= pl[1] & g <= pl[2]
-            )
-        }))
+        d4 <- do.call(
+            rbind,
+            lapply(outer_nodes, function(g) {
+                u <- o$gain[o$node == g]
+                us <- o$seed[o$node == g]
+                data.frame(
+                    node = g,
+                    P_tilde = p$P[p$node == g],
+                    S = p$S[p$node == g],
+                    U_seed1 = if (1 %in% us) u[us == 1] else NA_real_,
+                    U_seed2 = if (2 %in% us) u[us == 2] else NA_real_,
+                    U_seed3 = if (3 %in% us) u[us == 3] else NA_real_,
+                    max_U = max(u),
+                    gap = max(u) - p$P[p$node == g],
+                    in_plateau = g >= pl[1] & g <= pl[2]
+                )
+            })
+        )
         d4_print <- d4
-        for (cc in c("P_tilde", "S", "U_seed1", "U_seed2", "U_seed3", "max_U")) {
+        for (cc in c(
+            "P_tilde",
+            "S",
+            "U_seed1",
+            "U_seed2",
+            "U_seed3",
+            "max_U"
+        )) {
             d4_print[[cc]] <- sprintf("%.6f", d4[[cc]])
         }
         d4_print$gap <- sprintf("%+.2e", d4$gap)
@@ -300,9 +336,15 @@ report <- function() {
             if (is.na(max_gap_out)) "none" else sprintf("%+.2e", max_gap_out)
         ))
         cat(sprintf("GATE %s: %s\n", nm, if (pass) "PASS" else "FAIL"))
-        gate[[nm]] <- list(d4 = d4, pass = pass, plateau = pl, plateau_S = pl_s,
-                           argmax = am, max_gap_in = max_gap_in,
-                           max_gap_out = max_gap_out)
+        gate[[nm]] <- list(
+            d4 = d4,
+            pass = pass,
+            plateau = pl,
+            plateau_S = pl_s,
+            argmax = am,
+            max_gap_in = max_gap_in,
+            max_gap_out = max_gap_out
+        )
 
         cat("\n-- cost --\n")
         cat(sprintf(
@@ -351,7 +393,9 @@ report <- function() {
                 p0$w1[which.max(p0$P)]
             ))
         }
-        cat("README 7.5 (nsim 2e5, LDOF vs sfLDPocock on H2, grid in w1): 0.6707 at w1 0.32 -> 0.6903 at w1 0.46\n")
+        cat(
+            "README 7.5 (nsim 2e5, LDOF vs sfLDPocock on H2, grid in w1): 0.6707 at w1 0.32 -> 0.6903 at w1 0.46\n"
+        )
     }
 
     cat("\n== Gate summary ==\n")
@@ -366,8 +410,14 @@ report <- function() {
         ))
     }
     all_pass <- length(gate) == 3 && all(vapply(gate, `[[`, logical(1), "pass"))
-    cat(sprintf("OVERALL WARM-START GATE: %s\n", if (all_pass) "PASS" else "FAIL or incomplete"))
-    saveRDS(list(designs = res, gate = gate), file.path(here, "d02_warm_start_profile_results.rds"))
+    cat(sprintf(
+        "OVERALL WARM-START GATE: %s\n",
+        if (all_pass) "PASS" else "FAIL or incomplete"
+    ))
+    saveRDS(
+        list(designs = res, gate = gate),
+        file.path(here, "d02_warm_start_profile_results.rds")
+    )
 }
 
 if (sys.nframe() == 0L) {

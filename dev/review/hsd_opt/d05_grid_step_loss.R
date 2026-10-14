@@ -36,19 +36,27 @@ cat(sprintf(
 
 results <- list()
 for (nm in designs) {
-    d02 <- readRDS(file.path(here, sprintf("d02_warm_start_profile_results_%s.rds", nm)))
+    d02 <- readRDS(file.path(
+        here,
+        sprintf("d02_warm_start_profile_results_%s.rds", nm)
+    ))
     p <- d02$profile_df
     j_star <- which.max(p$P)
     g_star <- p$node[[j_star]]
     graph_star <- d02$graphs[[j_star]]
     des <- make_design(nm)
-    fine <- round(seq(g_star - half_width, g_star + half_width, by = fine_step), 10)
+    fine <- round(
+        seq(g_star - half_width, g_star + half_width, by = fine_step),
+        10
+    )
     local_opts <- local_opts_default(1e5, des$m)
     rows <- list()
     stop_rule <- NULL
     for (g in fine) {
         tn <- transform_node(des, g)
-        if (is.null(stop_rule) && !is.null(des$rule)) stop_rule <- stop_table(des$rule, tn$pv)
+        if (is.null(stop_rule) && !is.null(des$rule)) {
+            stop_rule <- stop_table(des$rule, tn$pv)
+        }
         t0 <- proc.time()[["elapsed"]]
         r <- refine_node(des, tn$pv, list(graph_star), stop_rule, local_opts)
         rows[[length(rows) + 1L]] <- data.frame(
@@ -78,21 +86,24 @@ for (nm in designs) {
     # unbounded window is reported beside it
     inb <- df$node >= -4 - 1e-9 & df$node <= 1 + 1e-9
     F_in <- max(df$gain[inb])
-    d9 <- do.call(rbind, lapply(steps, function(D) {
-        on <- abs(df$node / D - round(df$node / D)) < 1e-9
-        best <- max(df$gain[on])
-        on_in <- on & inb
-        best_in <- max(df$gain[on_in])
-        data.frame(
-            design = nm,
-            step = D,
-            n_coarse = sum(on_in),
-            best_coarse_node = df$node[on_in][which.max(df$gain[on_in])],
-            best_coarse = best_in,
-            loss = F_in - best_in,
-            loss_unbounded_window = F_max - best
-        )
-    }))
+    d9 <- do.call(
+        rbind,
+        lapply(steps, function(D) {
+            on <- abs(df$node / D - round(df$node / D)) < 1e-9
+            best <- max(df$gain[on])
+            on_in <- on & inb
+            best_in <- max(df$gain[on_in])
+            data.frame(
+                design = nm,
+                step = D,
+                n_coarse = sum(on_in),
+                best_coarse_node = df$node[on_in][which.max(df$gain[on_in])],
+                best_coarse = best_in,
+                loss = F_in - best_in,
+                loss_unbounded_window = F_max - best
+            )
+        })
+    )
     results[[nm]] <- list(
         g_star = g_star,
         P_star_d02 = p$P[[j_star]],
@@ -135,7 +146,9 @@ for (nm in designs) {
     ))
 }
 
-cat("\n== Table D9: loss of a coarse lattice step (F - best coarse node within g* +/- 0.5, intersected with [-4, 1]) ==\n")
+cat(
+    "\n== Table D9: loss of a coarse lattice step (F - best coarse node within g* +/- 0.5, intersected with [-4, 1]) ==\n"
+)
 d9 <- do.call(rbind, lapply(results, `[[`, "d9"))
 d9p <- d9
 d9p$best_coarse <- sprintf("%.6f", d9$best_coarse)
@@ -143,7 +156,11 @@ d9p$loss <- sprintf("%.2e", d9$loss)
 d9p$loss_unbounded_window <- sprintf("%.2e", d9$loss_unbounded_window)
 print(d9p, row.names = FALSE)
 
-ok <- vapply(steps, function(D) all(d9$loss[d9$step == D] <= loss_tol), logical(1))
+ok <- vapply(
+    steps,
+    function(D) all(d9$loss[d9$step == D] <= loss_tol),
+    logical(1)
+)
 chosen <- if (any(ok)) max(steps[ok]) else 0.25
 cat(sprintf(
     "\nDECISION: steps with loss <= %.0e on both designs: %s; default step = %s%s\n",
