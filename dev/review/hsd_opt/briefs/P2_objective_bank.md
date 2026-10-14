@@ -39,28 +39,36 @@ not commit.** Complete files, not diffs.
 - `create_obj_func_gsd_opt(spec, bank, power_criterion, hyp_constraint, trans_constraint,
   alpha, num_threads = 1L, stop_rule = NULL, p_graph, start_param)`:
   - `force()` everything as `create_obj_func_gsd()` does.
-  - Build the working matrix once, **inside the factory body** (not passed in as an argument):
-    `.gsd_kernel_matrix()` of `resolve_pvalues_gsd(spec, start_param)` subset to `bank$idx` rows
-    (`drop = FALSE` on the array before `dim<-`). Fixed hypotheses' columns never change
-    afterwards. **Assign columns with `mat[, cols] <<- slice`** from the closure. d03 measured
-    (`dev/review/hsd_opt/d03_memory_and_copy_output.txt`): a matrix built inside the factory
-    and updated with `<<-` is never copied; a plain `<-` inside the closure copies the whole
-    matrix on every evaluation; a matrix passed in as a factory argument is copied once. Do not
-    bind the matrix to a second name anywhere.
+  - **No `<<-` anywhere** (user decision, 2026-10-14). Keep the working matrix and the archive
+    in one explicit environment created inside the factory body:
+    `state <- new.env(parent = emptyenv()); state$mat <- …; state$best <- …; state$visits <-
+    …; state$genes <- …; state$last_q <- …`, and update it with ordinary `<-`:
+    `state$mat[, cols] <- slice`, `state$visits[q] <- state$visits[q] + 1L`, and so on. d03
+    measured (`dev/review/hsd_opt/d03_memory_and_copy_output.txt`, probe
+    `env_assign_3_evals`): assignment through an environment never copies the matrix, the same
+    as `<<-`; a plain `<-` to a local name inside the closure copies the whole matrix on every
+    evaluation; a matrix passed in as a factory argument is copied once. So: build the matrix
+    **inside the factory body** (`state$mat <- .gsd_kernel_matrix(…)` of
+    `resolve_pvalues_gsd(spec, start_param)` subset to `bank$idx` rows, `drop = FALSE` on the
+    array before `dim<-`), never bind it to a second name, never pass it in as an argument.
+    Fixed hypotheses' columns never change afterwards. Expose the archive as
+    `attr(fn, "archive") <- state` (the one environment holds both; document that `mat` is in
+    it too) or as a separate `state$archive` environment — either way, nothing uses `<<-`.
   - Precompute for each active hypothesis the column indices `(k - 1) * m + i` for `k = 1..K`
     and its group `r`.
-  - Returned closure `function(x)`: `xg <- x[seq_len(p_graph)]`; `u <- x[p_graph +
+  - Returned closure `function(x)` (all mutable state through `state$…`, no `<<-`): `xg <- x[seq_len(p_graph)]`; `u <- x[p_graph +
     seq_len(d)]`; `q <- .hsd_node_index(u, M_r)` per group; **then the decode-and-penalise block
     of `create_obj_func_gsd()` copied verbatim on `xg`** (returns the same penalties before any
     kernel work); then for each active `i`: `mat[, cols_i] <- bank$slices[[i]][[q[r_i]]]` (skip
     when `q` is unchanged from the previous call for that group — keep `last_q` in the closure);
     kernel call exactly as the fixed closure (`graph_shortcut_gsd()` or `_parallel()` with
     `grain_size = -1L`); `fit <- power_criterion(res$time)`; archive update; return `fit`.
-  - Archive: an environment `arch` with, per axis `r`, `best` (numeric M_r, init `-Inf`),
-    `visits` (integer M_r), `genes` (matrix M_r × p_graph, init NA): on each evaluation that
-    reached the kernel, `visits[q_r] += 1`; if `fit > best[q_r]` then `best[q_r] <- fit;
-    genes[q_r, ] <- xg`. Expose it as `attr(fn, "archive")` and `attr(fn, "d")`,
-    `attr(fn, "p_graph")`.
+  - Archive: in the same `state` environment (or a child environment held in it), per axis
+    `r`, `best` (numeric M_r, init `-Inf`), `visits` (integer M_r), `genes` (matrix M_r ×
+    p_graph, init NA): on each evaluation that reached the kernel, `state$visits[[r]][q_r] <-
+    … + 1L`; if `fit > best[q_r]` then `state$best[[r]][q_r] <- fit; state$genes[[r]][q_r, ] <-
+    xg`. Expose the archive as `attr(fn, "archive")`, plus `attr(fn, "d")`, `attr(fn,
+    "p_graph")`. Ordinary `<-` through the environment only; no `<<-`.
   - The `d` and the per-group `M_r` come from `spec$param`.
 - No RNG. No change to any existing file.
 
@@ -85,9 +93,12 @@ withr::with_seed(3, sample.int(spec$nsim, 1000))`. Tiny `graph_constraint_free(m
 - [ ] `last_q` short-cut does not change results: 50 evaluations alternating nodes equal the
   oracle.
 - [ ] the working matrix is not copied per evaluation: `tracemem()` the matrix inside the
-  closure's environment (reach it with `environment(fn)$mat`) and assert no copy output over
-  10 evaluations (skip on platforms where `tracemem` is unavailable: `skip_if_not(
-  capabilities("profmem"))`).
+  state environment (reach it through `attr(fn, "archive")$mat` or `environment(fn)$state$mat`)
+  and assert no copy output over 10 evaluations (skip on platforms where `tracemem` is
+  unavailable: `skip_if_not(capabilities("profmem"))`).
+- [ ] no `<<-` in the file: `expect_false(any(grepl("<<-", readLines("R/objective_function_gsd_opt.R"), fixed = TRUE)))`
+  (locate the file with `system.file()`-independent path logic, e.g. relative to
+  `testthat::test_path("..", "..", "R")`, and `skip_if_not(file.exists(...))`).
 - [ ] bank: dims of every slice, `bytes` formula, `.check_bank_memory()` warns at 2.5e9 and
   aborts at 4.5e9 (snapshot of both messages, `expect_snapshot(error = TRUE)` for the abort).
 - [ ] unchanged: `test-objective_function_gsd.R` 21.
