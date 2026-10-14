@@ -393,6 +393,21 @@ is_sf_hsd_opt <- function(x) {
     m <- length(group)
     schedule_key <- rep(NA_character_, m)
     tables <- list()
+    # progress per table built (discovery report, decision 5). A progress
+    # bar rather than a step per table: it appears only once the build has
+    # run for `cli.progress_show_after` seconds (2 by default), so a quick
+    # build, such as every spec of the test suite, prints nothing. Only the
+    # tagged path reaches this function, so the fixed path never prints it.
+    progress <- NULL
+    if (multigrain_verbosity() != "silent") {
+        # nolint start: object_usage_linter. read by the progress format
+        building <- ""
+        # nolint end
+        progress <- cli::cli_progress_bar(
+            format = "Building the boundary table of {building}",
+            total = NA
+        )
+    }
 
     for (i in which(!is.na(group))) {
         t_row <- info_frac[i, ]
@@ -404,13 +419,25 @@ is_sf_hsd_opt <- function(x) {
         f <- spending[[i]]
         name <- names[[group[[i]]]]
 
-        for (node in lattice[[group[[i]]]]) {
+        nodes <- lattice[[group[[i]]]]
+        for (k in seq_along(nodes)) {
+            node <- nodes[[k]]
             node_fn <- .hsd_node_fn(f, node)
             .gsd_check_spending(node_fn, alpha = alpha, hyp = i, call = call)
 
             key <- .hsd_table_key(schedule_key[[i]], node)
             if (!is.null(tables[[key]])) {
                 next
+            }
+            if (!is.null(progress)) {
+                building <- sprintf(
+                    "%s = %s (%d of %d)",
+                    name,
+                    format(node, digits = 15),
+                    k,
+                    length(nodes)
+                )
+                cli::cli_progress_update(id = progress)
             }
             tab <- rlang::try_fetch(
                 .gsd_boundary_table(

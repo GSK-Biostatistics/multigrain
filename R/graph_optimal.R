@@ -41,7 +41,8 @@ graph_optimal <- function(
     global_output = NULL,
     local_output = NULL,
     start_graph = NULL,
-    stopping_rule = NULL
+    stopping_rule = NULL,
+    spending = NULL
 ) {
     check_double(hyp_weight)
     check_double_matrix(trans_matrix)
@@ -58,6 +59,10 @@ graph_optimal <- function(
     check_ga(global_output, allow_null = TRUE)
     check_nloptr(local_output, allow_null = TRUE)
     check_stopping_rule_gsd(stopping_rule, allow_null = TRUE)
+    valid_spending <- is.list(spending) && rlang::is_named(spending)
+    if (!is.null(spending) && !valid_spending) {
+        cli::cli_abort("{.arg spending} must be a named list or {.code NULL}.")
+    }
 
     # remove some elements from the GA and nloptr outputs as they bloat the
     # graph_optimal object
@@ -88,6 +93,12 @@ graph_optimal <- function(
     # for every fixed-sample result) the object is unchanged
     if (!is.null(stopping_rule)) {
         out$stopping_rule <- stopping_rule
+    }
+
+    # an optimised-spending result records its spending fields (build plan,
+    # reconciliation 10); the fixed path never passes `spending`
+    if (!is.null(spending)) {
+        out[names(spending)] <- spending
     }
 
     out
