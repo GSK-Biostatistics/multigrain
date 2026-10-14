@@ -52,7 +52,11 @@ gsd_grid_min <- 1e-14
 #'   information fractions and returns the cumulative level spent, either as a
 #'   plain numeric vector or as an object with a `spend` element (as the
 #'   `gsDesign` spending functions do). It must spend the whole level by full
-#'   information.
+#'   information. Any entry may instead be [sf_hsd_opt()], which tags a
+#'   hypothesis whose Hwang-Shih-DeCani parameter is to be optimised by
+#'   [graph_optimise_gsd()]; a single `sf_hsd_opt()` passed on its own is
+#'   recycled and is one parameter shared by every hypothesis. With any tagged
+#'   entry the transform returns a spending spec instead (see Value).
 #' @param alpha A number giving the overall one-sided significance level.
 #'   Default is `0.025`.
 #' @param look_back A logical of length 1 or `m`. `TRUE` switches a hypothesis
@@ -70,6 +74,18 @@ gsd_grid_min <- 1e-14
 #'   * `tables`: per hypothesis, the analyses that carry distinct information,
 #'     the analysis at which it matured, and the grid of allocated levels with
 #'     the nominal boundaries computed at each of them.
+#'
+#'   When any entry of `spending` is [sf_hsd_opt()], a
+#'   `multigrain_pvals_gsd_spec` object instead. It holds the raw p-values
+#'   (as `raw`, not `pvals`), the hypotheses with fixed spending already
+#'   transformed, the lattice of each spending parameter and one boundary
+#'   table per lattice node, each checked for well ordering when the spec is
+#'   built. It is not a `multigrain_pvals_gsd` object and cannot be passed to
+#'   [calc_power_pvals_gsd()]: pass it to [graph_optimise_gsd()] to optimise
+#'   the parameters with the graph, or to [resolve_pvalues_gsd()] to obtain
+#'   the transformed p-values at chosen values. If every tagged hypothesis has
+#'   a single analysis at full information, where spending has no effect, an
+#'   ordinary `multigrain_pvals_gsd` object is returned with a message.
 #'
 #' @export
 #' @examples

@@ -36,10 +36,20 @@ functions, to \code{\link[=transform_pvalues_gsd]{transform_pvalues_gsd()}}, whi
 \code{multigrain_pvals_gsd_spec} object instead of transformed p-values.
 }
 \details{
+The Hwang-Shih-DeCani parameter sets how quickly the level is
+spent: at an interim analysis at half the information, a parameter of -4
+has spent about 12\% of the level, a boundary like O'Brien and Fleming's,
+and a parameter of 1 about 62\%, close to Pocock-type spending; 0 spends in
+proportion to information.
+
 The parameter is searched over a lattice: the multiples of \code{step}
-inside \code{bounds}, together with both bounds. Every node's boundary table is
-built, and checked for well ordering, when the spec is created, so every
-value the search can try is a valid group sequential transform.
+inside \code{bounds}, together with both bounds (21 nodes for the defaults).
+Every node's boundary table is built, and checked for well ordering and
+invertibility, when the spec is created, so every value the search can
+try is a valid group sequential transform. Building the tables takes
+about 0.9 s per node at the default \code{grid_size} of
+\code{\link[=transform_pvalues_gsd]{transform_pvalues_gsd()}} with two analyses; a progress bar is shown when
+it takes more than a couple of seconds.
 
 Tagged hypotheses with the same \code{id} share one parameter. Tagged
 hypotheses without an \code{id} each get their own, except that a single
@@ -72,5 +82,6 @@ spec
 }
 \seealso{
 \code{\link[gsDesign:sfHSD]{gsDesign::sfHSD()}}, \code{\link[=transform_pvalues_gsd]{transform_pvalues_gsd()}},
+\code{\link[=graph_optimise_gsd]{graph_optimise_gsd()}} for the search and the result,
 \code{\link[=resolve_pvalues_gsd]{resolve_pvalues_gsd()}}
 }

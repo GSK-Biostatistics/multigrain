@@ -23,7 +23,8 @@ any order). Every value must be a node of its parameter's lattice.}
 }
 \value{
 A \code{multigrain_pvals_gsd} object; the \code{spending} label of each
-tagged hypothesis reads, for example, \code{sfHSD(param = -2.5)}.
+tagged hypothesis reads, for example, \code{sfHSD(param = -2.5)}. \code{print()}
+returns \code{x} invisibly.
 }
 \description{
 When any spending function passed to \code{\link[=transform_pvalues_gsd]{transform_pvalues_gsd()}} is tagged
@@ -35,6 +36,20 @@ and the boundary table of every lattice node of every tagged parameter.
 returned had the tagged hypotheses used
 \code{function(a, t) gsDesign::sfHSD(a, t, value)$spend}, using the stored
 tables, so it does not rebuild any boundary.
+}
+\details{
+Only lattice nodes can be resolved, since only their tables were
+built and checked; a value off the lattice is refused, naming the nearest
+nodes. Resolving is quick (an interpolation per hypothesis and analysis),
+so it is the way to evaluate a fixed choice of parameters, to reproduce
+the final evaluation of \code{\link[=graph_optimise_gsd]{graph_optimise_gsd()}} with
+\code{resolve_pvalues_gsd(spec, result$spending_param)}, or to check a chosen
+design on fresh simulated p-values: build a new spec from them with the
+same spending functions and resolve it at the chosen values.
+
+\code{print()} of a spec shows its dimensions, the spending of each
+hypothesis, each parameter's bounds, step, number of nodes and start, and
+the number of boundary tables built.
 }
 \examples{
 spending <- list(
@@ -51,8 +66,11 @@ spec <- transform_pvalues_gsd(
     grid_size = 64L
 )
 
+spec
+
 resolve_pvalues_gsd(spec, c(secondary = -3.5))
 }
 \seealso{
-\code{\link[=sf_hsd_opt]{sf_hsd_opt()}}, \code{\link[=transform_pvalues_gsd]{transform_pvalues_gsd()}}
+\code{\link[=sf_hsd_opt]{sf_hsd_opt()}}, \code{\link[=transform_pvalues_gsd]{transform_pvalues_gsd()}},
+\code{\link[=graph_optimise_gsd]{graph_optimise_gsd()}}, \code{\link[=calc_power_pvals_gsd]{calc_power_pvals_gsd()}}
 }

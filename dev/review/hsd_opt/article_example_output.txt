@@ -1,0 +1,254 @@
+article_example: R 4.3.3; multigrain 0.3.0; gsDesign 3.11.0; GA 3.2.5; num_threads 2
+[time] transform_pvalues_gsd() spec: 20.4 s
+
+## spec
+<multigrain_pvals_gsd_spec>
+100000 simulation(s), 2 hypothes(es), 2 analys(es); alpha = 0.025
+Information fractions (NA = no data at that analysis):
+   analysis 1 analysis 2
+H1        0.5          1
+H2        0.5          1
+Look-back: H1 = FALSE, H2 = FALSE
+Spending:
+H1: gsDesign::sfLDOF
+H2: sfHSD(param = gamma in [-4, 1])
+Spending parameters:
+gamma: bounds [-4, 1], step 0.25, 21 nodes, start -1.5
+Boundary tables built: 21
+[time] graph_optimise_gsd() on the spec: 77.3 s
+
+## print(result)
+<multigrain_graph_optimal>
+Optimal graph found (given user-defined constraints on graph and computational resources):
+
+Hypothesis weights:
+    H1     H2 
+0.4447 0.5553 
+
+Transition matrix:
+   H1 H2
+H1  0  1
+H2  1  0
+
+Trial success function:
+0.6 * d(t1) + 0.4 * d(t2)
+
+Spending functions:
+  H1: gsDesign::sfLDOF
+  H2: sfHSD(param = -0.25)   [optimised: gamma, bounds -4 to 1, step 0.25]
+Gain profile in gamma (graph re-optimised at each value):
+  within 5e-4 of the maximum on [-0.75, 0]; fixed-graph plateau [-0.75, 0]
+
+Stopping rule:
+Every interim: r1
+Hypotheses referenced: up to r1
+
+Value of trial success measure:
+0.693
+
+## summary(result)
+Optimisation summary
+
+Optimisation results:
+
+Hypothesis weights:
+    H1     H2 
+0.4447 0.5553 
+
+Transition matrix:
+   H1 H2
+H1  0  1
+H2  1  0
+
+Trial success function (group sequential):
+0.6 * d(t1) + 0.4 * d(t2)
+Analyses (K): 2
+Discount table d(t): 1.0, 0.8
+
+Spending-parameter profile (gamma):
+ value   gain gain_fixed_graph   diff      se n_eval
+ -4.00 0.6802           0.6802 0.0128 0.00035     25
+ -3.75 0.6815           0.6815 0.0115 0.00033     27
+ -3.50 0.6829           0.6828 0.0102 0.00034     26
+ -3.25 0.6840           0.6839 0.0090 0.00035     24
+ -3.00 0.6853           0.6852 0.0077 0.00034     28
+ -2.75 0.6865           0.6864 0.0066 0.00030     30
+ -2.50 0.6876           0.6876 0.0054 0.00030     28
+ -2.25 0.6885           0.6885 0.0045 0.00027     24
+ -2.00 0.6896           0.6896 0.0034 0.00026     25
+ -1.75 0.6906           0.6906 0.0025 0.00025     25
+ -1.50 0.6913           0.6913 0.0017 0.00023     25
+ -1.25 0.6918           0.6917 0.0012 0.00021     28
+ -1.00 0.6923           0.6923 0.0007 0.00019     27
+ -0.75 0.6927           0.6927 0.0003 0.00016     27
+ -0.50 0.6929           0.6929 0.0001 0.00012     26
+ -0.25 0.6930           0.6930 0.0000 0.00000     25
+  0.00 0.6928           0.6927 0.0002 0.00013     31
+  0.25 0.6925           0.6925 0.0005 0.00016     25
+  0.50 0.6921           0.6920 0.0009 0.00019     25
+  0.75 0.6914           0.6913 0.0016 0.00022     26
+  1.00 0.6906           0.6905 0.0024 0.00024     26
+GA visited 21 of 21 nodes
+
+Stopping rule (group sequential):
+Every interim: r1
+Hypotheses referenced: up to r1
+
+Value of trial success measure:
+0.693
+
+Power metrics:
+Power for each hypothesis:
+[1] 0.8630 0.7208
+Expected number of rejections: 1.58
+Probability of at least one rejection: 0.8977
+Probability of rejecting all hypotheses: 0.6861
+Power by analysis:
+   analysis 1 analysis 2
+H1     0.1881     0.8630
+H2     0.3192     0.7208
+Decision-time distribution:
+    never analysis 1 analysis 2
+H1 0.1370     0.1881     0.6749
+H2 0.2792     0.3192     0.4016
+Stopping-look distribution:
+analysis 1 analysis 2 
+    0.1881     0.8119 
+Mean stopping look: 1.8119
+
+Graph constraints:
+Constraints on hypothesis weights:
+H1 H2 
+NA NA 
+
+Constraints on transition matrix:
+   H1 H2
+H1  0  1
+H2  1  0
+
+Solution source:
+Local optimisation (nloptr)
+
+## fields
+
+## result$spending_param
+gamma 
+-0.25 
+
+## result$hyp_spending_param
+   H1    H2 
+   NA -0.25 
+
+## result$spending
+[1] "gsDesign::sfLDOF"     "sfHSD(param = -0.25)"
+
+## round(result$hyp_weight, 3)
+   H1    H2 
+0.445 0.555 
+
+## round(result$power$trial_success, 4)
+[1] 0.693
+
+## result$solution$opt_source
+[1] "local"
+
+## result$profile_converged
+[1] TRUE
+
+## result$spending_profile (digits 6)
+ param value     gain gain_fixed_graph      diff          se n_eval
+ gamma -4.00 0.680200         0.680167 0.0128072 0.000349805     25
+ gamma -3.75 0.681498         0.681457 0.0115088 0.000334257     27
+ gamma -3.50 0.682850         0.682780 0.0101568 0.000340477     26
+ gamma -3.25 0.683999         0.683945 0.0090080 0.000348159     24
+ gamma -3.00 0.685268         0.685207 0.0077392 0.000341620     28
+ gamma -2.75 0.686451         0.686409 0.0065560 0.000303826     30
+ gamma -2.50 0.687588         0.687554 0.0054192 0.000296617     28
+ gamma -2.25 0.688544         0.688543 0.0044624 0.000273797     24
+ gamma -2.00 0.689608         0.689608 0.0033988 0.000261986     25
+ gamma -1.75 0.690556         0.690556 0.0024508 0.000248958     25
+ gamma -1.50 0.691276         0.691276 0.0017308 0.000231897     25
+ gamma -1.25 0.691815         0.691745 0.0011920 0.000214111     28
+ gamma -1.00 0.692264         0.692261 0.0007428 0.000187004     27
+ gamma -0.75 0.692738         0.692718 0.0002684 0.000162779     27
+ gamma -0.50 0.692928         0.692880 0.0000792 0.000115932     26
+ gamma -0.25 0.693007         0.693007 0.0000000 0.000000000     25
+ gamma  0.00 0.692764         0.692708 0.0002424 0.000126125     31
+ gamma  0.25 0.692464         0.692464 0.0005432 0.000157762     25
+ gamma  0.50 0.692080         0.692024 0.0009268 0.000190478     25
+ gamma  0.75 0.691413         0.691340 0.0015940 0.000217240     26
+ gamma  1.00 0.690606         0.690492 0.0024008 0.000240778     26
+
+## profile graphs: w1 by node
+ value    w1
+ -4.00 0.439
+ -3.75 0.439
+ -3.50 0.411
+ -3.25 0.398
+ -3.00 0.398
+ -2.75 0.438
+ -2.50 0.455
+ -2.25 0.445
+ -2.00 0.445
+ -1.75 0.445
+ -1.50 0.445
+ -1.25 0.435
+ -1.00 0.444
+ -0.75 0.437
+ -0.50 0.454
+ -0.25 0.445
+  0.00 0.434
+  0.25 0.445
+  0.50 0.453
+  0.75 0.455
+  1.00 0.453
+
+## result$spending_search
+   param value visits best_fitness_subsample
+1  gamma -4.00    793              0.6796160
+2  gamma -3.75    877              0.6808960
+3  gamma -3.50   1006              0.6823632
+4  gamma -3.25   1043              0.6833672
+5  gamma -3.00   1136              0.6845576
+6  gamma -2.75   1252              0.6856632
+7  gamma -2.50   1302              0.6867104
+8  gamma -2.25   1428              0.6877424
+9  gamma -2.00   1614              0.6887296
+10 gamma -1.75   1781              0.6895632
+11 gamma -1.50   1994              0.6902968
+12 gamma -1.25   2114              0.6909328
+13 gamma -1.00   2124              0.6913408
+14 gamma -0.75   2268              0.6917392
+15 gamma -0.50   2262              0.6918880
+16 gamma -0.25   5289              0.6919832
+17 gamma  0.00   2137              0.6917320
+18 gamma  0.25   1669              0.6912824
+19 gamma  0.50   1516              0.6907992
+20 gamma  0.75   1361              0.6900512
+21 gamma  1.00   1203              0.6893688
+[time] graph_optimise_gsd(), H2 sfLDOF: 55.4 s
+[fixed] H2 sfLDOF: gain 0.670874, w1 0.292
+[time] graph_optimise_gsd(), H2 sfLDPocock: 58.6 s
+[fixed] H2 sfLDPocock: gain 0.690508, w1 0.549
+
+## fixed spending on H2 vs the joint optimum (same draws)
+          H2_spending    w1   gain
+               sfLDOF 0.292 0.6709
+           sfLDPocock 0.549 0.6905
+ sfHSD(param = -0.25) 0.445 0.6930
+[time] transform_pvalues_gsd() fresh spec: 18.9 s
+
+## pv_new$spending
+[1] "gsDesign::sfLDOF"     "sfHSD(param = -0.25)"
+
+## round(check$gain, 4)
+[1] 0.6936
+
+## round(check$local_power, 3)
+[1] 0.865 0.720
+
+## round(check$stop_distribution, 3)
+analysis 1 analysis 2 
+     0.188      0.812 
+
+[time] total: 236.8 s

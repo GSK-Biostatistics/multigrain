@@ -20,10 +20,20 @@ hsd_opt_limits <- c(-10, 2)
 #' functions, to [transform_pvalues_gsd()], which then returns a
 #' `multigrain_pvals_gsd_spec` object instead of transformed p-values.
 #'
-#' @details The parameter is searched over a lattice: the multiples of `step`
-#'   inside `bounds`, together with both bounds. Every node's boundary table is
-#'   built, and checked for well ordering, when the spec is created, so every
-#'   value the search can try is a valid group sequential transform.
+#' @details The Hwang-Shih-DeCani parameter sets how quickly the level is
+#'   spent: at an interim analysis at half the information, a parameter of -4
+#'   has spent about 12% of the level, a boundary like O'Brien and Fleming's,
+#'   and a parameter of 1 about 62%, close to Pocock-type spending; 0 spends in
+#'   proportion to information.
+#'
+#'   The parameter is searched over a lattice: the multiples of `step`
+#'   inside `bounds`, together with both bounds (21 nodes for the defaults).
+#'   Every node's boundary table is built, and checked for well ordering and
+#'   invertibility, when the spec is created, so every value the search can
+#'   try is a valid group sequential transform. Building the tables takes
+#'   about 0.9 s per node at the default `grid_size` of
+#'   [transform_pvalues_gsd()] with two analyses; a progress bar is shown when
+#'   it takes more than a couple of seconds.
 #'
 #'   Tagged hypotheses with the same `id` share one parameter. Tagged
 #'   hypotheses without an `id` each get their own, except that a single
@@ -54,6 +64,7 @@ hsd_opt_limits <- c(-10, 2)
 #'   `step` and `start`.
 #'
 #' @seealso [gsDesign::sfHSD()], [transform_pvalues_gsd()],
+#'   [graph_optimise_gsd()] for the search and the result,
 #'   [resolve_pvalues_gsd()]
 #' @export
 #' @examples
@@ -819,6 +830,19 @@ new_pvals_gsd_spec <- function(
 #' `function(a, t) gsDesign::sfHSD(a, t, value)$spend`, using the stored
 #' tables, so it does not rebuild any boundary.
 #'
+#' @details Only lattice nodes can be resolved, since only their tables were
+#'   built and checked; a value off the lattice is refused, naming the nearest
+#'   nodes. Resolving is quick (an interpolation per hypothesis and analysis),
+#'   so it is the way to evaluate a fixed choice of parameters, to reproduce
+#'   the final evaluation of [graph_optimise_gsd()] with
+#'   `resolve_pvalues_gsd(spec, result$spending_param)`, or to check a chosen
+#'   design on fresh simulated p-values: build a new spec from them with the
+#'   same spending functions and resolve it at the chosen values.
+#'
+#'   `print()` of a spec shows its dimensions, the spending of each
+#'   hypothesis, each parameter's bounds, step, number of nodes and start, and
+#'   the number of boundary tables built.
+#'
 #' @param spec A `multigrain_pvals_gsd_spec` object from
 #'   [transform_pvalues_gsd()].
 #' @param spending_param A numeric vector with one value per spending
@@ -828,9 +852,11 @@ new_pvals_gsd_spec <- function(
 #' @param ... Not used.
 #'
 #' @returns A `multigrain_pvals_gsd` object; the `spending` label of each
-#'   tagged hypothesis reads, for example, `sfHSD(param = -2.5)`.
+#'   tagged hypothesis reads, for example, `sfHSD(param = -2.5)`. `print()`
+#'   returns `x` invisibly.
 #'
-#' @seealso [sf_hsd_opt()], [transform_pvalues_gsd()]
+#' @seealso [sf_hsd_opt()], [transform_pvalues_gsd()],
+#'   [graph_optimise_gsd()], [calc_power_pvals_gsd()]
 #' @export
 #' @examples
 #' spending <- list(
@@ -846,6 +872,8 @@ new_pvals_gsd_spec <- function(
 #'     spending = spending,
 #'     grid_size = 64L
 #' )
+#'
+#' spec
 #'
 #' resolve_pvalues_gsd(spec, c(secondary = -3.5))
 resolve_pvalues_gsd <- function(spec, spending_param) {

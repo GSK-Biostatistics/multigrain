@@ -74,6 +74,8 @@ reference:
     contents:
     - simulate_pvalues_gsd
     - transform_pvalues_gsd
+    - sf_hsd_opt
+    - resolve_pvalues_gsd
     - trial_success_gsd
     - stopping_rule_gsd
     - graph_optimise_gsd

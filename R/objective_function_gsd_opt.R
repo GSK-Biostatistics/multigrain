@@ -163,10 +163,11 @@
 #' Twin of `create_obj_func_gsd()` for a `multigrain_pvals_gsd_spec`. The
 #' encoded vector is the graph genes followed by one gene per spending
 #' parameter, `x = c(graph genes [p_graph], u_1, ..., u_d)` (build plan,
-#' reconciliation 2). Each parameter gene is clamped to [0, 1] and mapped to a
-#' lattice node by `.hsd_node_index()`; the active hypotheses' columns of the
-#' working kernel matrix are overwritten from the bank slices of those nodes,
-#' and the graph genes are decoded and penalised exactly as
+#' reconciliation 2). Each parameter gene is clamped to the unit interval
+#' and then mapped to a lattice node by `.hsd_node_index()`. The active
+#' hypotheses' columns of the working kernel matrix are overwritten from
+#' the bank slices of those nodes, and the graph genes are decoded and
+#' penalised exactly as
 #' `create_obj_func_gsd()` does (the block is copied, not shared).
 #'
 #' All mutable state lives in one environment, `state`, created in the
