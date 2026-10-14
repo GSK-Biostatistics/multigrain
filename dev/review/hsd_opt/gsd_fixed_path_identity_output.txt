@@ -1,0 +1,30 @@
+Scratch directory: /tmp/RtmpfHPEZp/gsd_fixed_path_4b5c7796004c 
+Creating a worktree of 3e55fb5 ...
+Preparing worktree (detached HEAD 3e55fb5)
+HEAD is now at 3e55fb5 Add the revised HSD spending-parameter design
+Installing 3e55fb5 into /tmp/RtmpfHPEZp/gsd_fixed_path_4b5c7796004c/lib_base ...
+Installing the working tree into /tmp/RtmpfHPEZp/gsd_fixed_path_4b5c7796004c/lib_branch ...
+Running the driver under each build ...
+Removing the worktree ...
+
+== group sequential fixed-path identity check ==
+base    : 0.3.0 at /tmp/RtmpfHPEZp/gsd_fixed_path_4b5c7796004c/lib_base 
+branch  : 0.3.0 at /tmp/RtmpfHPEZp/gsd_fixed_path_4b5c7796004c/lib_branch 
+identical(transform_pvalues_gsd() object): TRUE 
+identical(.Random.seed): TRUE 
+Result components that are not identical(): trial_success 
+Result components present on the branch only:  
+  hyp_weight       identical: TRUE
+  trans_matrix     identical: TRUE
+  power            identical: TRUE
+  solution         identical: TRUE
+  stopping_rule    identical: TRUE
+  global@solution  identical: TRUE
+
+`trial_success`, field by field:
+  m                identical: TRUE
+  objective        identical: TRUE
+  cpp_code         identical: TRUE
+  func             identical: FALSE  (external pointer; may differ)
+
+VERDICT: PASS 
