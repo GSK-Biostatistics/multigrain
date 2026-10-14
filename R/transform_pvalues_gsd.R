@@ -123,7 +123,22 @@ transform_pvalues_gsd <- function(
     }
     info_frac <- .gsd_info_frac(info_frac, m = m, n_look = n_look)
     look_back <- .gsd_look_back(look_back, m = m)
+    spending_recycled <- is.function(spending)
     spending <- .gsd_spending_list(spending, m = m)
+
+    # any sf_hsd_opt() entry: build the spending spec instead
+    if (.has_hsd_opt(spending)) {
+        return(.transform_pvalues_gsd_spec(
+            pvals,
+            info_frac = info_frac,
+            look_back = look_back,
+            spending = spending,
+            alpha = alpha,
+            grid_size = grid_size,
+            spending_label = spending_label,
+            recycled = spending_recycled
+        ))
+    }
 
     for (i in seq_len(m)) {
         .gsd_check_spending(spending[[i]], alpha = alpha, hyp = i)
@@ -467,6 +482,14 @@ summary.multigrain_pvals_gsd <- function(object, ...) {
     hyp = NULL,
     call = rlang::caller_env()
 ) {
+    if (inherits(spending, "multigrain_sf_hsd_opt")) {
+        cli::cli_abort(
+            "An optimised spending function reached the fixed transform; \\
+            this is a bug in multigrain.",
+            .internal = TRUE,
+            call = call
+        )
+    }
     spent <- spending(alpha, t_look)
     if (is.list(spent) && !is.null(spent[["spend"]])) {
         spent <- spent[["spend"]]
