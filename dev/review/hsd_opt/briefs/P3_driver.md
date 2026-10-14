@@ -28,7 +28,11 @@ a counter, a cache) lives in one explicit environment created inside the factory
 (`state <- new.env(parent = emptyenv()); state$x <- …`) and is updated with ordinary `<-`
 (`state$x[i] <- v`). d03 showed that assignment through an environment never copies a
 matrix, the same as `<<-`; a matrix must still be built inside the factory and never bound
-to a second name. Add a test that greps your new R files for `<<-` and expects none.
+to a second name. **Inside a function, `state$mat[, cols] <- v` copies the matrix** (P2 measured
+it; the d03 probe was at top level): the sanctioned form for a large object is take-out/put-back,
+`m <- state$mat; state$mat <- NULL; m[, cols] <- v; state$mat <- m` (see `.hsd_set_columns()` in
+`R/objective_function_gsd_opt.R`). Small scalars and vectors may be assigned through the
+environment directly. Add a test that greps your new R files for `<<-` and expects none.
 
 ## Read first (~60 minutes; do not skip)
 
@@ -70,7 +74,9 @@ Then Stage G (if `global_search`), Stage L, `choose_graph()`, final evaluation, 
 ### `.graph_optimise_ga_gsd_opt(spec, graph_constraint, trial_success, alpha, nsim, global_opts, num_threads, start_graph, verbose, stop_rule, p_graph)`
 RNG order: `x0 <- .build_start_matrix(…)` (no draws), then `idx_ga <- sample.int(spec$nsim,
 nsim)` (the same call `.sample_pvals_gsd()` makes), then the bank (`.hsd_bank(spec, idx_ga)`),
-the closure (`create_obj_func_gsd_opt(…, start_param = spec$param$start)`), suggestions = `x0`
+the closure — P2's actual signature is `create_obj_func_gsd_opt(spec, bank, power_criterion,
+hyp_constraint, trans_constraint, alpha, p_graph, num_threads = 1L, stop_rule = NULL,
+start_param = spec$param$start)`; `.hsd_bank(spec, idx)` returns `list(slices, idx, hyp, bytes)`, suggestions = `x0`
 with each start node's gene `(q_start − 0.5) / M_r` appended as extra columns, `lower = rep(0,
 p_graph + d)`, `upper = rep(1, …)`, and `GA::ga()` with **exactly** the fixed driver's
 `immutable_global_args` and `modifyList(…, global_opts)`. Winner: `sol <- ga_res@solution[1, ]`;
@@ -80,7 +86,11 @@ and **no** `repair_graph()` (as the fixed GA driver). Validity check as the fixe
 valid, re-score: `.calc_power_pvals_gsd_core()` on the subsample at `theta_ga` (resolve, subset
 `idx_ga`), then `graph_shortcut_gsd()` on the full `.gsd_kernel_matrix(resolve(spec,
 theta_ga))` and `trial_success$func(res$time)`. Return the fixed driver's list plus
-`ga_spending_param = theta_ga`, `archive = attr(fn, "archive")`, `idx_ga`.
+`ga_spending_param = theta_ga`, `archive = attr(fn, "archive")` (P2: the state environment with
+`best`, `visits`, `genes`, each a list over parameters named by `spec$param$names`; `best[[r]]`
+numeric M_r, `visits[[r]]` integer M_r, `genes[[r]]` M_r × p_graph with NA rows for unvisited
+nodes; it also holds `mat` and `last_q` — copy the three archive fields out into a plain list
+before returning so the working matrix is released), `idx_ga`.
 
 ### `.graph_optimise_local_gsd_opt(spec, graph_constraint, trial_success, alpha, nsim, local_opts, num_threads, x0, theta0, archive, verbose, stop_rule, p_graph, density)`
 - `idx_local <- sample.int(spec$nsim, nsim)` **once** (same call as `.sample_pvals_gsd()`),
