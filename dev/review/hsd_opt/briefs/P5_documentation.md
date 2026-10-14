@@ -31,6 +31,36 @@ to a second name. Add a test that greps your new R files for `<<-` and expects n
    example and its numbers); `dev/gsd_progress.md` "Stopping rules" entry (format only — the
    orchestrator writes the new progress entry, not you).
 
+## Facts from the build that the documents must reflect (read before writing)
+
+- Result fields actually attached by the driver (`R/optimisation_gsd_opt.R`, the `spending =
+  list(...)` in `.graph_optimise_gsd_opt()`): `spending_param`, `hyp_spending_param`, `spending`,
+  `spending_bounds`, `spending_step`, `spending_group`, `spending_profile` (columns `param, value,
+  gain, gain_fixed_graph, diff, se, n_eval`, attribute `graphs`), `spending_search` (`param, value,
+  visits, best_fitness_subsample`), `profile_converged`.
+- Stage L details that differ from the design text: step 1 is `.hsd_refine_node()` on rows
+  `idx_local` pinned once (the fixed local driver re-subsamples internally, so it is not called);
+  an axis whose own sweep improved the optimum is recomputed once against the final optimum with
+  **no refinement at the optimum's own node**, so `gain == gain_fixed_graph` and `diff == se == 0`
+  exactly at theta*; `profile_converged` is FALSE if a recomputed axis shows `diff < 0` or `d >= 2`
+  rounds did not settle in 3.
+- Table building shows a `cli::cli_progress_bar()` (not a step) after 2 s, verbosity-gated;
+  a step at default verbosity leaked into snapshots.
+- The objective closure keeps its working matrix, archive and last node in one environment
+  created inside the factory (no `<<-`); the matrix is updated by take-out/put-back because a
+  direct `state$mat[, cols] <-` inside a function copies it (P2 measured; d03's probe was top-level).
+- Benchmarks at nsim 1e5 (`dev/review/hsd_opt/gate_p3_benchmarks_output.txt`): M1 joint 0.693038
+  at gamma −0.25 (fixed spending at the start node −1.5: 0.691238); README §2 design joint 2.43998 at
+  gamma −4 (on the lower bound; fixed at −1.5: 2.40569), wall 8.0 min against the design's 3.5–6.5
+  min projection; d = 2 (M1, H1 and H2 tagged separately, bounds −2..0, step 0.5, nsim 2e4) joint
+  0.694014 at (−2, 0) equal to the 25-pair product-grid maximum.
+- Phase D decisions and numbers: `dev/review/hsd_opt_discovery.md` "Decisions" — quote them.
+- Reconciliations the record's 4.12 must state as departures from the design document: the plan's
+  §1 table (11 rows) plus the three above.
+- `R/graph_optimal.R`'s `spending = NULL` argument and the two guarded display calls; the dispatch
+  in `R/optimisation_gsd.R`; the handoff and `.gsd_spend()` guard in `R/transform_pvalues_gsd.R`;
+  the hint in `R/check_gsd.R` — these are the §4.10 touchpoints.
+
 ## Deliverables
 
 1. **roxygen** on `sf_hsd_opt()`, `resolve_pvalues_gsd()`, `print.multigrain_pvals_gsd_spec`
