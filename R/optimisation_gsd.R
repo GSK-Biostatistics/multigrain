@@ -147,6 +147,22 @@ graph_optimise_gsd <- function(
     control = multigrain_control(),
     verbose = multigrain_verbosity()
 ) {
+    if (inherits(pvals, "multigrain_pvals_gsd_spec")) {
+        rlang::check_dots_empty()
+        return(.graph_optimise_gsd_opt(
+            spec = pvals,
+            graph_constraint = graph_constraint,
+            trial_success = trial_success,
+            alpha = alpha,
+            stopping_rule = stopping_rule,
+            start_graph = start_graph,
+            global_search = global_search,
+            num_threads = num_threads,
+            control = control,
+            verbose = verbose
+        ))
+    }
+
     check_pvals_gsd(pvals)
     check_graph_constraint(graph_constraint)
     check_trial_success_gsd(trial_success)
