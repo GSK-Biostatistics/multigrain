@@ -78,8 +78,12 @@ constexpr int TABLE_HARD_MAX_M = 20;
 
 // "auto" uses the table kernel when 2^m <= TABLE_KAPPA * N. The table build
 // costs O(2^m m^2) once per call; the sequential kernel costs
-// O(N m^2 (1 + r)) for r rejections per trial.
-constexpr double TABLE_KAPPA = 1.0;
+// O(N m^2 (1 + r)) for r rejections per trial, so the break-even ratio
+// 2^m / N grows with r. Measured serially (dev/review/shortcut_table/):
+// the table kernel was faster in every case up to 2^m / N = 1.64, and the
+// sequential kernel first won (at low power) at 2.62. TABLE_KAPPA = 2 keeps
+// "auto" no slower than the sequential kernel.
+constexpr double TABLE_KAPPA = 2.0;
 
 // Target inner-loop operations per parallelFor chunk for the table walk,
 // with m^2 operations assumed per trial.

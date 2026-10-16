@@ -259,6 +259,14 @@ test_that("kernel choice follows the options and the size rule", {
     })
 })
 
+test_that("auto uses the table kernel exactly when 2^m <= 2 * N", {
+    # TABLE_KAPPA = 2, calibrated in dev/review/shortcut_table_report.md
+    for (m in c(8, 14, 17, 20)) {
+        expect_identical(graph_shortcut_kernel(2^(m - 1), m), "table")
+        expect_identical(graph_shortcut_kernel(2^(m - 1) - 1, m), "sequential")
+    }
+})
+
 test_that("forcing the table kernel above m = 20 errors before allocating", {
     withr::local_options(list(multigrain.shortcut_kernel = "table"))
     expect_error(graph_shortcut_kernel(10, 21), "at most 20")
