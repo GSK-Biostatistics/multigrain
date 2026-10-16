@@ -1,6 +1,6 @@
 # Table Kernel for `graph_shortcut()`: Local Review Report
 
-*16 October 2026. Branch `fast-shortcut`. Kernel and tests are in commit `0344474` (built with κ = 1). The calibrated κ = 2, the switch-rule test, DESCRIPTION, NEWS and these dev files are uncommitted on top of it. Design: `prompts/improve-shortcut.md`.*
+*16 October 2026. Branch `fast-shortcut`. The kernel and tests are in commit `0344474` (built with κ = 1). The calibrated κ = 2, the switch-rule test, DESCRIPTION, NEWS and this report are in `abcf908`. The scripts and results in `dev/review/shortcut_table/` are not yet committed. Design: `debug/improve-shortcut.md` (git-ignored).*
 
 *Machine: Windows 11 laptop, 10 physical / 12 logical cores, on AC power with sleep held off. R 4.6.1, Rtools45 g++ `-O2 -mfpmath=sse -msse2` (no FMA). v1.0.0 (`7884824`) and this branch were installed from source tarballs into separate libraries and timed in separate R processes.*
 
@@ -41,8 +41,20 @@ Two benchmark passes were spoiled and are kept only for the record.
 | `results/run1_update_noise/` | The laptop entered Modern Standby at 19:43 (idle timeout) and rebooted for an update at 20:07, mid-run. | **Discarded.** Same-code timings disagreed by up to ±40%. |
 | `results/run2/b1_*_battery.*` | On battery from 20:44 to 21:03. | **Discarded.** |
 | `results/run2/` (all other files) | On AC, no standby. A keep-awake request was held from 21:07. | **Used below.** |
+| `results/run3/` | Full repeat on the committed build `abcf908`, 21:54–22:28. On AC, keep-awake held, and no Kernel-Power events in the window. | **Reproduces run 2** (below). |
 
-**Check that the clean set is clean.** v1.0.0 and this build's sequential kernel run the same code. Their B1 timings had a median ratio of 0.983 (IQR 0.972–0.995, range 0.82–1.09 over 88 cells) **[measured]**.
+**Check that the clean sets are clean.** v1.0.0 and this build's sequential kernel run the same code. Their B1 timings had a median ratio of 0.983 in run 2 (IQR 0.972–0.995, range 0.82–1.09 over 88 cells) and 1.003 in run 3 (IQR 0.991–1.015) **[measured]**.
+
+**Reproducibility** (`compare_runs.R`, `results/run3/compare_run2_run3.txt`) **[measured]**. Run 3 changes no conclusion:
+
+* B1 speedups over v1.0.0 moved by a median of −1.8% (IQR −3.6% to 0%). Only 2 of 88 cells moved by more than 10%, both at m = 5; for example 2.20× became 1.94× at high power with N = 5e4.
+* The break-even pattern is identical, so the same range of κ meets the gate.
+* B4 table/sequential ratios moved by a median of −0.1%. The one large move was at m = 8, N = 5e4, 12 threads (2.5× → 3.6×), on calls under 1 ms.
+* B2 per-evaluation speedups were 2.2–4.5×, against 2.0–4.7× in run 2.
+* `"auto"` made the same choice in all 16 B5 cells; worst auto/sequential was 1.022.
+* Identity held again in every cell.
+
+Read the single-run figures below as accurate to within about ±10%.
 
 ---
 
@@ -234,8 +246,9 @@ Italics: cells where `"auto"` (κ = 2) uses the original kernel, so the user see
 * **Scripts**, in `dev/review/shortcut_table/`:
   * `common.R`, `sweep.R`, `builder_check.R`;
   * `bench_kernel.R`, `bench_threads.R`, `bench_objective.R`, `bench_auto.R`;
-  * `analyse_b1.R`, `run_benchmarks.sh`.
+  * `analyse_b1.R`, `compare_runs.R`, `run_benchmarks.sh`.
 * **Outputs**, in `results/`:
   * `sweep.*` and `builder_check.*`;
-  * `run2/`, the clean benchmark set;
+  * `run2/`, the clean benchmark set used in the tables;
+  * `run3/`, the repeat on `abcf908`, with `compare_run2_run3.txt`;
   * `run1_update_noise/` and `run2/*_battery.*`, discarded and kept for the record.

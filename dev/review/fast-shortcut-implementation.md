@@ -1,6 +1,6 @@
 # Fast Shortcut: What Changed and How to Compare It with v1.0.0
 
-*Branch `fast-shortcut`, based on `7884824` (v1.0.0). Implements `prompts/improve-shortcut.md`. Written 16 October 2026. The kernel and its tests are in commit `0344474` (built with κ = 1). The calibrated κ = 2, the switch-rule test, DESCRIPTION, NEWS, `dev/review/` and this file are uncommitted on top of it.*
+*Branch `fast-shortcut`, based on `7884824` (v1.0.0). Implements `debug/improve-shortcut.md` (git-ignored). Written 16 October 2026. The kernel and its tests are in commit `0344474` (built with κ = 1). The calibrated κ = 2, the switch-rule test, DESCRIPTION, NEWS and this file are in `abcf908`, the build to benchmark. The scripts and results in `dev/review/shortcut_table/` are not yet committed.*
 
 **Build label.** `Version: 1.0.0.9000`, plus a DESCRIPTION field `Config/multigrain/build: 1.0.0-fast-shortcut`. R does not accept `1.0.0-fast-shortcut` as a version string, so the label lives in its own field. Read it with `packageDescription("multigrain")[["Config/multigrain/build"]]`. On v1.0.0 the field is `NULL`.
 
@@ -81,7 +81,7 @@ The local weight of a hypothesis depends only on which hypotheses are still unre
 
 ### Local Results
 
-Full tables, conditions and caveats are in `dev/review/shortcut_table_report.md`. These are local hypotheses for the HPC run to confirm: a Windows laptop with 10 physical cores, serial unless stated, timed on AC power. Two earlier passes were spoiled by standby and battery power and were discarded.
+Full tables, conditions and caveats are in `dev/review/shortcut_table_report.md`. These are local hypotheses for the HPC run to confirm: a Windows laptop with 10 physical cores, serial unless stated, timed on AC power. Two earlier passes were spoiled by standby and battery power and were discarded. A full repeat on the committed build `abcf908` reproduced every conclusion, with speedups within a few per cent (median −1.8%). Read single figures as ±10%.
 
 * **Identity.**
   * 0 differences between the kernels in 2.0e9 indicators (m = 2–16, dense and sparse graphs, three power levels).
@@ -108,7 +108,7 @@ Full tables, conditions and caveats are in `dev/review/shortcut_table_report.md`
 The benchmarking agent knows the problems, seeds and cost conventions. This only fixes the shape of the comparison.
 
 1. **Two builds, two libraries.**
-   * Install v1.0.0 (`7884824`) and this branch (record its commit SHA once committed) into separate R libraries.
+   * Install v1.0.0 (`7884824`) and this branch (`abcf908` or later; record the SHA used) into separate R libraries.
    * Load each in its own R process with `library(multigrain, lib.loc = ...)`.
    * Confirm which build is loaded via `packageVersion()` (`1.0.0` vs `1.0.0.9000`) or the `Config/multigrain/build` field, and record it with every result.
    * Build both with the same compiler and flags.
