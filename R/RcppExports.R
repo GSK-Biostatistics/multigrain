@@ -80,10 +80,11 @@ graph_shortcut <- function(pvals, alpha, w, G) {
 #' @param num_threads Number of parallel threads (>= 1). Default 1.
 #' @param grain_size Chunk size for parallelFor. Default -1 (auto-tuned).
 #'   When negative, grain size is chosen so each chunk does approximately
-#'   TARGET_OPS worth of inner-loop operations. Per-trial work is O(m^3)
-#'   worst case (up to m rejections, each triggering an m*m graph update);
-#'   TARGET_OPS = 100000 gives ~195 trials/chunk at m=8 and ~800 trials/chunk
-#'   at m=5, leaving thousands of chunks at N=1e6 for good load balancing.
+#'   a target number of inner-loop operations. For the sequential kernel,
+#'   per-trial work is O(m^3) worst case (up to m rejections, each
+#'   triggering an m*m graph update) and the target is 100000, giving ~195
+#'   trials/chunk at m=8 and ~800 trials/chunk at m=5. For the table kernel,
+#'   per-trial work is taken as m^2 and the target is TABLE_TARGET_OPS.
 #'
 #' @return LogicalMatrix (N x m) of rejection indicators.
 #'
@@ -92,6 +93,31 @@ graph_shortcut <- function(pvals, alpha, w, G) {
 #' @noRd
 graph_shortcut_parallel <- function(pvals, alpha, w, G, num_threads = 1L, grain_size = -1L) {
     .Call(`_multigrain_graph_shortcut_parallel`, pvals, alpha, w, G, num_threads, grain_size)
+}
+
+#' Kernel chosen by graph_shortcut() under the current options
+#'
+#' @param n_trials Number of trials (rows of pvals).
+#' @param m Number of hypotheses.
+#' @return "table" or "sequential".
+#' @name graph_shortcut_kernel
+#' @noRd
+graph_shortcut_kernel <- function(n_trials, m) {
+    .Call(`_multigrain_graph_shortcut_kernel`, n_trials, m)
+}
+
+#' Critical-value table used by the table kernel
+#'
+#' @param alpha Scalar significance level.
+#' @param w NumericVector (length m) of hypothesis weights.
+#' @param G NumericMatrix (m x m) transition matrix.
+#' @return NumericMatrix (2^m x m). Row `mask + 1` holds alpha * w_j(S) for
+#'   the set S whose bit j - 1 is H_j; 0 for hypotheses outside S. Row 1
+#'   (the empty set) is all zero.
+#' @name graph_shortcut_table
+#' @noRd
+graph_shortcut_table <- function(alpha, w, G) {
+    .Call(`_multigrain_graph_shortcut_table`, alpha, w, G)
 }
 
 #' Graph violation score
