@@ -1,0 +1,8 @@
+m= 5 average     eval=3.72ms kernel=3.36ms criterion=0.08ms
+m= 5 disjunctive eval=3.41ms kernel=3.34ms criterion=0.09ms
+m= 6 average     eval=5.28ms kernel=4.78ms criterion=0.09ms
+m= 6 disjunctive eval=5.49ms kernel=5.01ms criterion=0.12ms
+m= 8 average     eval=9.96ms kernel=9.85ms criterion=0.12ms
+m= 8 disjunctive eval=10.30ms kernel=9.61ms criterion=0.15ms
+m=10 average     eval=16.76ms kernel=16.27ms criterion=0.17ms
+m=10 disjunctive eval=16.80ms kernel=16.19ms criterion=0.21ms

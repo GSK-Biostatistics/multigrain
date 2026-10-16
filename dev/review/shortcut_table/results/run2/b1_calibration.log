@@ -1,0 +1,18 @@
+Build 1.0.0-fast-shortcut (1.0.0.9000), kernels: sequential/table, iterations 20, graphs 2
+m=13 N=  10000  sequential=5.75ms table=1.58ms sequential=6.25ms table=1.52ms  [0.0 min]
+m=13 N=  50000  sequential=30.48ms table=5.43ms sequential=30.52ms table=5.43ms  [0.1 min]
+m=13 N= 200000  sequential=121.46ms table=21.32ms sequential=124.01ms table=22.06ms  [0.2 min]
+m=13 N=1000000  sequential=615.24ms table=104.81ms sequential=622.66ms table=107.26ms  [1.0 min]
+m=15 N=  10000  sequential=8.70ms table=4.08ms sequential=8.83ms table=4.20ms  [1.0 min]
+m=15 N=  50000  sequential=44.96ms table=8.77ms sequential=43.88ms table=9.32ms  [1.1 min]
+m=15 N= 200000  sequential=175.01ms table=27.40ms sequential=179.42ms table=28.97ms  [1.3 min]
+m=15 N=1000000  sequential=885.13ms table=129.43ms sequential=888.12ms table=129.31ms  [2.4 min]
+m=17 N=  10000  sequential=11.46ms table=20.14ms sequential=12.76ms table=19.97ms  [2.5 min]
+m=17 N=  50000  sequential=58.69ms table=27.15ms sequential=63.41ms table=27.33ms  [2.6 min]
+m=17 N= 200000  sequential=243.25ms table=51.30ms sequential=251.64ms table=49.85ms  [2.9 min]
+m=17 N=1000000  sequential=1209.06ms table=177.02ms sequential=1269.47ms table=172.35ms  [4.4 min]
+m=19 N=  10000  sequential=14.80ms table=92.34ms sequential=14.66ms table=90.85ms  [4.7 min]
+m=19 N=  50000  sequential=78.12ms table=100.09ms sequential=77.32ms table=102.03ms  [5.0 min]
+m=19 N= 200000  sequential=307.46ms table=132.07ms sequential=306.62ms table=132.45ms  [5.6 min]
+m=19 N=1000000  sequential=1554.56ms table=295.20ms sequential=1532.47ms table=299.10ms  [7.6 min]
+Done in 7.6 min
