@@ -239,3 +239,65 @@
       Solution source:
       Local optimisation (nloptr)
 
+# graph_optimal print & summary methods with families
+
+    Code
+      print(obj)
+    Output
+      <multigrain_graph_optimal>
+      Optimal graph found (given user-defined constraints on graph and computational resources):
+      
+      Hypothesis weights:
+        primary secondary 
+              1         0 
+      
+      Transition matrix:
+                primary secondary
+      primary         0         1
+      secondary       1         0
+      
+      Families of hypotheses (one per node):
+      primary   (hommel): 1
+      secondary (hommel): 2 3
+      
+      Trial success function:
+      
+      
+      Value of trial success measure:
+      0.85
+
+---
+
+    Code
+      summary(obj)
+    Output
+      Optimisation summary
+      
+      Optimisation results:
+      
+      Hypothesis weights:
+        primary secondary 
+              1         0 
+      
+      Transition matrix:
+                primary secondary
+      primary         0         1
+      secondary       1         0
+      
+      Families of hypotheses:
+      primary   (hommel): 1
+      secondary (hommel): 2 3
+      
+      Value of trial success measure:
+      0.85
+      
+      Power metrics:
+      Power for each hypothesis:
+      [1] 0.9 0.7 0.6
+      Expected number of rejections: 2.2
+      Probability of at least one rejection: 0.9
+      Probability of rejecting all hypotheses: 0.5
+      Probability of rejecting all hypotheses in each family:
+        primary secondary 
+            0.9       0.5 
+

@@ -453,3 +453,23 @@
       Value of trial success measure:
       3.0458
 
+# graph_optimise with families checks graph dimensions
+
+    Code
+      graph_optimise(pvals = pvals_4m[1:100, ], graph_constraint = graph_constraint_free(
+        4), trial_success = conjunctive_4m_power, families = fams_4m, verbose = "silent")
+    Condition
+      Error in `graph_optimise()`:
+      ! The graph has 4 nodes but `families` has 3 families.
+      i With `families`, the graph has one node per family.
+
+---
+
+    Code
+      graph_optimise(pvals = pvals_4m[1:100, ], graph_constraint = gc_fams,
+      trial_success = conjunctive_4m_power, families = fams_4m, start_graph = list(
+        list(hyp_weight = c(1, 0, 0, 0))), verbose = "silent")
+    Condition
+      Error in `graph_optimise()`:
+      ! `start_graph[[1]]$hyp_weight` has length 4; expected 3.
+
