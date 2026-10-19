@@ -21,3 +21,31 @@
       * ..1 = alpha
       i Did you forget to name an argument?
 
+# calc_power_pvals checks families dimensions
+
+    Code
+      calc_power_pvals(pvals, hyp_weight = c(0.5, 0.25, 0.25), trans_matrix = matrix(
+        0.5, 3, 3) - diag(0.5, 3), families = fams)
+    Condition
+      Error:
+      ! The graph has 3 nodes but `families` has 2 families.
+      i With `families`, the graph has one node per family.
+
+---
+
+    Code
+      calc_power_pvals(pvals[, 1:2], hyp_weight = c(0.5, 0.5), trans_matrix = matrix(
+        c(0, 1, 1, 0), nrow = 2), families = fams)
+    Condition
+      Error:
+      ! `pvals` has 2 columns but `families` covers 3 hypotheses.
+
+---
+
+    Code
+      calc_power_pvals(pvals, hyp_weight = c(0.5, 0.5), trans_matrix = matrix(c(0, 1,
+        1, 0), nrow = 2), families = list(1, 2:3))
+    Condition
+      Error in `calc_power_pvals()`:
+      ! `families` must be a multigrain family specification object or `NULL`, not a list.
+

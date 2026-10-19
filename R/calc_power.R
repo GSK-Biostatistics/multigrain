@@ -13,7 +13,12 @@
 #' Optionally, you can specify user-defined trial success criteria via
 #' `custom_power`.
 #'
-#' @inheritParams graph_optimise pvals
+#' With `families`, each node of the graph is a family of hypotheses (see
+#' [family_spec()]). `pvals` still holds one column per hypothesis, power
+#' metrics still refer to the individual hypotheses, and the output also
+#' contains `family_power`.
+#'
+#' @inheritParams graph_optimise pvals families
 #' @inheritParams is_graph_valid hyp_weight trans_matrix
 #' @inheritParams rlang::args_dots_empty
 #' @inheritParams graph_optimise alpha
@@ -53,6 +58,9 @@
 #'     one hypothesis.
 #'   * `conj_power`: Conjunctive power: the probability of rejecting all
 #'     hypotheses.
+#'   * `family_power`: Only when `families` is supplied. For each family, the
+#'     probability of rejecting every hypothesis in it (the family then passes
+#'     its weight on).
 #'   * `"..."`: Additional results as specified by user-defined success
 #'     functions in `custom_power`.
 #'
@@ -111,6 +119,16 @@
 #' )
 #'
 #' result
+#'
+#' # Families of hypotheses: H2 and H3 form one family, tested with Hommel,
+#' # and pass alpha on to H1 only when both are rejected
+#' fams <- family_spec(list(1, 2:3))
+#' calc_power_pvals(
+#'   pvals = pvals,
+#'   hyp_weight = c(0, 1),
+#'   trans_matrix = matrix(c(0, 1, 1, 0), nrow = 2),
+#'   families = fams
+#' )
 calc_power_pvals <- function(
     pvals,
     hyp_weight,
@@ -119,6 +137,7 @@ calc_power_pvals <- function(
     alpha = 0.025,
     custom_power = NULL,
     sum_to_one_constraint = TRUE,
+    families = NULL,
     call = rlang::caller_env()
 ) {
     check_double_matrix(pvals)
@@ -127,6 +146,16 @@ calc_power_pvals <- function(
     rlang::check_dots_empty()
     rlang::check_number_decimal(alpha, min = 0)
     check_logical(sum_to_one_constraint)
+    check_family_spec(families, allow_null = TRUE)
+
+    if (!is.null(families)) {
+        check_families_dims(
+            families,
+            pvals = pvals,
+            num_nodes = length(hyp_weight),
+            call = call
+        )
+    }
 
     if (
         !is_graph_valid(
@@ -144,23 +173,31 @@ calc_power_pvals <- function(
 
     custom_power <- .auto_name_custom_power(custom_power)
 
-    rej_mat <- graph_shortcut(
-        pvals = pvals,
+    rej_mat <- .reject_matrix(
+        pvals = .prepare_pvals(pvals, families),
+        hyp_weight = hyp_weight,
+        trans_matrix = trans_matrix,
         alpha = alpha,
-        w = hyp_weight,
-        G = trans_matrix
+        families = families
     )
 
     rej_counts <- rowSums(rej_mat)
-    c(
-        list(
-            local_power = colMeans(rej_mat),
-            exp_rejections = sum(rej_mat) / nrow(rej_mat),
-            disj_power = mean(rej_counts > 0L),
-            conj_power = mean(rej_counts == ncol(rej_mat))
-        ),
-        .eval_custom_power(custom_power, rej_mat)
+    power <- list(
+        local_power = colMeans(rej_mat),
+        exp_rejections = sum(rej_mat) / nrow(rej_mat),
+        disj_power = mean(rej_counts > 0L),
+        conj_power = mean(rej_counts == ncol(rej_mat))
     )
+
+    if (!is.null(families)) {
+        power$family_power <- vapply(
+            families$members,
+            \(idx) mean(rowSums(rej_mat[, idx, drop = FALSE]) == length(idx)),
+            FUN.VALUE = numeric(1L)
+        )
+    }
+
+    c(power, .eval_custom_power(custom_power, rej_mat))
 }
 
 

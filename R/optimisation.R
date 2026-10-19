@@ -19,6 +19,13 @@
 #' @inheritParams rlang::args_dots_empty
 #' @param alpha A single numeric value representing the overall one-sided
 #'   significance level. Default is 0.025.
+#' @param families Optional. A `multigrain_family_spec` object, created with
+#'   [family_spec()], that groups the hypotheses into families. Each node of
+#'   the graph is then a family and passes its weight on only when all of its
+#'   hypotheses are rejected (Maurer and Bretz, 2014). `graph_constraint` and
+#'   `start_graph` have one node per family, while `pvals` and
+#'   `trial_success` still refer to the individual hypotheses. If `NULL`
+#'   (default), each node is a single hypothesis.
 #' @param start_graph Optional. Initial list of graphs suggested. Each graph is
 #'   defined as a list containing starting weight vector `hyp_weight` and
 #'   transition matrix `trans_matrix`. If `NULL`, default starting values are
@@ -48,6 +55,7 @@
 #' * `constraints`: List of constraints used in the optimisation for weights
 #'   and transition matrix.
 #' * `trial_success`: The trial success function used in the optimisation.
+#' * `families`: The family specification used, or `NULL`.
 #' * `power`: Power metrics for the optimised graph.
 #' * `solution`: A list containing:
 #'   * `opt_source`: Source of the optimal solution (`local` or `global`).
@@ -98,6 +106,7 @@ graph_optimise <- function(
     trial_success,
     ...,
     alpha = 0.025,
+    families = NULL,
     start_graph = list(
         list(
             hyp_weight = NULL,
@@ -114,6 +123,7 @@ graph_optimise <- function(
     check_trial_success(trial_success)
     rlang::check_dots_empty()
     rlang::check_number_decimal(alpha, min = 0, max = 1)
+    check_family_spec(families, allow_null = TRUE)
     rlang::check_number_whole(num_threads, min = 1)
     check_control(control)
     check_logical(global_search, allow_na = FALSE)
@@ -135,14 +145,26 @@ graph_optimise <- function(
         )
     }
 
+    # Number of graph nodes: one per hypothesis, or one per family
+    num_nodes <- ncol(pvals)
+    if (!is.null(families)) {
+        check_families_dims(
+            families,
+            pvals = pvals,
+            num_nodes = graph_constraint_get_m(graph_constraint)
+        )
+        num_nodes <- length(families$members)
+    }
+
     .validate_start_graphs(
         start_graph,
-        m = ncol(pvals)
+        m = num_nodes
     )
 
     control <- control_prepare(
         control,
         pvals = pvals,
+        num_nodes = num_nodes,
         verbose = verbose
     )
 
@@ -159,6 +181,7 @@ graph_optimise <- function(
             start_graph = start_graph,
             global_opts = control$global_opt,
             num_threads = num_threads,
+            families = families,
             verbose = verbose
         )
 
@@ -185,6 +208,7 @@ graph_optimise <- function(
         local_opts = control$local_opt,
         num_threads = num_threads,
         x0 = x0_for_local,
+        families = families,
         verbose = verbose
     )
 
@@ -198,6 +222,7 @@ graph_optimise <- function(
         graph_constraint = graph_constraint,
         trial_success = trial_success,
         gamma = 1,
+        families = families,
         verbose = verbose
     )
 
@@ -212,7 +237,8 @@ graph_optimise <- function(
         hyp_weight = clean_graph$hyp_weight,
         trans_matrix = clean_graph$trans_matrix,
         alpha = alpha,
-        custom_power = list(trial_success = trial_success)
+        custom_power = list(trial_success = trial_success),
+        families = families
     )
 
     # Apply hypothesis names
@@ -225,6 +251,7 @@ graph_optimise <- function(
         trans_matrix = clean_graph$trans_matrix,
         constraints = graph_constraint,
         trial_success = trial_success,
+        families = families,
         power = final_power,
         solution = list(
             opt_source = best_graph_result$source,
@@ -280,6 +307,7 @@ graph_optimise <- function(
             trans_matrix = NULL
         )
     ),
+    families = NULL,
     verbose = c("info", "detail", "silent")
 ) {
     verbose <- rlang::arg_match(verbose)
@@ -301,7 +329,8 @@ graph_optimise <- function(
             trans_constraint = graph_constraint$trans_constraint,
             alpha = alpha,
             pvals = pvals_sampled,
-            num_threads = num_threads
+            num_threads = num_threads,
+            families = families
         ),
         lower = rep(0, ncol(x0)),
         upper = rep(1, ncol(x0)),
@@ -336,14 +365,16 @@ graph_optimise <- function(
             hyp_weight = sol$hyp_weight,
             trans_matrix = sol$trans_matrix,
             alpha = alpha,
-            custom_power = list(trial_success = trial_success)
+            custom_power = list(trial_success = trial_success),
+            families = families
         )
 
-        rej_mat <- graph_shortcut(
-            pvals = pvals, # calculated on full sample
+        rej_mat <- .reject_matrix(
+            pvals = .prepare_pvals(pvals, families), # calculated on full sample
+            hyp_weight = sol$hyp_weight,
+            trans_matrix = sol$trans_matrix,
             alpha = alpha,
-            w = sol$hyp_weight,
-            G = sol$trans_matrix
+            families = families
         )
 
         ga_trial_success <- trial_success$func(rej_mat)
@@ -398,6 +429,7 @@ graph_optimise <- function(
     num_threads = 1L,
     nsim = nrow(pvals),
     x0 = NULL,
+    families = NULL,
     verbose = c("info", "detail", "silent")
 ) {
     verbose <- rlang::arg_match(verbose)
@@ -419,7 +451,8 @@ graph_optimise <- function(
         trans_constraint = graph_constraint$trans_constraint,
         alpha = alpha,
         pvals = pvals_sampled,
-        num_threads = num_threads
+        num_threads = num_threads,
+        families = families
     )
     nlopt_obj_func <- function(x) {
         -obj_fun(x)
@@ -456,14 +489,16 @@ graph_optimise <- function(
             hyp_weight = sol$hyp_weight,
             trans_matrix = sol$trans_matrix,
             alpha = alpha,
-            custom_power = list(trial_success = trial_success)
+            custom_power = list(trial_success = trial_success),
+            families = families
         )
 
-        rej_mat <- graph_shortcut(
-            pvals = pvals, # calculated on full sample
+        rej_mat <- .reject_matrix(
+            pvals = .prepare_pvals(pvals, families), # calculated on full sample
+            hyp_weight = sol$hyp_weight,
+            trans_matrix = sol$trans_matrix,
             alpha = alpha,
-            w = sol$hyp_weight,
-            G = sol$trans_matrix
+            families = families
         )
 
         local_trial_success <- trial_success$func(rej_mat)

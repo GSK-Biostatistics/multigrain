@@ -933,3 +933,83 @@ test_that("graph_optimise with old, logical verbose", {
         transform = fix_duration
     )
 })
+
+
+# Families of hypotheses --------------------------------------------------
+
+fams_4m <- family_spec(list(primary = 1, secondary = 2:3, other = 4))
+gc_fams <- graph_constraint(
+    hyp_constraint = c(1, 0, 0),
+    names = names(fams_4m$members)
+)
+
+test_that("graph_optimise with families: end to end", {
+    ctrl <- multigrain_control() |>
+        control_global(maxiter = 20, run = 10) |>
+        control_nsim_global(5e3) |>
+        control_local(maxeval = 200)
+    pvals_fam <- pvals_4m[1:1e4, ]
+
+    optimise_fam <- function() {
+        set.seed(31)
+        graph_optimise(
+            pvals = pvals_fam,
+            graph_constraint = gc_fams,
+            trial_success = conjunctive_4m_power,
+            families = fams_4m,
+            control = ctrl,
+            verbose = "silent"
+        )
+    }
+    result <- optimise_fam()
+
+    expect_s3_class(result, "multigrain_graph_optimal")
+    expect_identical(result$families, fams_4m)
+    expect_named(result$hyp_weight, c("primary", "secondary", "other"))
+    expect_true(is_graph_valid(result$hyp_weight, result$trans_matrix))
+    expect_length(result$power$local_power, 4)
+    expect_named(result$power$family_power, c("primary", "secondary", "other"))
+    # population size is calibrated on 3 graph nodes, not 4 hypotheses
+    expect_identical(result$control$global_opt$popSize, 200L)
+
+    # the reported trial success is that of the returned graph
+    check_power <- calc_power_pvals(
+        pvals_fam,
+        hyp_weight = result$hyp_weight,
+        trans_matrix = result$trans_matrix,
+        custom_power = list(trial_success = conjunctive_4m_power),
+        families = fams_4m
+    )
+    expect_identical(result$power, check_power)
+
+    # reproducible with the same seed
+    result_again <- optimise_fam()
+    expect_identical(result_again$hyp_weight, result$hyp_weight)
+    expect_identical(result_again$trans_matrix, result$trans_matrix)
+    expect_identical(result_again$power, result$power)
+})
+
+test_that("graph_optimise with families checks graph dimensions", {
+    # graph constraint with one node per hypothesis instead of per family
+    expect_snapshot(error = TRUE, {
+        graph_optimise(
+            pvals = pvals_4m[1:100, ],
+            graph_constraint = graph_constraint_free(4),
+            trial_success = conjunctive_4m_power,
+            families = fams_4m,
+            verbose = "silent"
+        )
+    })
+
+    # start graph with one node per hypothesis
+    expect_snapshot(error = TRUE, {
+        graph_optimise(
+            pvals = pvals_4m[1:100, ],
+            graph_constraint = gc_fams,
+            trial_success = conjunctive_4m_power,
+            families = fams_4m,
+            start_graph = list(list(hyp_weight = c(1, 0, 0, 0))),
+            verbose = "silent"
+        )
+    })
+})

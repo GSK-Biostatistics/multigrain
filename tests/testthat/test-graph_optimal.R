@@ -14,6 +14,7 @@ test_that("new_graph_optimal", {
             "trans_matrix",
             "constraints",
             "trial_success",
+            "families",
             "power",
             "solution",
             "global_search",
@@ -196,4 +197,31 @@ test_that("check_graph_optimal", {
         check_graph_optimal(2),
         "`2` must be a multigrain graph optimal object, not the number 2."
     )
+})
+
+test_that("graph_optimal print & summary methods with families", {
+    trans_matrix <- matrix(c(0, 1, 1, 0), nrow = 2)
+    dimnames(trans_matrix) <- list(
+        c("primary", "secondary"),
+        c("primary", "secondary")
+    )
+
+    obj <- graph_optimal(
+        hyp_weight = c(primary = 1, secondary = 0),
+        trans_matrix = trans_matrix,
+        families = family_spec(list(primary = 1, secondary = 2:3)),
+        power = list(
+            local_power = c(0.9, 0.7, 0.6),
+            exp_rejections = 2.2,
+            disj_power = 0.9,
+            conj_power = 0.5,
+            family_power = c(primary = 0.9, secondary = 0.5),
+            trial_success = 0.85
+        ),
+        global_search = FALSE
+    )
+
+    expect_s3_class(obj$families, "multigrain_family_spec")
+    expect_snapshot(print(obj))
+    expect_snapshot(summary(obj))
 })

@@ -279,3 +279,19 @@ test_that("control_prepare with control_global and optimArgs", {
         )
     )
 })
+
+test_that("control_prepare calibrates the population size on graph nodes", {
+    test_pvals <- matrix(stats::runif(1000 * 20), ncol = 20)
+
+    # one node per hypothesis by default
+    prep_ctrl <- control_prepare(multigrain_control(), pvals = test_pvals)
+    expect_identical(prep_ctrl$global_opt$popSize, 500L)
+
+    # one node per family
+    prep_ctrl <- control_prepare(
+        multigrain_control(),
+        pvals = test_pvals,
+        num_nodes = 6L
+    )
+    expect_identical(prep_ctrl$global_opt$popSize, 240L)
+})

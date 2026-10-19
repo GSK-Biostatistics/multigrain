@@ -1,0 +1,19 @@
+multigrain 1.0.0.9000 
+2026-10-19 21:59:36 
+
+1. Kernel vs literal Algorithm 5.7 (400 trials per case)
+   hommel   lowest order: 60 / 60 identical
+   hommel   random order: 60 / 60 identical
+   hochberg lowest order: 60 / 60 identical
+   hochberg random order: 60 / 60 identical
+   holm     lowest order: 60 / 60 identical
+   holm     random order: 60 / 60 identical
+
+2. All-singleton vs graph_shortcut(): 40 / 40 identical
+
+3. adjust_pvals_families() vs stats::p.adjust() (10,000 rows)
+   hommel   k = 1..7 identical: TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+   hochberg k = 1..7 identical: TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+   holm     k = 1..7 identical: TRUE TRUE TRUE TRUE TRUE TRUE TRUE
+
+4. Serial vs parallel (1-4 threads): 20 / 20 identical

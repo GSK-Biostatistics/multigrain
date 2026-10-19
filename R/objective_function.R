@@ -18,8 +18,9 @@
 #'
 #' @returns A function with signature `function(x)` that evaluates the trial
 #'   success measure for a given encoded parameter vector `x`. All other
-#'   inputs (`alpha`, `pvals`, constraints, thread count) are captured in the
-#'   closure at creation time.
+#'   inputs (`alpha`, `pvals`, constraints, families, thread count) are
+#'   captured in the closure at creation time. With `families`, the
+#'   within-family adjustment of `pvals` is done once, here, not per call.
 #' @noRd
 create_obj_func <- function(
     m,
@@ -28,16 +29,17 @@ create_obj_func <- function(
     trans_constraint,
     pvals,
     alpha = 0.025,
-    num_threads = 1L
+    num_threads = 1L,
+    families = NULL
 ) {
     force(power_criterion)
     force(hyp_constraint)
     force(trans_constraint)
     force(alpha)
-    force(pvals)
     force(num_threads)
+    force(families)
 
-    use_parallel <- num_threads >= 2L
+    pvals <- .prepare_pvals(pvals, families)
 
     function(x) {
         theta <- split_theta(x, hyp_constraint)
@@ -66,7 +68,49 @@ create_obj_func <- function(
         hyp_weight[hyp_weight < 1e-4] <- 0
         trans_matrix[trans_matrix < 1e-5] <- 0
 
-        rej_matrix <- if (use_parallel) {
+        rej_matrix <- .reject_matrix(
+            pvals = pvals,
+            hyp_weight = hyp_weight,
+            trans_matrix = trans_matrix,
+            alpha = alpha,
+            families = families,
+            num_threads = num_threads
+        )
+
+        power_criterion(rej_matrix)
+    }
+}
+
+#' Rejection matrix of a graph
+#'
+#' Runs the shortcut kernel for a graph: `graph_shortcut()` when each node is
+#' a hypothesis, or `graph_shortcut_families()` when each node is a family.
+#' The parallel kernels are used when `num_threads >= 2`.
+#'
+#' @param pvals (numeric matrix) Matrix of p-values (`nsim × m`) returned by
+#'   `.prepare_pvals(pvals, families)`: raw p-values without families,
+#'   within-family adjusted p-values with families.
+#' @param hyp_weight (numeric) Weights of the graph nodes.
+#' @param trans_matrix (numeric matrix) Transition matrix between the nodes.
+#' @param alpha (numeric scalar) Overall one-sided significance level.
+#' @param families `NULL` or a `multigrain_family_spec` object.
+#' @param num_threads Number of threads for the shortcut kernel.
+#'
+#' @returns A logical matrix (`nsim × m`) of rejections, one column per
+#'   hypothesis.
+#' @noRd
+.reject_matrix <- function(
+    pvals,
+    hyp_weight,
+    trans_matrix,
+    alpha,
+    families = NULL,
+    num_threads = 1L
+) {
+    use_parallel <- num_threads >= 2L
+
+    if (is.null(families)) {
+        if (use_parallel) {
             graph_shortcut_parallel(
                 pvals = pvals,
                 alpha = alpha,
@@ -83,8 +127,28 @@ create_obj_func <- function(
                 G = trans_matrix
             )
         }
+    } else {
+        family_index <- family_spec_get_index(families) - 1L
 
-        power_criterion(rej_matrix)
+        if (use_parallel) {
+            graph_shortcut_families_parallel(
+                pvals = pvals,
+                family = family_index,
+                alpha = alpha,
+                w = hyp_weight,
+                G = trans_matrix,
+                num_threads = num_threads,
+                grain_size = -1L
+            )
+        } else {
+            graph_shortcut_families(
+                pvals = pvals,
+                family = family_index,
+                alpha = alpha,
+                w = hyp_weight,
+                G = trans_matrix
+            )
+        }
     }
 }
 

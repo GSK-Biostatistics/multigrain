@@ -821,3 +821,38 @@ test_that("recover_full_trans_matrix errors on wrong opt x length", {
         "does not match"
     )
 })
+
+# Families of hypotheses --------------------------------------------------
+
+test_that("create_obj_func with families uses the families kernel", {
+    fams <- family_spec(list(1, 2:3, 4))
+    gc_fam <- graph_constraint_free(3)
+    pvals_fam <- pvals[1:1e4, 1:4]
+    x0 <- create_start_params(gc_fam)
+
+    theta <- split_theta(x0, gc_fam$hyp_constraint)
+    w <- recover_full_weights(theta$w_pars, gc_fam$hyp_constraint)
+    G <- recover_full_trans_matrix(theta$g_pars, gc_fam$trans_constraint)
+    expected <- conjunctive_4m_power$func(
+        graph_shortcut_families(
+            .prepare_pvals(pvals_fam, fams),
+            family = c(0L, 1L, 1L, 2L),
+            alpha = 0.025,
+            w = w,
+            G = G
+        )
+    )
+
+    for (nt in c(1L, 2L)) {
+        obj_func <- create_obj_func(
+            4,
+            power_criterion = conjunctive_4m_power$func,
+            hyp_constraint = gc_fam$hyp_constraint,
+            trans_constraint = gc_fam$trans_constraint,
+            pvals = pvals_fam,
+            num_threads = nt,
+            families = fams
+        )
+        expect_identical(obj_func(x0), expected, info = paste("threads", nt))
+    }
+})
