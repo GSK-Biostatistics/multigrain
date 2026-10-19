@@ -17,12 +17,12 @@ Source:
 
 Spiers A, Moldovan-Grünfeld D (2026). *multigrain: Optimise Graphical
 Approaches to Multiple Testing Procedures*. R package version
-0.3.0.9003, <https://github.com/GSK-Biostatistics/multigrain>.
+1.0.0.9000, <https://github.com/GSK-Biostatistics/multigrain>.
 
     @Manual{,
       title = {multigrain: Optimise Graphical Approaches to Multiple Testing Procedures},
       author = {Alex Spiers and Dragoș Moldovan-Grünfeld},
       year = {2026},
-      note = {R package version 0.3.0.9003},
+      note = {R package version 1.0.0.9000},
       url = {https://github.com/GSK-Biostatistics/multigrain},
     }
