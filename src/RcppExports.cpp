@@ -10,6 +10,19 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// adjust_pvals_families
+NumericMatrix adjust_pvals_families(const NumericMatrix& pvals, const IntegerVector& family, const IntegerVector& test);
+RcppExport SEXP _multigrain_adjust_pvals_families(SEXP pvalsSEXP, SEXP familySEXP, SEXP testSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type pvals(pvalsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type family(familySEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type test(testSEXP);
+    rcpp_result_gen = Rcpp::wrap(adjust_pvals_families(pvals, family, test));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calc_local_weights
 NumericMatrix calc_local_weights(NumericVector w, NumericMatrix G);
 RcppExport SEXP _multigrain_calc_local_weights(SEXP wSEXP, SEXP GSEXP) {
@@ -79,6 +92,38 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// graph_shortcut_families
+LogicalMatrix graph_shortcut_families(const NumericMatrix& pvals, const IntegerVector& family, const double alpha, const NumericVector& w, const NumericMatrix& G);
+RcppExport SEXP _multigrain_graph_shortcut_families(SEXP pvalsSEXP, SEXP familySEXP, SEXP alphaSEXP, SEXP wSEXP, SEXP GSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type pvals(pvalsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type family(familySEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    rcpp_result_gen = Rcpp::wrap(graph_shortcut_families(pvals, family, alpha, w, G));
+    return rcpp_result_gen;
+END_RCPP
+}
+// graph_shortcut_families_parallel
+LogicalMatrix graph_shortcut_families_parallel(const NumericMatrix& pvals, const IntegerVector& family, const double alpha, const NumericVector& w, const NumericMatrix& G, int num_threads, int grain_size);
+RcppExport SEXP _multigrain_graph_shortcut_families_parallel(SEXP pvalsSEXP, SEXP familySEXP, SEXP alphaSEXP, SEXP wSEXP, SEXP GSEXP, SEXP num_threadsSEXP, SEXP grain_sizeSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type pvals(pvalsSEXP);
+    Rcpp::traits::input_parameter< const IntegerVector& >::type family(familySEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< int >::type num_threads(num_threadsSEXP);
+    Rcpp::traits::input_parameter< int >::type grain_size(grain_sizeSEXP);
+    rcpp_result_gen = Rcpp::wrap(graph_shortcut_families_parallel(pvals, family, alpha, w, G, num_threads, grain_size));
+    return rcpp_result_gen;
+END_RCPP
+}
 // graph_violation_score_cpp
 double graph_violation_score_cpp(NumericVector w, NumericMatrix G);
 RcppExport SEXP _multigrain_graph_violation_score_cpp(SEXP wSEXP, SEXP GSEXP) {
@@ -93,11 +138,14 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_multigrain_adjust_pvals_families", (DL_FUNC) &_multigrain_adjust_pvals_families, 3},
     {"_multigrain_calc_local_weights", (DL_FUNC) &_multigrain_calc_local_weights, 2},
     {"_multigrain_esch_population_rcpp", (DL_FUNC) &_multigrain_esch_population_rcpp, 4},
     {"_multigrain_esch_mutation_rcpp", (DL_FUNC) &_multigrain_esch_mutation_rcpp, 3},
     {"_multigrain_graph_shortcut", (DL_FUNC) &_multigrain_graph_shortcut, 4},
     {"_multigrain_graph_shortcut_parallel", (DL_FUNC) &_multigrain_graph_shortcut_parallel, 6},
+    {"_multigrain_graph_shortcut_families", (DL_FUNC) &_multigrain_graph_shortcut_families, 5},
+    {"_multigrain_graph_shortcut_families_parallel", (DL_FUNC) &_multigrain_graph_shortcut_families_parallel, 7},
     {"_multigrain_graph_violation_score_cpp", (DL_FUNC) &_multigrain_graph_violation_score_cpp, 2},
     {NULL, NULL, 0}
 };

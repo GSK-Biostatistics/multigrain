@@ -11,6 +11,7 @@ graph_optimise(
   trial_success,
   ...,
   alpha = 0.025,
+  families = NULL,
   start_graph = list(list(hyp_weight = NULL, trans_matrix = NULL)),
   global_search = TRUE,
   num_threads = 1L,
@@ -24,6 +25,7 @@ graph_optimize(
   trial_success,
   ...,
   alpha = 0.025,
+  families = NULL,
   start_graph = list(list(hyp_weight = NULL, trans_matrix = NULL)),
   global_search = TRUE,
   num_threads = 1L,
@@ -47,6 +49,14 @@ success measure (power objective) function to maximize. Created with
 
 \item{alpha}{A single numeric value representing the overall one-sided
 significance level. Default is 0.025.}
+
+\item{families}{Optional. A \code{multigrain_family_spec} object, created with
+\code{\link[=family_spec]{family_spec()}}, that groups the hypotheses into families. Each node of
+the graph is then a family and passes its weight on only when all of its
+hypotheses are rejected (Maurer and Bretz, 2014). \code{graph_constraint} and
+\code{start_graph} have one node per family, while \code{pvals} and
+\code{trial_success} still refer to the individual hypotheses. If \code{NULL}
+(default), each node is a single hypothesis.}
 
 \item{start_graph}{Optional. Initial list of graphs suggested. Each graph is
 defined as a list containing starting weight vector \code{hyp_weight} and
@@ -84,6 +94,7 @@ A \code{multigrain_graph_optimal} object containing:
 \item \code{constraints}: List of constraints used in the optimisation for weights
 and transition matrix.
 \item \code{trial_success}: The trial success function used in the optimisation.
+\item \code{families}: The family specification used, or \code{NULL}.
 \item \code{power}: Power metrics for the optimised graph.
 \item \code{solution}: A list containing:
 \itemize{

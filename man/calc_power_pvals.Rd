@@ -12,6 +12,7 @@ calc_power_pvals(
   alpha = 0.025,
   custom_power = NULL,
   sum_to_one_constraint = TRUE,
+  families = NULL,
   call = rlang::caller_env()
 )
 }
@@ -56,6 +57,14 @@ object (or within a list as with the anonymous functions). See
 graphs where transition matrix rows are not constrained to sum to one,
 for example in a fixed sequence. Defaults to \code{TRUE}.}
 
+\item{families}{Optional. A \code{multigrain_family_spec} object, created with
+\code{\link[=family_spec]{family_spec()}}, that groups the hypotheses into families. Each node of
+the graph is then a family and passes its weight on only when all of its
+hypotheses are rejected (Maurer and Bretz, 2014). \code{graph_constraint} and
+\code{start_graph} have one node per family, while \code{pvals} and
+\code{trial_success} still refer to the individual hypotheses. If \code{NULL}
+(default), each node is a single hypothesis.}
+
 \item{call}{The execution environment of a currently
 running function, e.g. \code{caller_env()}. The function will be
 mentioned in error messages as the source of the error. See the
@@ -72,6 +81,9 @@ simulations.
 one hypothesis.
 \item \code{conj_power}: Conjunctive power: the probability of rejecting all
 hypotheses.
+\item \code{family_power}: Only when \code{families} is supplied. For each family, the
+probability of rejecting every hypothesis in it (the family then passes
+its weight on).
 \item \code{"..."}: Additional results as specified by user-defined success
 functions in \code{custom_power}.
 }
@@ -92,6 +104,11 @@ wish to evaluate.
 Optionally, you can specify user-defined trial success criteria via
 \code{custom_power}.
 }
+
+With \code{families}, each node of the graph is a family of hypotheses (see
+\code{\link[=family_spec]{family_spec()}}). \code{pvals} still holds one column per hypothesis, power
+metrics still refer to the individual hypotheses, and the output also
+contains \code{family_power}.
 }
 \examples{
 
@@ -147,4 +164,14 @@ result <- calc_power_pvals(
 )
 
 result
+
+# Families of hypotheses: H2 and H3 form one family, tested with Hommel,
+# and pass alpha on to H1 only when both are rejected
+fams <- family_spec(list(1, 2:3))
+calc_power_pvals(
+  pvals = pvals,
+  hyp_weight = c(0, 1),
+  trans_matrix = matrix(c(0, 1, 1, 0), nrow = 2),
+  families = fams
+)
 }
