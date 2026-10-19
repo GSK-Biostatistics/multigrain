@@ -211,6 +211,7 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
 #' @param constrained_idx Integer vector; which hypotheses carry marginal
 #'   constraints.
 #' @param power_constraint Numeric vector of marginal thresholds.
+#' @param families `NULL` or a `multigrain_family_spec` object.
 #'
 #' @returns A list with `hyp_weight`, `trans_matrix`, `power_best`, and
 #'   `accepted` (logical).
@@ -223,14 +224,16 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
     power_best,
     constrained_idx,
     power_constraint,
-    alpha = 0.025
+    alpha = 0.025,
+    families = NULL
 ) {
     power_all <- calc_power_pvals(
         pvals,
         hyp_weight = hyp_weight,
         trans_matrix = trans_matrix,
         alpha = alpha,
-        custom_power = trial_success
+        custom_power = trial_success,
+        families = families
     )
 
     violated <- .marginal_violated(
@@ -280,6 +283,8 @@ repair_graph <- function(hyp_weight, trans_matrix, graph_constraint) {
 #'   [normalise_sum()] during mass redistribution. Defaults to
 #'   `sqrt(.Machine$double.eps)`.
 #'
+#' @param families `NULL` or a `multigrain_family_spec` object.
+#'
 #' @returns A list with elements `hyp_weight` (pruned weights), `trans_matrix`
 #'   (unchanged), and `power_best` (the best power achieved).
 #'
@@ -293,14 +298,16 @@ prune_hyp_weights <- function(
     alpha = 0.025,
     gamma = 1,
     power_constraint = NULL,
-    tolerance = sqrt(.Machine$double.eps)
+    tolerance = sqrt(.Machine$double.eps),
+    families = NULL
 ) {
     power_all <- calc_power_pvals(
         pvals,
         hyp_weight = hyp_weight,
         trans_matrix = trans_matrix,
         alpha = alpha,
-        custom_power = trial_success
+        custom_power = trial_success,
+        families = families
     )
     power_best <- power_all$custom_power
 
@@ -338,7 +345,8 @@ prune_hyp_weights <- function(
             trial_success = trial_success,
             power_best = power_best,
             constrained_idx = constrained_idx,
-            power_constraint = power_constraint
+            power_constraint = power_constraint,
+            families = families
         )
 
         if (result$accepted) {
@@ -380,6 +388,8 @@ prune_hyp_weights <- function(
 #'   [normalise_sum()] during mass redistribution. Defaults to
 #'   `sqrt(.Machine$double.eps)`.
 #'
+#' @param families `NULL` or a `multigrain_family_spec` object.
+#'
 #' @returns A list with elements `hyp_weight` (unchanged), `trans_matrix`
 #'   (pruned edges), and `power_best` (the best power achieved).
 #'
@@ -394,7 +404,8 @@ prune_edges <- function(
     alpha = 0.025,
     gamma = 1,
     power_constraint = NULL,
-    tolerance = sqrt(.Machine$double.eps)
+    tolerance = sqrt(.Machine$double.eps),
+    families = NULL
 ) {
     G_best <- trans_matrix
 
@@ -438,7 +449,8 @@ prune_edges <- function(
                 trial_success = trial_success,
                 power_best = power_best,
                 constrained_idx = constrained_idx,
-                power_constraint = power_constraint
+                power_constraint = power_constraint,
+                families = families
             )
 
             if (result$accepted) {
@@ -474,6 +486,8 @@ prune_edges <- function(
 #'   that are non-`NA` impose a marginal-power requirement. Defaults to `NULL`
 #'   (no marginal constraints).
 #'
+#' @param families `NULL` or a `multigrain_family_spec` object.
+#'
 #' @returns A list with elements `hyp_weight` and `trans_matrix`, the pruned
 #' graph.
 #'
@@ -487,6 +501,7 @@ prune_graph <- function(
     alpha = 0.025,
     gamma = 1,
     power_constraint = NULL,
+    families = NULL,
     verbose = c("info", "detail", "silent")
 ) {
     verbose <- rlang::arg_match(verbose)
@@ -509,7 +524,8 @@ prune_graph <- function(
         alpha = alpha,
         gamma = gamma,
         power_constraint = power_constraint,
-        tolerance = tolerance
+        tolerance = tolerance,
+        families = families
     )
 
     pruned <- prune_edges(
@@ -522,7 +538,8 @@ prune_graph <- function(
         gamma = gamma,
         power_best = pruned_weights$power_best,
         power_constraint = power_constraint,
-        tolerance = tolerance
+        tolerance = tolerance,
+        families = families
     )
 
     list(
