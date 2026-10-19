@@ -57,7 +57,9 @@ Two implementation choices in `adjust_pvals_families.cpp` halved the cost:
 
 * `?family_spec` and the `families` parameter in `?graph_optimise` and `?calc_power_pvals` (`calc_power_pvals()` inherits it).
 * `NEWS.md`, `_pkgdown.yml` (reference and the "Details" article list), `inst/WORDLIST`.
-* Article `vignettes/articles/families.qmd`: a simplified ETHOS two-dose design, m = 12, M = 6. The optimised graph comes from `data-raw/families-vignette.R` and is saved to `vignettes/articles/data/families-graph.rds`.
+* Article `vignettes/articles/families.qmd`: a simplified ETHOS two-dose design, m = 12, M = 6. The optimised graph comes from `data-raw/families-vignette.R` (default control, 4 threads, about 14 minutes on the laptop; pruning took 1 s including the Option A re-adjustments) and is saved to `vignettes/articles/data/families-graph.rds`.
+  * The article renders with Quarto against the dev build. `pkgdown::check_pkgdown()` reports no problems.
+  * On an independent sample of 1e5 trials, the gain is 6.077 for the optimised family graph and 5.874 for the hierarchy as drawn.
 
 ## Deviations from the plan
 
