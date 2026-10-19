@@ -462,3 +462,92 @@ test_that(".eval_custom_power complains", {
         "must be a function"
     )
 })
+
+# Families of hypotheses --------------------------------------------------
+
+test_that("calc_power_pvals with families reports power per family", {
+    fams <- family_spec(list(1, 2:3, 4))
+    hyp_weight <- c(1, 0, 0)
+    trans_matrix <- matrix(
+        c(
+            0, 1, 0,
+            0, 0, 1,
+            1, 0, 0
+        ),
+        nrow = 3,
+        byrow = TRUE
+    )
+
+    result <- calc_power_pvals(
+        pvals_fixture[1:1e4, 1:4],
+        hyp_weight = hyp_weight,
+        trans_matrix = trans_matrix,
+        custom_power = list(both_2_3 = function(x) x[2] && x[3]),
+        families = fams
+    )
+
+    expect_named(
+        result,
+        c(
+            "local_power",
+            "exp_rejections",
+            "disj_power",
+            "conj_power",
+            "family_power",
+            "both_2_3"
+        )
+    )
+    expect_length(result$local_power, 4)
+    expect_named(result$family_power, c("F1", "F2", "F3"))
+    expect_identical(result$family_power[["F2"]], result$both_2_3)
+    expect_identical(result$family_power[["F1"]], result$local_power[1])
+})
+
+test_that("calc_power_pvals with singleton families equals no families", {
+    pvals <- pvals_fixture[1:1e4, 1:4]
+    gr <- make_test_graph(4, seed = 8)
+
+    no_fam <- calc_power_pvals(pvals, gr$w, gr$G)
+    singletons <- calc_power_pvals(
+        pvals,
+        gr$w,
+        gr$G,
+        families = family_spec(as.list(1:4))
+    )
+
+    expect_identical(singletons[names(no_fam)], no_fam)
+    expect_identical(
+        unname(singletons$family_power),
+        unname(no_fam$local_power)
+    )
+})
+
+test_that("calc_power_pvals checks families dimensions", {
+    fams <- family_spec(list(1, 2:3))
+    pvals <- pvals_fixture[1:100, 1:3]
+
+    expect_snapshot(error = TRUE, {
+        calc_power_pvals(
+            pvals,
+            hyp_weight = c(0.5, 0.25, 0.25),
+            trans_matrix = matrix(0.5, 3, 3) - diag(0.5, 3),
+            families = fams
+        )
+    })
+    expect_snapshot(error = TRUE, {
+        calc_power_pvals(
+            pvals[, 1:2],
+            hyp_weight = c(0.5, 0.5),
+            trans_matrix = matrix(c(0, 1, 1, 0), nrow = 2),
+            families = fams
+        )
+    })
+    expect_snapshot(error = TRUE, {
+        calc_power_pvals(
+            pvals,
+            hyp_weight = c(0.5, 0.5),
+            trans_matrix = matrix(c(0, 1, 1, 0), nrow = 2),
+            families = list(1, 2:3)
+        )
+    })
+})
