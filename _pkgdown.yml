@@ -35,6 +35,7 @@ articles:
   navbar: Details
   contents:
   - articles/graph_constraint
+  - articles/families
 
 reference:
   - title: Optimisation
@@ -50,6 +51,7 @@ reference:
     - simulate_pvalues
     - graph_constraint
     - graph_constraint_free
+    - family_spec
     - trial_success
 
   - subtitle: Advanced control
