@@ -49,6 +49,9 @@ default_control <- function() {
 #' @inheritParams control_nsim_local
 #' @param pvals (optional) matrix of p values to use for calibration. We are
 #'   interested in the number of rows and columns.
+#' @param num_nodes Number of graph nodes, used to calibrate the population
+#'   size of the genetic algorithm. Defaults to `ncol(pvals)` (one node per
+#'   hypothesis); with families it is the number of families.
 #' @inheritParams graph_optimise
 #' @inheritParams rlang::args_error_context
 #'
@@ -66,11 +69,13 @@ default_control <- function() {
 control_prepare <- function(
     ctrl,
     pvals,
+    num_nodes = ncol(pvals),
     verbose = "silent",
     call = rlang::caller_env()
 ) {
     check_control(ctrl, call = call)
     check_double_matrix(pvals, call = call)
+    rlang::check_number_whole(num_nodes, min = 1, call = call)
     rlang::check_string(verbose, call = call)
 
     default_ctrl <- default_control()
@@ -79,7 +84,7 @@ control_prepare <- function(
     default_ctrl$nsim_local <- nrow(pvals)
     default_ctrl$nsim_global <- min(5e4L, nrow(pvals))
 
-    default_ctrl$global_opt$popSize <- min(max(40L * ncol(pvals), 200L), 500L)
+    default_ctrl$global_opt$popSize <- min(max(40L * num_nodes, 200L), 500L)
 
     # calibrate user-supplied nsim values
     ctrl <- adjust_nsim_local(ctrl, nrow(pvals), call = call)

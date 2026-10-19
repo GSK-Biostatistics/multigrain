@@ -3,6 +3,7 @@ new_graph_optimal <- function(
     trans_matrix = matrix(double()),
     constraints = NULL,
     trial_success = NULL,
+    families = NULL,
     power = NULL,
     solution = NULL,
     global_search = logical(),
@@ -17,6 +18,7 @@ new_graph_optimal <- function(
             trans_matrix = trans_matrix,
             constraints = constraints,
             trial_success = trial_success,
+            families = families,
             power = power,
             solution = solution,
             global_search = global_search,
@@ -34,6 +36,7 @@ graph_optimal <- function(
     trans_matrix,
     constraints = NULL,
     trial_success = NULL,
+    families = NULL,
     power = NULL,
     solution = NULL,
     global_search = NULL,
@@ -46,6 +49,7 @@ graph_optimal <- function(
     check_double_matrix(trans_matrix)
     check_graph_constraint(constraints, allow_null = TRUE)
     check_trial_success(trial_success, allow_null = TRUE)
+    check_family_spec(families, allow_null = TRUE)
 
     if (!is.null(solution)) {
         check_character(solution$opt_source)
@@ -73,6 +77,7 @@ graph_optimal <- function(
         trans_matrix = trans_matrix,
         constraints = constraints,
         trial_success = trial_success,
+        families = families,
         power = power,
         solution = solution,
         global_search = global_search,
@@ -149,6 +154,11 @@ summarise_power_object <- function(power_object) {
             round(power_object$conj_power, 4)
         )
     }
+
+    if (!is.null(power_object$family_power)) {
+        cli::cat_line("Probability of rejecting all hypotheses in each family:")
+        print(round(power_object$family_power, 4))
+    }
 }
 
 summarise_solution_source <- function(solution_object) {
@@ -201,6 +211,12 @@ print.multigrain_graph_optimal <- function(x, ...) {
     cli::cat_line("\nTransition matrix:")
     print(round(x$trans_matrix, 4))
 
+    if (!is.null(x$families)) {
+        cli::cat_line("\nFamilies of hypotheses (one per node):")
+        format_families(x$families) |>
+            cli::cat_line()
+    }
+
     cli::cat_line("\nTrial success function:")
     cli::cat_line(x$trial_success$objective)
 
@@ -232,6 +248,8 @@ summary.multigrain_graph_optimal <- function(object, ...) {
 
     cli::cat_line("\nTransition matrix:")
     print(round(object$trans_matrix, 4))
+
+    summary(object$families)
 
     summary(object$trial_success)
 
