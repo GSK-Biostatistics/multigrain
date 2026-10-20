@@ -31,7 +31,7 @@ shortcut_all_kernels <- function(pvals, alpha, w, G) {
 
 expect_all_identical <- function(outs) {
     for (nm in names(outs)[-1]) {
-        expect_identical(outs[[nm]], outs[[1]], label = nm)
+        testthat::expect_identical(outs[[nm]], outs[[1]], label = nm)
     }
 }
 
@@ -46,9 +46,9 @@ test_that("forced kernels agree on random graphs (m = 2..6)", {
     for (m in 2:6) {
         for (seed in 1:4) {
             gr <- make_test_graph(m, seed = 100 * m + seed)
-            expect_all_identical(
-                shortcut_all_kernels(pvals_fixture[1:2000, 1:m], 0.025, gr$w, gr$G)
-            )
+            expect_all_identical(shortcut_all_kernels(
+                pvals_fixture[1:2000, 1:m], 0.025, gr$w, gr$G
+            ))
             expect_all_identical(
                 shortcut_all_kernels(pvals_high_power[, 1:m], 0.025, gr$w, gr$G)
             )
@@ -234,7 +234,10 @@ test_that("invalid multigrain.shortcut_table_max_m values give a clear error", {
 test_that("kernel choice follows the options and the size rule", {
     # Defaults: table for small m at large N, sequential beyond the cap
     expect_identical(graph_shortcut_kernel(1e6, 3), "table")
-    expect_identical(graph_shortcut_kernel(.Machine$integer.max, 21), "sequential")
+    expect_identical(
+        graph_shortcut_kernel(.Machine$integer.max, 21),
+        "sequential"
+    )
     expect_identical(graph_shortcut_kernel(1, 10), "sequential")
     expect_identical(graph_shortcut_kernel(1e6, 0), "sequential")
 
