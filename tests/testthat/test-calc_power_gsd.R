@@ -362,7 +362,8 @@ test_that("mean_decision_look is NA for an unreachable hypothesis", {
 
 test_that("at K = 1 the shared fields equal calc_power_pvals()", {
     gsd <- calc_power_pvals_gsd(cp_pvals_k1, cp_w, cp_g)
-    fixed <- calc_power_pvals(cp_pvals_k1$pvals[,, 1L], cp_w, cp_g) # nolint: commas_linter.
+    # nolint next: commas_linter.
+    fixed <- calc_power_pvals(cp_pvals_k1$pvals[,, 1L], cp_w, cp_g)
 
     expect_identical(gsd$local_power, fixed$local_power)
     expect_identical(gsd$exp_rejections, fixed$exp_rejections)
@@ -573,7 +574,8 @@ test_that("alpha is bounded by the level of the p-value object", {
 
 test_that("a plain matrix is not accepted as pvals", {
     expect_error(
-        calc_power_pvals_gsd(cp_pvals_gsd$pvals[,, 1L], cp_w, cp_g), # nolint: commas_linter.
+        # nolint next: commas_linter.
+        calc_power_pvals_gsd(cp_pvals_gsd$pvals[,, 1L], cp_w, cp_g),
         "multigrain_pvals_gsd"
     )
 })

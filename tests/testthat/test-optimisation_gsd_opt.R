@@ -1,3 +1,4 @@
+# nolint start: object_usage_linter. Helpers live in helper-hsd_opt.R.
 # Phase P3 of dev/hsd_opt_build_plan.md: the driver of the joint graph and
 # spending-parameter search (Stage G, Stage L, the profile and the dispatch).
 # Fixtures are in helper-hsd_opt.R; every run uses the tiny optimiser
@@ -18,7 +19,7 @@ opt_hsd_gain_4 <- trial_success_gsd(
 opt_hsd_rule <- stopping_rule_gsd(r1)
 
 opt_hsd_run <- function(
-    spec = hsd_opt_spec(), # nolint: object_usage_linter.
+    spec = hsd_opt_spec(),
     gain = opt_hsd_gain_3,
     seed = 202,
     ...
@@ -28,7 +29,7 @@ opt_hsd_run <- function(
             pvals = spec,
             graph_constraint = graph_constraint_free(spec$m),
             trial_success = gain,
-            control = hsd_opt_control(), # nolint: object_usage_linter.
+            control = hsd_opt_control(),
             verbose = "silent",
             ...
         )
@@ -36,15 +37,14 @@ opt_hsd_run <- function(
 }
 
 opt_hsd_result <- function() {
-    hsd_opt_cached("opt_result_d1", opt_hsd_run()) # nolint: object_usage_linter.
+    hsd_opt_cached("opt_result_d1", opt_hsd_run())
 }
 
 opt_hsd_result_d2 <- function() {
     hsd_opt_cached(
-        # nolint: object_usage_linter.
         "opt_result_d2",
         opt_hsd_run(
-            spec = hsd_opt_spec_d2(), # nolint: object_usage_linter.
+            spec = hsd_opt_spec_d2(),
             gain = opt_hsd_gain_4,
             seed = 303,
             stopping_rule = opt_hsd_rule
@@ -54,9 +54,8 @@ opt_hsd_result_d2 <- function() {
 
 # The prepared local options of the tiny control at the d = 1 fixture.
 opt_hsd_local_opts <- function(spec = hsd_opt_spec()) {
-    # nolint: object_usage_linter.
     control_prepare_dims(
-        hsd_opt_control(), # nolint: object_usage_linter.
+        hsd_opt_control(),
         nsim = spec$nsim,
         m = spec$m
     )$local_opt
@@ -488,3 +487,4 @@ test_that("the P3 files use no superassignment", {
         expect_false(any(grepl("<<-", code, fixed = TRUE)), label = f)
     }
 })
+# nolint end
