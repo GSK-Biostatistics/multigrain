@@ -242,7 +242,9 @@ summary.multigrain_trial_success_gsd <- function(object, ...) {
     )
     for (nm in names(x$tables)) {
         cli::cat_line(
-            "Discount table ", nm, "(t): ",
+            "Discount table ",
+            nm,
+            "(t): ",
             toString(format(x$tables[[nm]]))
         )
     }
@@ -418,7 +420,8 @@ is_trial_success_gsd <- function(x) {
 # Settle the number of analyses `K`: the common table length when tables are
 # given (checked against an explicit `K`), otherwise the explicit `K`, or
 # NULL when neither is available (design record, section 10 item 6).
-.gsd_gain_K <- function( # nolint: object_name_linter.
+.gsd_gain_K <- function(
+    # nolint: object_name_linter.
     tables,
     K, # nolint: object_name_linter.
     call = rlang::caller_env()
@@ -823,7 +826,10 @@ parse_and_transform_gsd <- function(node, table_names = character()) {
         return(.gsd_gain_transform_symbol(node))
     } else if (is.numeric(node)) {
         # Numeric literal => real, written as a C++ double literal
-        return(list(expr = as.symbol(.gsd_gain_cpp_number(node)), type = "real"))
+        return(list(
+            expr = as.symbol(.gsd_gain_cpp_number(node)),
+            type = "real"
+        ))
     } else if (is.logical(node)) {
         # TRUE/FALSE => bool 1.0/0.0
         return(list(

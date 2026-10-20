@@ -13,9 +13,13 @@ suppressMessages(devtools::load_all(quiet = TRUE))
 library(gsDesign)
 
 alpha <- 0.025
-t     <- c(0.5, 1)
-tab   <- multigrain:::.gsd_boundary_table(
-    t_look = t, spending = sfLDOF, alpha = alpha, grid_size = 1024, hyp = 1
+t <- c(0.5, 1)
+tab <- multigrain:::.gsd_boundary_table(
+    t_look = t,
+    spending = sfLDOF,
+    alpha = alpha,
+    grid_size = 1024,
+    hyp = 1
 )
 
 # --- 1. Invert a few p-values at look 2 ------------------------------------
@@ -38,7 +42,11 @@ nom_bounds <- function(gamma, t, sf = sfLDOF) {
     pnorm(b, lower.tail = FALSE)
 }
 exact <- function(p, k) {
-    uniroot(function(g) nom_bounds(g, t)[k] - p, c(1e-13, alpha), tol = 1e-12)$root
+    uniroot(
+        function(g) nom_bounds(g, t)[k] - p,
+        c(1e-13, alpha),
+        tol = 1e-12
+    )$root
 }
 pr_exact <- sapply(p, exact, k = 2)
 print(data.frame(
@@ -55,14 +63,21 @@ print(data.frame(
 
 set.seed(2)
 p_test <- 10^runif(40, -8, log10(0.02))
-truth  <- sapply(p_test, exact, k = 2)
+truth <- sapply(p_test, exact, k = 2)
 for (G in c(128, 256, 512, 1024)) {
     tb <- multigrain:::.gsd_boundary_table(
-        t_look = t, spending = sfLDOF, alpha = alpha, grid_size = G, hyp = 1
+        t_look = t,
+        spending = sfLDOF,
+        alpha = alpha,
+        grid_size = G,
+        hyp = 1
     )
     est <- multigrain:::.gsd_invert(tb$bounds[, 2], grid = tb$grid, p = p_test)
-    cat(sprintf("G = %4d  max relative error = %.2e\n", G,
-                max(abs(est - truth) / truth)))
+    cat(sprintf(
+        "G = %4d  max relative error = %.2e\n",
+        G,
+        max(abs(est - truth) / truth)
+    ))
 }
 
 # >>> Question: the error roughly quarters each time G doubles. What does
@@ -77,7 +92,7 @@ for (G in c(128, 256, 512, 1024)) {
 # "true" repeated p is below 1e-14. It is floored at gsd_grid_min = 1e-14,
 # NOT 0.
 
-top    <- max(tab$bounds[, 2])
+top <- max(tab$bounds[, 2])
 bottom <- min(tab$bounds[tab$bounds[, 2] > 0, 2])
 cat("\nlook-2 table runs from", bottom, "to", top, "\n")
 
@@ -101,10 +116,14 @@ cat("\nfloor value:", multigrain:::gsd_grid_min, "\n")
 # needs strictly increasing x, so .gsd_invert() drops duplicated and
 # non-positive entries before interpolating. Show it still inverts look 1.
 
-p1  <- c(1e-3, 1e-5, 1e-8)
+p1 <- c(1e-3, 1e-5, 1e-8)
 pr1 <- multigrain:::.gsd_invert(tab$bounds[, 1], grid = tab$grid, p = p1)
 ex1 <- sapply(p1, exact, k = 1)
-print(data.frame(raw_p = p1, interpolated = signif(pr1, 6), uniroot = signif(ex1, 6)))
+print(data.frame(
+    raw_p = p1,
+    interpolated = signif(pr1, 6),
+    uniroot = signif(ex1, 6)
+))
 
 # >>> Question: a look-1 p of 1e-3 has a repeated p around 0.02: the raw value
 #     looks impressive but is barely enough at the full 0.025. Explain that
@@ -112,7 +131,8 @@ print(data.frame(raw_p = p1, interpolated = signif(pr1, 6), uniroot = signif(ex1
 
 stopifnot(
     all(abs(pr - pr_exact) / pr_exact < 1e-5),
-    pr_edge[1] == 1, pr_edge[2] == 1,
+    pr_edge[1] == 1,
+    pr_edge[2] == 1,
     pr_edge[3] == multigrain:::gsd_grid_min,
     pr_edge[4] == multigrain:::gsd_grid_min,
     pr_edge[5] == 1,
