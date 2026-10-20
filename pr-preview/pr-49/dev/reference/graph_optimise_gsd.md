@@ -327,22 +327,22 @@ result <- graph_optimise_gsd(
     num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [7.2s]
+#> ✔ Running global optimization [7.7s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [14ms]
+#> ✔ Evaluating trial success of globally optimised graph [15ms]
 #> 
 #> ℹ Running local optimization
 #> ✔ Running local optimization [11ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [13ms]
+#> ✔ Evaluating trial success of locally optimised graph [14ms]
 #> 
 #> ℹ Pruning redundant weights and edges
 #> ✔ Pruning redundant weights and edges [8ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [6ms]
+#> ✔ Evaluating trial success of pruned graph [7ms]
 #> 
 
 # choose the spending parameter of H2 jointly with the graph
@@ -359,25 +359,25 @@ result_spending <- graph_optimise_gsd(
     num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [9.5s]
+#> ✔ Running global optimization [9.7s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [15ms]
+#> ✔ Evaluating trial success of globally optimised graph [16ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [13ms]
+#> ✔ Running local optimization [14ms]
 #> 
 #> ℹ Profiling spending parameters: gamma
-#> ✔ Profiling spending parameters: gamma [157ms]
+#> ✔ Profiling spending parameters: gamma [166ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [16ms]
+#> ✔ Evaluating trial success of locally optimised graph [18ms]
 #> 
 #> ℹ Pruning redundant weights and edges
 #> ✔ Pruning redundant weights and edges [8ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [7ms]
+#> ✔ Evaluating trial success of pruned graph [15ms]
 #> 
 result_spending$spending_param
 #> gamma 
