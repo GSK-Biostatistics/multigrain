@@ -1,0 +1,47 @@
+# d03_memory_and_copy.R output
+TRACEMEM: no per-evaluation copy - the kernel call never copies; a K-column assignment with <<- copies at most once in total when the matrix arrived as a factory argument (1 copy over 3 evaluations), never when it is built inside the closure factory, and on every evaluation with a plain <- inside the closure.
+
+R 4.3.3; multigrain 0.3.0; profmem capability TRUE; 2026-10-14 13:49:47.343021
+Working matrix: 50000 x 6, storage double
+
+== 1. tracemem: does the kernel call or a column assignment copy? ==
+                         probe copies
+                   kernel_call      0
+ assign_top_level_after_kernel      0
+    closure_superassign_eval_1      0
+    closure_superassign_eval_2      1
+    closure_superassign_eval_3      0
+   closure_built_inside_eval_1      0
+   closure_built_inside_eval_2      0
+   closure_built_inside_eval_3      0
+  closure_local_assign_3_evals      3
+            env_assign_3_evals      0
+             aliased_2_assigns      1
+closure_superassign_eval_2: tracemem[0x562bccc92670 -> 0x562bccedc5b0]: <Anonymous> withVisible <Anonymous> 
+closure_local_assign_3_evals: tracemem[0x562bd0883ab0 -> 0x562bd0acd9f0]: <Anonymous> withVisible <Anonymous>  | tracemem[0x562bd0883ab0 -> 0x562bd0e9e430]: <Anonymous> withVisible <Anonymous>  | tracemem[0x562bd0883ab0 -> 0x562bd126ee70]: <Anonymous> withVisible <Anonymous> 
+aliased_2_assigns: tracemem[0x562bccc92670 -> 0x562bce140190]: withVisible <Anonymous> 
+TRACEMEM: no per-evaluation copy - the kernel call never copies; a K-column assignment with <<- copies at most once in total when the matrix arrived as a factory argument (1 copy over 3 evaluations), never when it is built inside the closure factory, and on every evaluation with a plain <- inside the closure.
+
+== 2. K-column assignment vs kernel call, N_GA = 5e4, m = 3, K = 2, 2 threads ==
+                          operation median_ms p90_ms
+   assign K = 2 columns (top level)    0.1448 0.1833
+                        kernel call    1.7669 2.5271
+ closure eval (<<- assign + kernel)    1.9457 2.3969
+copy / kernel = 8.2 % (threshold 15 %): below - no C++ column copier needed
+closure eval overhead over a bare kernel call = 10.1 %
+  projected at m_act = 1: 8.2 % of a kernel call
+  projected at m_act = 2: 16.4 % of a kernel call
+  projected at m_act = 4: 32.8 % of a kernel call
+
+== 3. memory ==
+object.size(working matrix) = 2.3 Mb (2400216 bytes; 8 * N_GA * mK = 2400000)
+Projected bank bytes 8 * K * N_GA * M * m_act, N_GA = 5e4, in MB (1e6 bytes):
+  M K MB_m_act_1 MB_m_act_2 MB_m_act_4
+ 21 2       16.8       33.6       67.2
+ 41 2       32.8       65.6      131.2
+ 97 2       77.6      155.2      310.4
+ 21 3       25.2       50.4      100.8
+ 41 3       49.2       98.4      196.8
+ 97 3      116.4      232.8      465.6
+
+Script runtime: 7.7 s

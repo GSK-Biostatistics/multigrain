@@ -1,0 +1,581 @@
+---
+title: "Choosing the spending function and the graph together"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Choosing the spending function and the graph together}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+resource_files:
+  - ./data/gsd-joint-spending.rds
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "#>"
+)
+```
+
+```{r, echo=FALSE, eval=TRUE, results='hide', message=FALSE}
+library(multigrain)
+library(ggplot2)
+
+# Every slow step of this article (simulation, boundary tables, optimisation)
+# was run once by data-raw/gsd-joint-spending-vignette.R; the article shows
+# the code and prints the stored results.
+stored <- readRDS("./data/gsd-joint-spending.rds")
+main_base <- stored$main_base
+main_joint <- stored$main_joint
+ex5_base <- stored$ex5_base
+ex5_joint <- stored$ex5_joint
+at_m4 <- main_joint$spending_profile[main_joint$spending_profile$value == -4, ]
+
+fmt <- function(x, digits = 4) formatC(x, digits = digits, format = "f")
+gain_of <- function(res) res$power$trial_success
+gamma_of <- function(res) unname(res$spending_param[[1L]])
+
+# the connected run of profile nodes around the chosen value within 5e-4 of
+# the maximum, as print() reports it
+plateau <- function(res, column = "diff", tol = 5e-4) {
+    prof <- res$spending_profile[order(res$spending_profile$value), ]
+    gap <- if (column == "diff") {
+        prof$diff
+    } else {
+        max(prof[[column]]) - prof[[column]]
+    }
+    best <- match(gamma_of(res), prof$value)
+    lo <- best
+    hi <- best
+    while (lo > 1L && gap[lo - 1L] <= tol) lo <- lo - 1L
+    while (hi < nrow(prof) && gap[hi + 1L] <= tol) hi <- hi + 1L
+    prof$value[c(lo, hi)]
+}
+```
+
+## What this article covers
+
+A group sequential design (GSD) looks at the data more than once. Each
+hypothesis then needs a *spending function*, which decides how much of its
+significance level may be used at each look. Spending functions are usually
+picked from a short list before the graph is optimised. This article shows how
+**`multigrain`** can choose one spending parameter *together with* the graph,
+and how to read the result.
+
+It builds on two other articles, which it does not repeat:
+
+- [Getting started](get-started.html) explains graphical multiple testing
+  procedures (hypothesis weights $\mathbf{w}$ and transition matrix
+  $\mathbf{G}$), gain functions and `graph_optimise()`.
+- [Trial success measures](trial_success.html) explains the group sequential
+  workflow with *fixed* spending functions: `simulate_pvalues_gsd()`,
+  `transform_pvalues_gsd()`, gains that depend on when a hypothesis is
+  rejected (`trial_success_gsd()` and its discount tables), stopping rules
+  (`stopping_rule_gsd()`) and `graph_optimise_gsd()`.
+
+The optimisation framework is described in [Spiers et al. (2026),
+*Gain-function optimisation of graphical multiple testing procedures for
+confirmatory clinical trials* (arXiv:2609.19994v1)](https://arxiv.org/abs/2609.19994).
+The second example below extends its Example 5.
+
+## A short primer on interim analyses and spending
+
+**Interim analyses.** In a GSD the data are analysed at planned *looks*, for
+example once when half the patients have their outcome and once at the end.
+The amount of data at a look is its *information fraction* $t$: $t = 0.5$ at
+the halfway look and $t = 1$ at the final one. If a hypothesis is rejected at
+an interim look, the trial can stop early for efficacy.
+
+**Spending functions.** Testing the same hypothesis at full level $\alpha$ at
+every look would inflate the type I error. Instead, each hypothesis gets an
+*α-spending function* $\alpha(t)$: the cumulative part of its level that may be
+used by information fraction $t$, rising to the whole level at $t = 1$. The
+boundary at each look is set so that the probability of crossing any boundary
+by that look, under the null hypothesis, equals $\alpha(t)$. A spending
+function that spends little early keeps almost the full level for the final
+analysis; one that spends a lot early makes early rejection more likely but
+leaves a stricter final boundary.
+
+**The Hwang–Shih–DeCani family.** The HSD spending functions
+(`gsDesign::sfHSD()`) have one parameter $\gamma$:
+
+$$
+\alpha(t) = \alpha \, \frac{1 - e^{-\gamma t}}{1 - e^{-\gamma}}, \qquad
+\gamma \neq 0,
+$$
+
+and $\alpha(t) = \alpha t$ for $\gamma = 0$. Some texts write the parameter as
+$\theta$. Negative values spend little early: at $t = 0.5$, $\gamma = -4$ has
+spent about 12% of the level, close to O'Brien–Fleming spending. $\gamma = 0$
+spends in proportion to information, and $\gamma = 1$ has spent about 62% at
+$t = 0.5$, close to Pocock spending. So one number moves the design smoothly
+between the two textbook choices.
+
+```{r spending-plot, fig.width=7, fig.height=4, out.width='100%'}
+alpha <- 0.025
+t <- seq(0, 1, by = 0.01)
+gammas <- c(-4, -2, 0, 1)
+
+spent <- do.call(rbind, lapply(gammas, function(g) {
+    data.frame(
+        t = t,
+        spent = gsDesign::sfHSD(alpha, t, g)$spend / alpha,
+        curve = sprintf("HSD, gamma = %g", g)
+    )
+}))
+spent <- rbind(
+    spent,
+    data.frame(
+        t = t,
+        spent = gsDesign::sfLDOF(alpha, t)$spend / alpha,
+        curve = "sfLDOF (O'Brien-Fleming type)"
+    )
+)
+spent$curve <- factor(spent$curve, levels = unique(spent$curve))
+
+ggplot(spent, aes(t, spent, colour = curve, linetype = curve)) +
+    geom_line(linewidth = 0.8) +
+    geom_vline(xintercept = 0.5, linetype = "dotted") +
+    scale_linetype_manual(values = c(rep("solid", 4), "dashed")) +
+    labs(
+        x = "Information fraction t",
+        y = "Proportion of the level spent",
+        colour = NULL,
+        linetype = NULL
+    ) +
+    theme_minimal()
+```
+
+The dotted line marks the interim look used below. The dashed curve,
+`gsDesign::sfLDOF`, is the Lan–DeMets O'Brien–Fleming-type function used for
+the primary hypothesis throughout.
+
+## Why spending and graph should be chosen together
+
+Take two hypotheses: a primary $H_1$ and a key secondary $H_2$, each tested at
+an interim look ($t = 0.5$) and a final look ($t = 1$), at one-sided
+$\alpha = 0.025$. The nominal powers are 0.90 and 0.80 and the test statistics
+are correlated with $\rho = 0.5$. $H_1$ uses `gsDesign::sfLDOF`.
+
+The gain values $H_1$ at 0.6 and $H_2$ at 0.4. A claim at the final analysis
+is worth 0.8 of the same claim at the interim (the discount table `d`), and
+the trial **stops as soon as $H_1$ is rejected**:
+
+```{r design, eval=FALSE}
+gain <- trial_success_gsd(0.6 * d(t1) + 0.4 * d(t2), d = c(1, 0.8))
+rule <- stopping_rule_gsd(r1)
+```
+
+Here `t1` and `t2` are the looks at which $H_1$ and $H_2$ were rejected
+(0 if never), and `r1` is "$H_1$ has been rejected"; see
+[Trial success measures](trial_success.html) for the syntax.
+
+The stopping rule is what ties the spending of $H_2$ to the graph. If $H_1$
+is rejected at the interim, the trial stops there, so $H_2$ gets its interim
+look and nothing else. Whether $H_2$ is rejected in that trial then depends on
+two things:
+
+1. **How much level the graph gives $H_2$**: its own weight $w_2$, plus what
+   $H_1$ passes on once it is rejected.
+2. **How much of that level $H_2$'s spending function lets it use at
+   $t = 0.5$.** Under O'Brien–Fleming-type spending it is very little.
+
+The graph also decides how often the trial stops: a larger $w_1$ makes an
+interim rejection of $H_1$, and therefore a stop, more likely. With
+O'Brien–Fleming-type spending on $H_2$ a stop is costly, so the best graph
+keeps $w_1$ low. With spending that uses more of the level early, a stop costs
+less and the best graph can put more weight on $H_1$. The best graph depends on
+the spending function, and the best spending function depends on the graph, so
+the two should be chosen together.
+
+## Simulate the p-values once
+
+`simulate_pvalues_gsd()` draws raw p-values at every look; the
+information fractions are stored with them.
+
+```{r simulate, eval=FALSE}
+set.seed(20261007)
+raw <- simulate_pvalues_gsd(
+    power_nominal = c(H1 = 0.90, H2 = 0.80),
+    corr_matrix = matrix(c(1, 0.5, 0.5, 1), nrow = 2),
+    info_frac = c(0.5, 1),
+    nsim = 1e5
+)
+```
+
+Both runs below use these same draws, so their gains can be compared directly.
+
+## Baseline: fixed spending
+
+First, the usual approach: fix the spending of both hypotheses at
+`gsDesign::sfLDOF` and optimise the graph alone.
+
+```{r baseline, eval=FALSE}
+pv_ldof <- transform_pvalues_gsd(raw, spending = gsDesign::sfLDOF)
+
+main_base <- graph_optimise_gsd(
+    pv_ldof,
+    graph_constraint_free(2),
+    gain,
+    stopping_rule = rule
+)
+main_base
+```
+
+```{r baseline-print, echo=FALSE}
+main_base
+```
+
+## Joint optimisation
+
+To let the spending of $H_2$ be chosen, tag it with `sf_hsd_opt()` in the list
+of spending functions. `transform_pvalues_gsd()` then returns a *spending
+spec* instead of transformed p-values:
+
+```{r spec, eval=FALSE}
+spec <- transform_pvalues_gsd(
+    raw,
+    spending = list(gsDesign::sfLDOF, sf_hsd_opt())
+)
+spec
+```
+
+```{r spec-print, echo=FALSE}
+cat(stored$main_spec_print, sep = "\n")
+```
+
+The search does not try every real value of $\gamma$. It tries a *lattice*:
+by default $-4$ to $1$ in steps of $0.25$, 21 values (`sf_hsd_opt()` takes
+`bounds` and `step` to change it). For each value the spec holds a boundary
+table, built and checked when the spec is created; building them is the slow
+step, about 20 seconds here. The same spec can be reused with other gains and
+stopping rules on the same draws.
+
+Pass the spec to `graph_optimise_gsd()` in place of the p-values:
+
+```{r joint, eval=FALSE}
+main_joint <- graph_optimise_gsd(
+    spec,
+    graph_constraint_free(2),
+    gain,
+    stopping_rule = rule
+)
+main_joint
+```
+
+```{r joint-print, echo=FALSE}
+main_joint
+```
+
+The search runs in two stages. A genetic algorithm first searches the graph
+and $\gamma$ together. Then, at every lattice value of $\gamma$, the graph is
+re-optimised, starting from a neighbouring value's graph. The second stage
+gives the *profile*: the best achievable gain at each $\gamma$. The chosen
+value is in `main_joint$spending_param` and the profile in
+`main_joint$spending_profile`.
+
+## Comparing the two designs
+
+```{r compare-table, echo=FALSE}
+design_row <- function(label, res, h2_spending) {
+    p <- res$power
+    data.frame(
+        Design = label,
+        `H2 spending` = h2_spending,
+        w1 = res$hyp_weight[[1L]],
+        w2 = res$hyp_weight[[2L]],
+        g12 = res$trans_matrix[1L, 2L],
+        g21 = res$trans_matrix[2L, 1L],
+        `Power H1` = p$local_power[[1L]],
+        `Power H2` = p$local_power[[2L]],
+        `H2 at interim` = p$time_distribution[2L, 2L],
+        `Mean stop look` = p$mean_stop_look,
+        Gain = gain_of(res),
+        check.names = FALSE
+    )
+}
+knitr::kable(
+    rbind(
+        design_row("Fixed spending", main_base, "sfLDOF"),
+        design_row("Joint", main_joint, main_joint$spending[[2L]])
+    ),
+    digits = c(NA, NA, 3, 3, 3, 3, 3, 3, 3, 3, 4)
+)
+```
+
+`w1`, `w2` are the hypothesis weights and `g12`, `g21` the transition weights
+($H_1 \to H_2$ and $H_2 \to H_1$). `Power H1` and `Power H2` are the
+probabilities of rejecting each hypothesis at any look, `H2 at interim` the
+probability of rejecting $H_2$ at the interim, and `Mean stop look` the
+average look at which the trial ends.
+
+```{r compare-graphs, fig.width=8, fig.height=3.5, out.width='100%'}
+gridExtra::grid.arrange(
+    plot(main_base, title = "Fixed spending (sfLDOF)"),
+    plot(main_joint, title = "Joint (sfHSD for H2)"),
+    ncol = 2
+)
+```
+
+The optimiser chooses $\gamma^* = `r gamma_of(main_joint)`$ for $H_2$, which
+spends much earlier than O'Brien–Fleming, and the gain rises from
+`r fmt(gain_of(main_base))` to `r fmt(gain_of(main_joint))`. The graph moves
+too: the weight on $H_1$ goes from `r fmt(main_base$hyp_weight[[1L]], 3)` to
+`r fmt(main_joint$hyp_weight[[1L]], 3)`. Because $H_2$ can now use more of its
+level at the interim, a stop after an interim rejection of $H_1$ costs less,
+so the graph can afford to back the primary hypothesis more.
+
+The overall power of $H_2$ falls slightly, from
+`r fmt(main_base$power$local_power[[2L]], 3)` to
+`r fmt(main_joint$power$local_power[[2L]], 3)`, because spending more early
+leaves a stricter final boundary. But $H_2$ is now rejected at the interim
+in `r fmt(main_joint$power$time_distribution[2L, 2L], 3)` of trials instead of
+`r fmt(main_base$power$time_distribution[2L, 2L], 3)`, and under this gain
+and stopping rule an earlier claim is worth more than a slightly likelier late
+one.
+
+## Reading the output
+
+**The spending lines in `print()`.** Under `Spending functions:` each
+hypothesis has a label. A tagged hypothesis shows the chosen function, here
+`sfHSD(param = `r gamma_of(main_joint)`)`, marked `[optimised: ...]` with the
+parameter's name (`gamma`, or the `id` given to `sf_hsd_opt()`), its bounds and
+its step. The next lines sum up the profile as two *plateaus*, explained below.
+
+**The profile table in `summary()`.** `summary()` prints the graph, the gain,
+the power and the constraints, followed by the profile, which is shown here:
+
+```{r summary, eval=FALSE}
+summary(main_joint)
+```
+
+```{r summary-profile, echo=FALSE}
+out <- utils::capture.output(summary(main_joint))
+first <- grep("Spending-parameter profile", out, fixed = TRUE)
+last <- grep("GA visited", out, fixed = TRUE)
+cat(out[first:last], sep = "\n")
+```
+
+Each row is one lattice value of $\gamma$:
+
+- `gain`: the best gain at that value, with the graph re-optimised there.
+- `gain_fixed_graph`: the gain at that value of the graph chosen overall,
+  kept as it is.
+- `diff`: how far `gain` falls short of the optimum. Every row is computed on
+  the same simulated trials, so the difference is *paired* and much more
+  precise than either gain on its own.
+- `se`: the standard error of `diff`. It is 0 at the chosen value.
+- `n_eval`: the number of gain evaluations the local search used at that
+  value.
+
+**Plateaus.** A plateau is the run of $\gamma$ values around the optimum whose
+gain is within $5 \times 10^{-4}$ of the best. Inside it the differences are
+a few standard errors at most, so the values are as good as each other for
+practical purposes. `print()` reports two: one for `gain` (graph re-optimised
+at each $\gamma$) and one for `gain_fixed_graph` (graph held at the chosen
+one). The plot below draws the `value`, `gain` and `gain_fixed_graph` columns
+of `main_joint$spending_profile`:
+
+```{r profile-helper, echo=FALSE}
+plot_profile <- function(res) {
+    prof <- res$spending_profile
+    band <- plateau(res)
+    long <- rbind(
+        data.frame(value = prof$value, gain = prof$gain,
+                   curve = "graph re-optimised (gain)"),
+        data.frame(value = prof$value, gain = prof$gain_fixed_graph,
+                   curve = "chosen graph kept (gain_fixed_graph)")
+    )
+    ggplot(long, aes(value, gain, colour = curve)) +
+        annotate(
+            "rect", xmin = band[1L], xmax = band[2L],
+            ymin = -Inf, ymax = Inf, alpha = 0.15
+        ) +
+        geom_line() +
+        geom_point() +
+        geom_vline(xintercept = gamma_of(res), linetype = "dotted") +
+        labs(x = "gamma", y = "Gain", colour = NULL) +
+        theme_minimal() +
+        theme(legend.position = "bottom")
+}
+```
+
+```{r profile-plot, echo=FALSE, fig.width=7, fig.height=4, out.width='100%'}
+plot_profile(main_joint)
+```
+
+The shaded band is the plateau of `gain`; the dotted line marks $\gamma^*$.
+
+How to use the plateau when writing a protocol:
+
+- **A wide plateau** means the gain hardly depends on $\gamma$ within that
+  range. Pick a round, easily justified value inside it and pre-specify it;
+  nothing is lost by not using $\gamma^*$ exactly.
+- **A narrow plateau** means $\gamma$ matters. Report the chosen value with
+  the graph, and check it on fresh simulations (next section).
+- **The fixed-graph plateau narrower than the re-optimised one** means the
+  best graph changes with $\gamma$. If you move $\gamma$ within the wider
+  plateau, re-optimise the graph at the new value too.
+- **An optimum on a bound** of the lattice means the gain may still rise beyond
+  it. Widen `bounds` in `sf_hsd_opt()` (from $-10$ up to $2$) and run again.
+
+In this design both plateaus run from $`r plateau(main_joint)[1L]`$ to
+$`r plateau(main_joint)[2L]`$. Any $\gamma$ in that range is as good as
+$\gamma^*$ to within the simulation error, and since the two plateaus agree,
+the best graph barely moves across it. At $\gamma = -4$, close to O'Brien–Fleming, the gain is
+`r fmt(at_m4$diff)` lower, about `r round(at_m4$diff / at_m4$se)` standard
+errors.
+
+## Checking the chosen design on fresh simulations
+
+The graph and $\gamma$ were chosen on the same simulated trials that score
+them, so the reported gain is slightly optimistic (the "winner's curse"). To
+check it, simulate new p-values, build a spec from them with the same
+spending functions, and use `resolve_pvalues_gsd()` to obtain the transformed
+p-values at the chosen $\gamma$. Then evaluate the chosen graph on them:
+
+```{r fresh, eval=FALSE}
+set.seed(20261008)
+raw_new <- simulate_pvalues_gsd(
+    power_nominal = c(H1 = 0.90, H2 = 0.80),
+    corr_matrix = matrix(c(1, 0.5, 0.5, 1), nrow = 2),
+    info_frac = c(0.5, 1),
+    nsim = 1e5
+)
+spec_new <- transform_pvalues_gsd(
+    raw_new,
+    spending = list(gsDesign::sfLDOF, sf_hsd_opt())
+)
+pv_new <- resolve_pvalues_gsd(spec_new, main_joint$spending_param)
+
+check <- calc_power_pvals_gsd(
+    pv_new,
+    hyp_weight = main_joint$hyp_weight,
+    trans_matrix = main_joint$trans_matrix,
+    stopping_rule = rule,
+    custom_power = list(gain = gain)
+)
+round(check$gain, 4)
+```
+
+```{r fresh-print, echo=FALSE}
+round(stored$main_check$gain, 4)
+```
+
+On fresh draws the design scores `r fmt(stored$main_check$gain)`, against
+`r fmt(gain_of(main_joint))` reported by the optimiser. Only lattice values
+can be resolved, because only their boundary tables were built and checked.
+
+## A second example: the paper's Example 5
+
+Example 5 of the paper has two endpoints with different timing.
+Progression-free survival (PFS, $H_1$) is complete at the interim analysis:
+its information fraction is 1 at both looks, so its spending function has no
+effect. Overall survival (OS, $H_2$) has 70% of its information at the interim
+and all of it at the final analysis. The nominal powers are 0.98 and 0.93 and
+$\rho = 0.5$. PFS is valued at 0.4 and OS at 0.6. A PFS claim made only at the
+final analysis keeps half its value, and an OS claim at the final analysis
+keeps 75%. There is no stopping rule.
+
+The paper fixes O'Brien–Fleming-type spending for OS. Here we let OS's
+spending be chosen with the graph:
+
+```{r ex5, eval=FALSE}
+set.seed(20261014)
+raw5 <- simulate_pvalues_gsd(
+    power_nominal = c(PFS = 0.98, OS = 0.93),
+    corr_matrix = matrix(c(1, 0.5, 0.5, 1), nrow = 2),
+    info_frac = rbind(PFS = c(1, 1), OS = c(0.7, 1)),
+    nsim = 1e5
+)
+gain5 <- trial_success_gsd(
+    0.4 * d_pfs(t1) + 0.6 * d_os(t2),
+    d_pfs = c(1, 0.50),
+    d_os = c(1, 0.75)
+)
+
+# baseline: OS spending fixed at sfLDOF
+ex5_base <- graph_optimise_gsd(
+    transform_pvalues_gsd(raw5, spending = gsDesign::sfLDOF),
+    graph_constraint_free(2),
+    gain5
+)
+
+# joint: OS tagged
+spec5 <- transform_pvalues_gsd(
+    raw5,
+    spending = list(gsDesign::sfLDOF, sf_hsd_opt())
+)
+ex5_joint <- graph_optimise_gsd(spec5, graph_constraint_free(2), gain5)
+ex5_joint
+```
+
+```{r ex5-print, echo=FALSE}
+ex5_joint
+```
+
+```{r ex5-table, echo=FALSE}
+ex5_row <- function(label, res, os_spending) {
+    p <- res$power
+    data.frame(
+        Design = label,
+        `OS spending` = os_spending,
+        `w PFS` = res$hyp_weight[[1L]],
+        `w OS` = res$hyp_weight[[2L]],
+        `Power PFS` = p$local_power[[1L]],
+        `Power OS` = p$local_power[[2L]],
+        `OS at interim` = p$time_distribution[2L, 2L],
+        Gain = gain_of(res),
+        check.names = FALSE
+    )
+}
+knitr::kable(
+    rbind(
+        ex5_row("Fixed spending", ex5_base, "sfLDOF"),
+        ex5_row("Joint", ex5_joint, ex5_joint$spending[[2L]])
+    ),
+    digits = c(NA, NA, 3, 3, 3, 3, 3, 4)
+)
+```
+
+`OS at interim` is the proportion of trials in which OS is rejected at the
+interim analysis.
+
+```{r ex5-profile, echo=FALSE, fig.width=7, fig.height=4, out.width='100%'}
+plot_profile(ex5_joint)
+```
+
+Even without a stopping rule, the time discount rewards spending earlier
+for OS. The optimiser chooses $\gamma^* = `r gamma_of(ex5_joint)`$, OS is
+rejected at the interim in `r fmt(ex5_joint$power$time_distribution[2L, 2L], 3)`
+of trials instead of `r fmt(ex5_base$power$time_distribution[2L, 2L], 3)`, and
+the gain rises from `r fmt(gain_of(ex5_base))` to `r fmt(gain_of(ex5_joint))`.
+
+This example differs from the first in two ways:
+
+- **The graph hardly moves.** The weight on PFS goes from
+  `r fmt(ex5_base$hyp_weight[[1L]], 3)` to `r fmt(ex5_joint$hyp_weight[[1L]], 3)`,
+  and the two plateaus are the same. Without a stopping rule an interim
+  rejection of PFS costs OS nothing, so the coupling between the graph and the
+  spending is weak. Here the spending could have been chosen on its own.
+- **The plateau is wide**, from $`r plateau(ex5_joint)[1L]`$ to
+  $`r plateau(ex5_joint)[2L]`$. Any value in that range, including the
+  conventional $\gamma = 0$ (spending in proportion to information), would do.
+  Both textbook ends are clearly worse, O'Brien–Fleming-like spending much more
+  so than Pocock-like spending.
+
+## Simulation error does not affect error control
+
+Monte Carlo error and the coarseness of the lattice affect only the power and
+gain reported for a design, never its familywise error rate: every value of
+$\gamma$ the search can choose has a boundary table checked before the search
+starts, and the procedure controls the error rate for any fixed choice.
+
+## Further reading
+
+- [Getting started](get-started.html): graphs, gain functions and tuning the
+  optimiser.
+- [Trial success measures](trial_success.html): time-dependent gains, discount
+  tables, stopping rules and the fixed-spending workflow.
+- The help pages of `sf_hsd_opt()`, `transform_pvalues_gsd()`,
+  `resolve_pvalues_gsd()` and `graph_optimise_gsd()`, including how to share
+  one parameter between several hypotheses with the `id` argument.

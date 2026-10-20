@@ -1,0 +1,86 @@
+13:57:58 [M0] design built
+13:58:38 [M0] 21 transforms: 39.9 s (median 1.91 s per node)
+13:59:55 [M0] outer node -4.00 seed 1: gain 0.710438 w1 0.9595 (local) 77.1 s
+14:01:08 [M0] outer node -4.00 seed 2: gain 0.710446 w1 0.9593 (local) 72.8 s
+14:02:15 [M0] outer node -4.00 seed 3: gain 0.710446 w1 0.9593 (local) 67.0 s
+14:03:17 [M0] outer node -3.00 seed 1: gain 0.711060 w1 0.9593 (local) 61.8 s
+14:04:22 [M0] outer node -3.00 seed 2: gain 0.711081 w1 0.9568 (local) 64.9 s
+14:05:40 [M0] outer node -3.00 seed 3: gain 0.711060 w1 0.9593 (local) 78.7 s
+14:06:43 [M0] outer node -2.00 seed 1: gain 0.710895 w1 0.9019 (local) 62.2 s
+14:07:57 [M0] outer node -2.00 seed 2: gain 0.710883 w1 0.9531 (local) 73.9 s
+14:08:58 [M0] outer node -2.00 seed 3: gain 0.710868 w1 0.9511 (local) 61.7 s
+14:10:03 [M0] outer node -1.00 seed 1: gain 0.709570 w1 0.9038 (local) 64.6 s
+14:11:07 [M0] outer node -1.00 seed 2: gain 0.709567 w1 0.9034 (local) 64.0 s
+14:12:14 [M0] outer node -1.00 seed 3: gain 0.709570 w1 0.9038 (local) 66.7 s
+14:13:20 [M0] outer node  0.00 seed 1: gain 0.706752 w1 0.9009 (local) 66.6 s
+14:14:20 [M0] outer node  0.00 seed 2: gain 0.706737 w1 0.8965 (local) 59.6 s
+14:15:20 [M0] outer node  0.00 seed 3: gain 0.706718 w1 0.8691 (local) 60.7 s
+14:16:18 [M0] outer node  1.00 seed 1: gain 0.701950 w1 0.8944 (local) 57.9 s
+14:17:18 [M0] outer node  1.00 seed 2: gain 0.701935 w1 0.8922 (local) 59.7 s
+14:18:21 [M0] outer node  1.00 seed 3: gain 0.701953 w1 0.8946 (local) 62.7 s
+14:18:21 [M0] profile starts at node -3.00
+14:18:21 [M0] profile node -2.75: P~ 0.711126 S 0.711057 n_eval 26 0.1 s
+14:18:21 [M0] profile node -2.50: P~ 0.711064 S 0.710994 n_eval 27 0.1 s
+14:18:21 [M0] profile node -2.25: P~ 0.710975 S 0.710868 n_eval 27 0.1 s
+14:18:21 [M0] profile node -2.00: P~ 0.710876 S 0.710781 n_eval 28 0.1 s
+14:18:21 [M0] profile node -1.75: P~ 0.710732 S 0.710598 n_eval 27 0.1 s
+14:18:21 [M0] profile node -1.50: P~ 0.710468 S 0.710242 n_eval 30 0.1 s
+14:18:21 [M0] profile node -1.25: P~ 0.710029 S 0.709796 n_eval 25 0.1 s
+14:18:22 [M0] profile node -1.00: P~ 0.709550 S 0.709211 n_eval 27 0.1 s
+14:18:22 [M0] profile node -0.75: P~ 0.709071 S 0.708670 n_eval 28 0.1 s
+14:18:22 [M0] profile node -0.50: P~ 0.708399 S 0.707898 n_eval 25 0.2 s
+14:18:22 [M0] profile node -0.25: P~ 0.707702 S 0.707102 n_eval 24 0.1 s
+14:18:22 [M0] profile node  0.00: P~ 0.706727 S 0.706069 n_eval 25 0.1 s
+14:18:22 [M0] profile node  0.25: P~ 0.705690 S 0.704936 n_eval 29 0.1 s
+14:18:22 [M0] profile node  0.50: P~ 0.704582 S 0.703755 n_eval 26 0.1 s
+14:18:22 [M0] profile node  0.75: P~ 0.703344 S 0.702448 n_eval 26 0.1 s
+14:18:22 [M0] profile node  1.00: P~ 0.701950 S 0.700924 n_eval 29 0.1 s
+14:18:23 [M0] profile node -3.25: P~ 0.710928 S 0.710922 n_eval 25 0.1 s
+14:18:23 [M0] profile node -3.50: P~ 0.710808 S 0.710797 n_eval 28 0.1 s
+14:18:23 [M0] profile node -3.75: P~ 0.710642 S 0.710641 n_eval 23 0.1 s
+14:18:23 [M0] profile node -4.00: P~ 0.710446 S 0.710442 n_eval 25 0.1 s
+14:18:23 [M0] done in 1228.6 s
+14:18:23 [M1] design built
+14:19:00 [M1] 21 transforms: 37.0 s (median 1.76 s per node)
+14:20:06 [M1] outer node -4.00 seed 1: gain 0.680144 w1 0.3981 (local) 66.5 s
+14:21:06 [M1] outer node -4.00 seed 2: gain 0.680167 w1 0.4436 (local) 59.2 s
+14:22:32 [M1] outer node -4.00 seed 3: gain 0.680203 w1 0.4381 (local) 86.8 s
+14:23:40 [M1] outer node -3.00 seed 1: gain 0.685224 w1 0.4418 (local) 67.1 s
+14:24:36 [M1] outer node -3.00 seed 2: gain 0.685146 w1 0.3581 (local) 56.5 s
+14:25:59 [M1] outer node -3.00 seed 3: gain 0.685268 w1 0.3982 (local) 83.2 s
+14:27:12 [M1] outer node -2.00 seed 1: gain 0.689614 w1 0.4325 (local) 73.2 s
+14:28:17 [M1] outer node -2.00 seed 2: gain 0.689636 w1 0.4381 (local) 64.8 s
+14:29:15 [M1] outer node -2.00 seed 3: gain 0.689636 w1 0.4381 (local) 58.1 s
+14:30:19 [M1] outer node -1.00 seed 1: gain 0.692275 w1 0.4435 (local) 64.2 s
+14:31:22 [M1] outer node -1.00 seed 2: gain 0.692265 w1 0.4429 (local) 62.5 s
+14:32:17 [M1] outer node -1.00 seed 3: gain 0.692269 w1 0.4437 (local) 55.5 s
+14:33:29 [M1] outer node  0.00 seed 1: gain 0.692769 w1 0.4389 (local) 71.1 s
+14:34:30 [M1] outer node  0.00 seed 2: gain 0.692731 w1 0.4649 (local) 61.2 s
+14:35:29 [M1] outer node  0.00 seed 3: gain 0.692792 w1 0.4520 (local) 59.6 s
+14:36:30 [M1] outer node  1.00 seed 1: gain 0.690487 w1 0.5503 (local) 60.9 s
+14:37:32 [M1] outer node  1.00 seed 2: gain 0.690609 w1 0.4548 (local) 61.8 s
+14:38:37 [M1] outer node  1.00 seed 3: gain 0.690610 w1 0.4526 (local) 64.8 s
+14:38:37 [M1] profile starts at node 0.00
+14:38:37 [M1] profile node  0.25: P~ 0.692498 S 0.692364 n_eval 29 0.1 s
+14:38:37 [M1] profile node  0.50: P~ 0.692077 S 0.691990 n_eval 25 0.1 s
+14:38:37 [M1] profile node  0.75: P~ 0.691420 S 0.691340 n_eval 27 0.1 s
+14:38:37 [M1] profile node  1.00: P~ 0.690615 S 0.690490 n_eval 28 0.1 s
+14:38:37 [M1] profile node -0.25: P~ 0.693038 S 0.692998 n_eval 27 0.1 s
+14:38:38 [M1] profile node -0.50: P~ 0.692929 S 0.692866 n_eval 28 0.1 s
+14:38:38 [M1] profile node -0.75: P~ 0.692730 S 0.692730 n_eval 27 0.1 s
+14:38:38 [M1] profile node -1.00: P~ 0.692275 S 0.692223 n_eval 31 0.1 s
+14:38:38 [M1] profile node -1.25: P~ 0.691800 S 0.691798 n_eval 27 0.1 s
+14:38:38 [M1] profile node -1.50: P~ 0.691262 S 0.691260 n_eval 25 0.1 s
+14:38:38 [M1] profile node -1.75: P~ 0.690580 S 0.690572 n_eval 25 0.1 s
+14:38:38 [M1] profile node -2.00: P~ 0.689636 S 0.689625 n_eval 26 0.1 s
+14:38:38 [M1] profile node -2.25: P~ 0.688523 S 0.688521 n_eval 27 0.1 s
+14:38:38 [M1] profile node -2.50: P~ 0.687584 S 0.687544 n_eval 29 0.1 s
+14:38:38 [M1] profile node -2.75: P~ 0.686451 S 0.686426 n_eval 28 0.1 s
+14:38:38 [M1] profile node -3.00: P~ 0.685203 S 0.685183 n_eval 29 0.1 s
+14:38:39 [M1] profile node -3.25: P~ 0.683984 S 0.683984 n_eval 27 0.1 s
+14:38:39 [M1] profile node -3.50: P~ 0.682816 S 0.682816 n_eval 27 0.1 s
+14:38:39 [M1] profile node -3.75: P~ 0.681492 S 0.681489 n_eval 28 0.1 s
+14:38:39 [M1] profile node -4.00: P~ 0.680199 S 0.680199 n_eval 27 0.1 s
+14:38:39 [M1] done in 1216.1 s
+Error: unexpected symbol in "sfLDPocock on"
+Execution halted

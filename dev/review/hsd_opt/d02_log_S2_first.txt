@@ -1,0 +1,5 @@
+13:57:58 [S2] design built
+13:58:57 [S2] 21 transforms: 58.2 s (median 2.75 s per node)
+14:03:33 [S2] outer node -4.00 seed 1: gain 2.439860 w1 0.3433 (local) 276.4 s
+14:07:45 [S2] outer node -4.00 seed 2: gain 2.440100 w1 0.3644 (local) 251.6 s
+14:10:50 [S2] outer node -4.00 seed 3: gain 2.440230 w1 0.3681 (local) 185.5 s

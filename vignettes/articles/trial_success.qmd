@@ -393,6 +393,228 @@ stop at the interim without the rule, all of them because every hypothesis was
 rejected there.
 :::
 
+### Optimising the spending parameter
+
+A stopping rule also changes which spending function suits each hypothesis.
+If the trial stops once $H_1$ is rejected, $H_2$ gets no analysis after that
+stop, so spending more of $H_2$'s level at the interim becomes worth more. In
+the user testing (sections 7.4 and 7.5 of
+`dev/review/gsd_user_testing/README.md`) the design below had a best gain of
+0.6707 (at $w_1 = 0.32$) with an O'Brien–Fleming-type function for $H_2$.
+With a Pocock-type function for $H_2$ the best gain rose to 0.6903 (at
+$w_1 = 0.46$). That gain is 14 times the gap between the best graph and Holm,
+so under the rule the choice of $H_2$'s spending function mattered more than
+the graph did.
+
+Instead of trying spending functions one at a time, you can tag a hypothesis
+with `sf_hsd_opt()`. Its Hwang–Shih–DeCani parameter $\gamma$ is then chosen
+together with the graph. At an interim analysis at half the information,
+$\gamma = -4$ has spent about 12% of the level (close to O'Brien–Fleming) and
+$\gamma = 1$ about 62% (close to Pocock). Given a tagged entry,
+`transform_pvalues_gsd()` returns a *spending spec* instead of transformed
+p-values. The spec holds the raw p-values and a boundary table for every value
+the search may try: by default $\gamma$ runs from $-4$ to $1$ in steps of
+$0.25$, 21 values, each checked for well ordering when the spec is built.
+Building the tables is the slow part, about 20 seconds here. A spec can be
+reused with other gains and stopping rules on the same draws.
+
+```{r}
+#| label: hsd-opt
+#| eval: false
+set.seed(20261007)
+raw <- simulate_pvalues_gsd(
+    power_nominal = c(H1 = 0.90, H2 = 0.80),
+    corr_matrix = matrix(c(1, 0.5, 0.5, 1), nrow = 2),
+    info_frac = c(0.5, 1),
+    nsim = 1e5
+)
+
+spec <- transform_pvalues_gsd(
+    raw,
+    spending = list(gsDesign::sfLDOF, sf_hsd_opt())
+)
+spec
+#> <multigrain_pvals_gsd_spec>
+#> 100000 simulation(s), 2 hypothes(es), 2 analys(es); alpha = 0.025
+#> Information fractions (NA = no data at that analysis):
+#>    analysis 1 analysis 2
+#> H1        0.5          1
+#> H2        0.5          1
+#> Look-back: H1 = FALSE, H2 = FALSE
+#> Spending:
+#> H1: gsDesign::sfLDOF
+#> H2: sfHSD(param = gamma in [-4, 1])
+#> Spending parameters:
+#> gamma: bounds [-4, 1], step 0.25, 21 nodes, start -1.5
+#> Boundary tables built: 21
+```
+
+To optimise the graph and $\gamma$ together, pass the spec to
+`graph_optimise_gsd()` in place of the p-values. The gain values $H_1$ at 0.6
+and $H_2$ at 0.4, a claim at the final analysis is worth 0.8 of one at the
+interim, and the trial stops once $H_1$ is rejected:
+
+```{r}
+#| label: hsd-opt-optimise
+#| eval: false
+gain <- trial_success_gsd(0.6 * d(t1) + 0.4 * d(t2), d = c(1, 0.8))
+rule <- stopping_rule_gsd(r1)
+
+result <- graph_optimise_gsd(
+    spec,
+    graph_constraint_free(2),
+    gain,
+    stopping_rule = rule,
+    num_threads = 2
+)
+result
+#> <multigrain_graph_optimal>
+#> Optimal graph found (given user-defined constraints on graph and computational resources):
+#>
+#> Hypothesis weights:
+#>     H1     H2
+#> 0.4447 0.5553
+#>
+#> Transition matrix:
+#>    H1 H2
+#> H1  0  1
+#> H2  1  0
+#>
+#> Trial success function:
+#> 0.6 * d(t1) + 0.4 * d(t2)
+#>
+#> Spending functions:
+#>   H1: gsDesign::sfLDOF
+#>   H2: sfHSD(param = -0.25)   [optimised: gamma, bounds -4 to 1, step 0.25]
+#> Gain profile in gamma (graph re-optimised at each value):
+#>   within 5e-4 of the maximum on [-0.75, 0]; fixed-graph plateau [-0.75, 0]
+#>
+#> Stopping rule:
+#> Every interim: r1
+#> Hypotheses referenced: up to r1
+#>
+#> Value of trial success measure:
+#> 0.693
+```
+
+The search runs in two stages. First a genetic algorithm searches the graph
+and $\gamma$ together. Then the graph is re-optimised at every one of the 21
+values of $\gamma$, starting each time from a neighbouring value's graph. The
+second stage traces how the best achievable gain depends on $\gamma$, the
+*profile*. Most of the run (77 seconds here, on two threads) is the genetic
+algorithm, as it is without `sf_hsd_opt()`. The chosen value is in
+`result$spending_param`, the label per hypothesis in `result$spending`, and
+the profile in `result$spending_profile`. `summary()` prints the profile
+(alongside the graph, the gain, the power and the constraints, which are not
+shown here):
+
+```{r}
+#| label: hsd-opt-summary
+#| eval: false
+summary(result)
+#> Spending-parameter profile (gamma):
+#>  value   gain gain_fixed_graph   diff      se n_eval
+#>  -4.00 0.6802           0.6802 0.0128 0.00035     25
+#>  -3.75 0.6815           0.6815 0.0115 0.00033     27
+#>  -3.50 0.6829           0.6828 0.0102 0.00034     26
+#>  -3.25 0.6840           0.6839 0.0090 0.00035     24
+#>  -3.00 0.6853           0.6852 0.0077 0.00034     28
+#>  -2.75 0.6865           0.6864 0.0066 0.00030     30
+#>  -2.50 0.6876           0.6876 0.0054 0.00030     28
+#>  -2.25 0.6885           0.6885 0.0045 0.00027     24
+#>  -2.00 0.6896           0.6896 0.0034 0.00026     25
+#>  -1.75 0.6906           0.6906 0.0025 0.00025     25
+#>  -1.50 0.6913           0.6913 0.0017 0.00023     25
+#>  -1.25 0.6918           0.6917 0.0012 0.00021     28
+#>  -1.00 0.6923           0.6923 0.0007 0.00019     27
+#>  -0.75 0.6927           0.6927 0.0003 0.00016     27
+#>  -0.50 0.6929           0.6929 0.0001 0.00012     26
+#>  -0.25 0.6930           0.6930 0.0000 0.00000     25
+#>   0.00 0.6928           0.6927 0.0002 0.00013     31
+#>   0.25 0.6925           0.6925 0.0005 0.00016     25
+#>   0.50 0.6921           0.6920 0.0009 0.00019     25
+#>   0.75 0.6914           0.6913 0.0016 0.00022     26
+#>   1.00 0.6906           0.6905 0.0024 0.00024     26
+#> GA visited 21 of 21 nodes
+```
+
+The table has one row per value of $\gamma$. `gain` is the best gain with the
+graph re-optimised at that value, and `gain_fixed_graph` is the gain of the
+chosen graph kept as it is. `diff` is how far the row falls short of the
+optimum, computed on the same simulated trials, and `se` is the standard error
+of that difference. `print()` sums the table up as two *plateaus*: the range
+of $\gamma$ around the optimum whose gain is within $5 \times 10^{-4}$ of the
+best.
+
+Here the optimum is $\gamma = -0.25$, between the two textbook choices, with
+a gain of 0.6930. Both plateaus run from $-0.75$ to $0$, so any $\gamma$ in
+that range is as good as the optimum to within the precision of the
+simulation. Below $-1$ the gain falls steadily: at $\gamma = -4$, close to
+O'Brien–Fleming, it is 0.0128 lower, about 37 standard errors. Above $0.25$
+the gain falls more slowly. The two gain columns barely differ because the
+best graph hardly moves with $\gamma$ in this design. Every row's re-optimised
+weight on $H_1$ lies between 0.40 and 0.46, and the plateau of $w_1$ under
+this rule is wide. When the best graph does move with the parameter, the
+fixed-graph plateau is the narrower of the two, and the re-optimised one is
+the one to read.
+
+On the same draws, optimising the graph with $H_2$'s spending fixed gives the
+user testing's comparison (these runs are in the example script):
+
+| $H_2$ spending | $w_1$ | Gain |
+|---|---:|---:|
+| `sfLDOF` (O'Brien–Fleming type) | 0.292 | 0.6709 |
+| `sfLDPocock` (Pocock type) | 0.549 | 0.6905 |
+| `sf_hsd_opt()`, chosen $\gamma = -0.25$ | 0.445 | 0.6930 |
+
+These reproduce the 0.6707 → 0.6903 of the user testing. Choosing $\gamma$
+adds a further 0.0025 over a fixed Pocock function, which is small next to
+the 0.0196 gained by moving away from O'Brien–Fleming. So the main point of
+the earlier finding stands: under this rule, $H_2$ should spend early. The
+profile adds that $H_2$ need not spend quite as early as Pocock, and that
+anywhere in $[-0.75, 0]$ will do.
+
+The parameter and the graph were chosen on the same simulated trials that
+score them, so the reported gain is optimistic, as it is for an optimised
+graph alone. Check the chosen design on fresh draws by building a spec from
+them with the same spending functions and resolving it at the chosen value
+with `resolve_pvalues_gsd()`:
+
+```{r}
+#| label: hsd-opt-check
+#| eval: false
+set.seed(20261008)
+raw_new <- simulate_pvalues_gsd(
+    power_nominal = c(H1 = 0.90, H2 = 0.80),
+    corr_matrix = matrix(c(1, 0.5, 0.5, 1), nrow = 2),
+    info_frac = c(0.5, 1),
+    nsim = 1e5
+)
+spec_new <- transform_pvalues_gsd(
+    raw_new,
+    spending = list(gsDesign::sfLDOF, sf_hsd_opt())
+)
+pv_new <- resolve_pvalues_gsd(spec_new, result$spending_param)
+
+check <- calc_power_pvals_gsd(
+    pv_new,
+    hyp_weight = result$hyp_weight,
+    trans_matrix = result$trans_matrix,
+    stopping_rule = rule,
+    custom_power = list(gain = gain)
+)
+round(check$gain, 4)
+#> [1] 0.6936
+```
+
+On these fresh draws the design scores 0.6936, in line with the 0.6930
+reported: here the optimism is smaller than the simulation noise. Only the 21
+values of the lattice can be resolved, since only their tables were built and
+checked. `sf_hsd_opt()` takes `bounds` (within $-10$ to $2$) and `step`
+(`0.5`, `0.25` or `0.125`) to change the lattice. If the optimum sits on a
+bound, the gain may still be rising beyond it. Hypotheses tagged with the same
+`id` share one parameter.
+
 # Things that go wrong quietly
 
 The gain-function constructors validate your expression, but some mistakes
