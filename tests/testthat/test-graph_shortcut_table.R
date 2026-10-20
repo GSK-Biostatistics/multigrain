@@ -47,7 +47,10 @@ test_that("forced kernels agree on random graphs (m = 2..6)", {
         for (seed in 1:4) {
             gr <- make_test_graph(m, seed = 100 * m + seed)
             expect_all_identical(shortcut_all_kernels(
-                pvals_fixture[1:2000, 1:m], 0.025, gr$w, gr$G
+                pvals_fixture[1:2000, 1:m],
+                0.025,
+                gr$w,
+                gr$G
             ))
             expect_all_identical(
                 shortcut_all_kernels(pvals_high_power[, 1:m], 0.025, gr$w, gr$G)
