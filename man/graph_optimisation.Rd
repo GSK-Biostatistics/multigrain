@@ -17,6 +17,19 @@ graph_optimise(
   control = multigrain_control(),
   verbose = multigrain_verbosity()
 )
+
+graph_optimize(
+  pvals,
+  graph_constraint,
+  trial_success,
+  ...,
+  alpha = 0.025,
+  start_graph = list(list(hyp_weight = NULL, trans_matrix = NULL)),
+  global_search = TRUE,
+  num_threads = 1L,
+  control = multigrain_control(),
+  verbose = multigrain_verbosity()
+)
 }
 \arguments{
 \item{pvals}{A numeric matrix of p-values. Each row represents a simulated
@@ -80,8 +93,8 @@ and global solutions (\code{c("local" = TRUE/FALSE, "global" = TRUE/FALSE)}).
 }
 \item \code{global_search}: \code{TRUE} or \code{FALSE} indicating whether a global
 optimisation was performed.
-\item \code{control}: A modified \code{\link[=multigrain_control]{multigrain_control()}} object used. The values
-passed on by the user are complemented with contextual defaults.
+\item \code{control}: The modified \link{multigrain_control} object used. Values passed on
+by the user are complemented with contextual defaults.
 \item \code{global_output}: Output from the genetic algorithm if global
 optimisation was performed.
 \item \code{local_output}: Output from the NLOPT optimisation.

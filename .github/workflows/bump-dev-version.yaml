@@ -26,7 +26,7 @@ jobs:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Setup R
         uses: r-lib/actions/setup-r@v2
@@ -44,30 +44,45 @@ jobs:
           DESC_VERSION=$(R --slave -e 'cat(paste(desc::desc_get_version()))' | tr -d '\n' | xargs)
           echo "CURRENT_PKG_VERSION=${DESC_VERSION}" >> $GITHUB_ENV
 
-      - name: Bump dev version in DESCRIPTION
-        # only bump the version if it has 4 components (i.e. is dev)
+      - name: Check whether the version is a dev version
+        # only bump the version if it has 4 components and the last one
+        # looks like a dev version number (i.e. >= 9000, e.g. 9003)
+        id: check
         run: |
           ver <- desc::desc_get_version()
           cat(paste("\nDESCRIPTION version:", ver, "\n"))
-          ver_length <- ver |> as.character() |> stringr::str_split("\\.") |> unlist() |> length()
-          if (ver_length == 4) desc::desc_bump_version("dev", normalize = TRUE)
+          ver_parts <- ver |> as.character() |> stringr::str_split("\\.") |> unlist()
+          is_dev <- length(ver_parts) == 4 && as.integer(ver_parts[4]) >= 9000
+          gh_output <- Sys.getenv("GITHUB_OUTPUT")
+          cat(paste0("is_dev=", tolower(is_dev), "\n"), file = gh_output, append = TRUE)
+        shell: Rscript {0}
+
+      - name: Bump dev version in DESCRIPTION
+        if: steps.check.outputs.is_dev == 'true'
+        id: bump
+        run: |
+          ver <- desc::desc_get_version()
+          desc::desc_bump_version("dev", normalize = TRUE)
           ver <- desc::desc_get_version()
           cat(paste("\nUpdated DESCRIPTION version:", ver, "\n"))
         shell: Rscript {0}
 
       - name: Record the new package version
         # record the updated package version
+        if: steps.check.outputs.is_dev == 'true'
         run: |
           DESC_VERSION=$(R --slave -e 'cat(paste(desc::desc_get_version()))' | tr -d '\n' | xargs)
           echo "NEW_PKG_VERSION=${DESC_VERSION}" >> $GITHUB_ENV
 
       - name: Update `Date` field
         # bump the date if present
+        if: steps.check.outputs.is_dev == 'true'
         run: if (desc::desc_has_fields("Date")) desc::desc_set("Date", Sys.Date())
         shell: Rscript {0}
 
       - name: Debug environment variables
         # print the env vars holding the versions (for debugging)
+        if: steps.check.outputs.is_dev == 'true'
         run: |
           echo "CURRENT_PKG_VERSION=${{ env.CURRENT_PKG_VERSION }}"
           echo "NEW_PKG_VERSION=${{ env.NEW_PKG_VERSION }}"
@@ -76,6 +91,7 @@ jobs:
         # use the environment variables to write the commit message
         # once merged `[skip version bump]` prevents this workflow from being
         # re-triggered
+        if: steps.check.outputs.is_dev == 'true'
         run: |
           git config --local user.name "Github Actions"
           git config --local user.email "$github-actions@users.noreply.github.com"
@@ -86,6 +102,7 @@ jobs:
       - name: Create pull request
         # this step uses the Github CLI to create a pull request
         # https://cli.github.com/manual/gh_pr_create
+        if: steps.check.outputs.is_dev == 'true'
         run: gh pr create -B main -H version-bump-${{ env.NEW_PKG_VERSION }} --title "Bump dev version to ${{ env.NEW_PKG_VERSION }}" --body "Created by Github Action"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

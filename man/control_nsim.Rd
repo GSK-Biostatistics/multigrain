@@ -40,4 +40,8 @@ multigrain_control() |>
 
 multigrain_control() |>
     control_nsim_global(10000)
+
+multigrain_control() |>
+    control_nsim_local(10000) |>
+    control_nsim_global(5000)
 }

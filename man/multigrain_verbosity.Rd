@@ -8,23 +8,23 @@ multigrain_verbosity()
 }
 \value{
 A string indicating the verbosity level as set with options or
-"info" if \code{multigrain_verbosity} is unset.
+\code{"info"} if \code{multigrain_verbosity} is unset.
 }
 \description{
 \code{multigrain_verbosity()} returns the option named \code{multigrain_verbosity},
 which controls multigrain's verbosity. There are 3 possible levels
-("detail" > "info" > "silent"):
+(\code{"detail"} > \code{"info"} > \code{"silent"}):
 \itemize{
-\item "info" (default): will only show milestones / informational messages
+\item \code{"info"} (default): will only show milestones / informational messages
 highlighting the progress of the optimisation at coarse-grained level.
-\item "detail":  will show milestones and information about fine-grained
+\item \code{"detail"}:  will show milestones and information about fine-grained
 optimisation events.
-\item "silent": no information about the progress of the optimisation is
+\item \code{"silent"}: no information about the progress of the optimisation is
 printed to the console. Errors and warnings are still thrown normally.
 }
 }
 \details{
-If the \code{multigrain_verbosity} option is unset, then the "info" level will
+If the \code{multigrain_verbosity} option is unset, then the \code{"info"} level will
 be used.
 }
 \examples{

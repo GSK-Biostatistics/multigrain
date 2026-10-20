@@ -2,7 +2,7 @@
 % Please edit documentation in R/graph_constraint.R
 \name{graph_constraint}
 \alias{graph_constraint}
-\title{Create a \emph{graph constraint} object for optimisation procedures}
+\title{Create a \emph{graph constraint} for optimisation procedures}
 \usage{
 graph_constraint(
   hyp_constraint = NULL,
@@ -38,15 +38,14 @@ i.e. \code{sqrt(.Machine$double.eps)} (the standard R definition of
 "practically equal", as used by \code{\link[base:all.equal]{base::all.equal()}}).}
 }
 \value{
-A multigrain \emph{graph constraint} object (an S3 list with class
-\code{multigrain_graph_constraint}) containing:
+A \verb{multigrain_graph constraint} object containing:
 \itemize{
 \item \code{hyp_constraint}: a numeric vector representing the constraints on the
 hypothesis weight vector.
 \item \code{trans_constraint}: a numeric matrix representing the constraints on the
 transition matrix.
 If an element is \code{NA}, it is a free parameter to be optimised by
-\code{graph_optimise()}.
+\code{\link[=graph_optimise]{graph_optimise()}}.
 }
 }
 \description{
@@ -80,5 +79,5 @@ graph_constraint(hyp_constraint = c(NA, 0.4, NA))
 \references{
 Xi, D. and Chen, Y. (2024). Optimal weighted Bonferroni tests and
 their graphical extensions. \emph{Statistics in Medicine}, 43(3),
-475--500. \url{https://doi.org/10.1002/sim.9958}
+475--500. \doi{doi:10.1002/sim.9958}
 }

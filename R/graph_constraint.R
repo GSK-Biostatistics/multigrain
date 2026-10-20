@@ -34,7 +34,7 @@ new_graph_constraint <- function(
 
 ## user-facing constructor ------------------------------------------------
 
-#' Create a _graph constraint_ object for optimisation procedures
+#' Create a _graph constraint_ for optimisation procedures
 #'
 #' A _graph constraint_ object defines constraints on the hypothesis weight
 #' vector and transition matrix for optimisation of graph-based multiple testing
@@ -76,19 +76,18 @@ new_graph_constraint <- function(
 #'   i.e. `sqrt(.Machine$double.eps)` (the standard R definition of
 #'   "practically equal", as used by [base::all.equal()]).
 #'
-#' @returns A multigrain _graph constraint_ object (an S3 list with class
-#'   `multigrain_graph_constraint`) containing:
+#' @returns A `multigrain_graph constraint` object containing:
 #'   * `hyp_constraint`: a numeric vector representing the constraints on the
 #'   hypothesis weight vector.
 #'   * `trans_constraint`: a numeric matrix representing the constraints on the
 #'   transition matrix.
 #' If an element is `NA`, it is a free parameter to be optimised by
-#' `graph_optimise()`.
+#' [graph_optimise()].
 #'
 #' @references
 #' Xi, D. and Chen, Y. (2024). Optimal weighted Bonferroni tests and
 #' their graphical extensions. *Statistics in Medicine*, 43(3),
-#' 475--500. <https://doi.org/10.1002/sim.9958>
+#' 475--500. \doi{doi:10.1002/sim.9958}
 #'
 #' @export
 #' @examples

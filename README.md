@@ -48,8 +48,13 @@ procedures for confirmatory clinical trials*
 
 ## Installation
 
-**multigrain** is not on CRAN yet. Install the development version from
-GitHub with:
+Install the released version of {multigrain} from CRAN:
+
+``` r
+install.packages("multigrain")
+```
+
+Or install the development version from GitHub with:
 
 ``` r
 # install.packages("pak")
@@ -163,7 +168,7 @@ calc_power_pvals(
         AvgPower      = avg_power,
         Disjunctive   = disjunctive,
         CustomSuccess = custom_success
-  )
+    )
 )
 ```
 
@@ -182,8 +187,7 @@ calc_power_pvals(
 
 Found a bug, or want to request a feature? Please [open an
 issue](https://github.com/GSK-Biostatistics/multigrain/issues),
-including a [reprex](https://www.tidyverse.org/help/#reprex) where
-relevant.
+including a [reprex](https://tidyverse.org/help/#reprex) where relevant.
 
 ## Contributing
 
@@ -192,5 +196,8 @@ changes before submitting a pull request.
 
 ## License
 
-**multigrain** is released under the [LGPL (\>= 3)](LICENSE.md) license.
+**multigrain** is released under the [LGPL (\>=
+3)](https://gsk-biostatistics.github.io/multigrain/LICENSE.html)
+license.
+
 Copyright © GlaxoSmithKline Research & Development Limited.

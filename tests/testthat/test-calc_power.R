@@ -72,6 +72,7 @@ test_that("calc_power_pvals calculates power metrics", {
 
 
 test_that("calc_power_pvals stops suboptimal graphs as default", {
+    skip_if_not_installed("gMCPLite")
     pvals <- matrix(runif(9000), nrow = 1000, ncol = 9)
     fs <- gMCPLite::fixedSequence(9)
 
@@ -89,6 +90,7 @@ test_that("calc_power_pvals stops suboptimal graphs as default", {
 })
 
 test_that("calc_power_pvals allows fixed sequence sum_to_one_constraint=TRUE", {
+    skip_if_not_installed("gMCPLite")
     pvals <- matrix(
         rbeta(90000, shape1 = 0.24, shape2 = 0.65),
         nrow = 10000,
@@ -123,6 +125,7 @@ test_that("calc_power_pvals allows fixed sequence sum_to_one_constraint=TRUE", {
 
 
 test_that("calc_power_pvals allows list of anonymous functions", {
+    skip_if_not_installed("gMCPLite")
     pvals <- matrix(
         rbeta(50000, shape1 = 0.24, shape2 = 0.65),
         nrow = 10000,
@@ -168,6 +171,7 @@ test_that("calc_power_pvals allows list of anonymous functions", {
 
 
 test_that("calc_power_pvals with list of anonymous funcs and trial_success", {
+    skip_if_not_installed("gMCPLite")
     pvals <- matrix(
         rbeta(30000, shape1 = 0.24, shape2 = 0.65),
         nrow = 10000,
@@ -213,6 +217,7 @@ test_that("calc_power_pvals with list of anonymous funcs and trial_success", {
 
 
 test_that("calc_power_pvals allows single anonymous function", {
+    skip_if_not_installed("gMCPLite")
     pvals <- matrix(
         rbeta(40000, shape1 = 0.24, shape2 = 0.65),
         nrow = 10000,
@@ -247,6 +252,7 @@ test_that("calc_power_pvals allows single anonymous function", {
 
 
 test_that("calc_power_pvals allows single trial_success function", {
+    skip_if_not_installed("gMCPLite")
     pvals <- matrix(
         rbeta(40000, shape1 = 0.24, shape2 = 0.65),
         nrow = 10000,
@@ -315,6 +321,7 @@ test_that("calc_power_pvals validates input types", {
 
 
 test_that("calc_power_pvals complains", {
+    skip_if_not_installed("gMCPLite")
     # when custom_power is not a list or trial_success
     pvals <- matrix(
         rbeta(40000, shape1 = 0.24, shape2 = 0.65),
@@ -336,6 +343,7 @@ test_that("calc_power_pvals complains", {
 })
 
 test_that("calc_power_pvals complains when users passes anything via dots", {
+    skip_if_not_installed("gMCPLite")
     pvals <- matrix(
         rbeta(40000, shape1 = 0.24, shape2 = 0.65),
         nrow = 10000,

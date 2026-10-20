@@ -23,6 +23,7 @@ pvals <- withr::with_seed(5, {
 # create_obj_func --------------------------------------------------------
 
 test_that("create_obj_func: 3-m disjunctive power: improvedFallbackI", {
+    skip_if_not_installed("gMCPLite")
     pvals_3m <- pvals[, 1:3]
 
     gMCP_3m <- gMCPLite::improvedFallbackI()
@@ -65,6 +66,7 @@ test_that("create_obj_func: 3-m disjunctive power: improvedFallbackI", {
 
 
 test_that("create_obj_func: 4-m conjunctive pow: improvedParallelGatekeeping", {
+    skip_if_not_installed("gMCPLite")
     pvals_4m <- pvals[, 1:4]
 
     gMCP_4m <- gMCPLite::improvedParallelGatekeeping() |>
@@ -107,6 +109,7 @@ test_that("create_obj_func: 4-m conjunctive pow: improvedParallelGatekeeping", {
 
 
 test_that("create_obj_func: 6-m average power: BretzEtAl2011", {
+    skip_if_not_installed("gMCPLite")
     pvals_6m <- pvals[, 1:6]
     gMCP_6m <- gMCPLite::BretzEtAl2011()
     G_6m <- gMCPLite::getMatrix(gMCP_6m)
@@ -147,6 +150,8 @@ test_that("create_obj_func: 6-m average power: BretzEtAl2011", {
 })
 
 # Epsilon edges ----------------------------------------------------------
+
+skip_if_not_installed("gMCPLite")
 
 # Test objects for handling epsilons edges
 
@@ -756,7 +761,7 @@ test_that("recover_full_trans_matrix bug from issue #137 fix", {
     expect_identical(rowSums(result), rep(1, 3))
 })
 
-test_that("recover_full_trans_matrix fully specified matrix passthrough", {
+test_that("recover_full_trans_matrix fully specified matrix pass-through", {
     G_constr <- matrix(
         c(
             0, 1, 0,

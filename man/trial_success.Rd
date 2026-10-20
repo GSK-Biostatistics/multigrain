@@ -2,7 +2,7 @@
 % Please edit documentation in R/trial_success.R
 \name{trial_success}
 \alias{trial_success}
-\title{Create a trial success function}
+\title{Create a \emph{trial success} function}
 \usage{
 trial_success(objective, verbose = multigrain_verbosity())
 }
@@ -14,14 +14,14 @@ as the largest index found (e.g., \code{r1 + r3} implies \eqn{m = 3} and warns
 about the gap at \code{r2}). To inject values from your R session, use rlang's
 injection operator \code{\link[rlang:injection-operator]{!!}} (see Examples).}
 
-\item{verbose}{An optional string controlling verbosity (\verb{”detail”} >
-\verb{”info”} > \verb{”silent”}). Verbosity can also be set at package level with the
+\item{verbose}{An optional string controlling verbosity (\code{"detail"} >
+\code{"info"} > \code{"silent"}). Verbosity can also be set at package level with the
 \code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
 \itemize{
-\item \verb{”info”} (default): informs about successful compilation of the
+\item \code{"info"} (default): informs about successful compilation of the
 trial success function.
-\item \verb{”detail”}: same as \verb{”info”} (no additional detail available).
-\item \verb{”silent”}: no compilation messages. Errors and warnings are still
+\item \code{"detail"}: same as \code{"info"} (no additional detail available).
+\item \code{"silent"}: no compilation messages. Errors and warnings are still
 thrown.
 }}
 }
@@ -156,7 +156,7 @@ w <- 2
 trial_success(!!w * r1 + r2 + r3)
 
 # Programmatic string input
-expr_str <- sprintf(“\%s * r1 + r2”, w)
+expr_str <- sprintf("\%s * r1 + r2", w)
 trial_success(!!expr_str)
 
 }

@@ -142,7 +142,7 @@ jobs:
             comment,
             repo = "${{ github.repository }}",
             pr_number = ${{ github.event.pull_request.number }},
-            update = FALSE
+            update = TRUE
           )
 
           writeLines(comment, file.path(temp_path, "comment.md"))

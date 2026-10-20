@@ -25,14 +25,14 @@ discount tables are supplied \code{K} is inferred from their common length and,
 if also given, must agree with it. When neither is given \code{K} is left
 \code{NULL} and checked against the p-values at first use.}
 
-\item{verbose}{An optional string controlling verbosity (\verb{”detail”} >
-\verb{”info”} > \verb{”silent”}). Verbosity can also be set at package level with the
+\item{verbose}{An optional string controlling verbosity (\code{"detail"} >
+\code{"info"} > \code{"silent"}). Verbosity can also be set at package level with the
 \code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
 \itemize{
-\item \verb{”info”} (default): informs about successful compilation of the
+\item \code{"info"} (default): informs about successful compilation of the
 trial success function.
-\item \verb{”detail”}: same as \verb{”info”} (no additional detail available).
-\item \verb{”silent”}: no compilation messages. Errors and warnings are still
+\item \code{"detail"}: same as \code{"info"} (no additional detail available).
+\item \code{"silent"}: no compilation messages. Errors and warnings are still
 thrown.
 }}
 }

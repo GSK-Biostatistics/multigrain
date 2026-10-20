@@ -478,9 +478,9 @@ test_that("normalise_sum problematic vector test", {
         )
     )
 
-    # Problematic vector only doesn't sum strictly on macOS.
+    # Problematic vector only doesn't sum strictly on macOS (arm64).
+    # it sums strictly on Intel macOS
     skip_on_os(c("linux", "windows"))
-    expect_false(sum(problematic_vector) == 1)
 
     expect_no_warning(
         normalised_vec <- normalise_sum(problematic_vector)

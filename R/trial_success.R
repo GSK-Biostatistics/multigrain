@@ -1,4 +1,4 @@
-#' Create a trial success function
+#' Create a _trial success_ function
 #'
 #' Create a user-defined **trial-success utility** (gain function) \eqn{\psi}
 #' that assigns a numerical value to each rejection pattern from a graphical
@@ -19,13 +19,13 @@
 #'   about the gap at `r2`). To inject values from your R session, use rlang's
 #'   injection operator [`!!`][rlang::injection-operator] (see Examples).
 #'
-#' @param verbose An optional string controlling verbosity (`”detail”` >
-#'   `”info”` > `”silent”`). Verbosity can also be set at package level with the
+#' @param verbose An optional string controlling verbosity (`"detail"` >
+#'   `"info"` > `"silent"`). Verbosity can also be set at package level with the
 #'   `multigrain_verbosity` option (see [multigrain_verbosity()]):
-#'     * `”info”` (default): informs about successful compilation of the
+#'     * `"info"` (default): informs about successful compilation of the
 #'       trial success function.
-#'     * `”detail”`: same as `”info”` (no additional detail available).
-#'     * `”silent”`: no compilation messages. Errors and warnings are still
+#'     * `"detail"`: same as `"info"` (no additional detail available).
+#'     * `"silent"`: no compilation messages. Errors and warnings are still
 #'       thrown.
 #'
 #' @returns A `multigrain_trial_success` object made up of:
@@ -145,7 +145,7 @@
 #' trial_success(!!w * r1 + r2 + r3)
 #'
 #' # Programmatic string input
-#' expr_str <- sprintf(“%s * r1 + r2”, w)
+#' expr_str <- sprintf("%s * r1 + r2", w)
 #' trial_success(!!expr_str)
 #'
 #' }
