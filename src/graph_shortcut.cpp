@@ -18,6 +18,9 @@
 //   Each step is O(m) and there is no per-trial copy of the graph. All
 //   hypotheses that qualify at S are rejected together; this reaches the
 //   same final set because local weights only grow as S shrinks.
+//   The approach (weights for every intersection computed once, then a
+//   per-trial walk) follows graph_test_shortcut_fast() in graphicalMCP
+//   (Xi and Brockmann, 2024); this is an independent C++ implementation.
 //
 // Sequential kernel (the original implementation, kept as the fallback for
 // large m and as the test oracle):
