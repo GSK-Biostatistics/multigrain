@@ -1,0 +1,72 @@
+
+==================== D. Three analyses, two hypotheses ====================
+<multigrain_pvals_gsd>
+100000 simulation(s), 2 hypothes(es), 3 analys(es); alpha = 0.025
+Information fractions (NA = no data at that analysis):
+   analysis 1 analysis 2 analysis 3
+H1  0.3333333  0.6666667          1
+H2  0.3333333  0.6666667          1
+Look-back: H1 = FALSE, H2 = FALSE
+
+Per-hypothesis detail:
+ hypothesis analyses matured_at look_back spending
+         H1  1, 2, 3          3     FALSE   sfLDOF
+         H2  1, 2, 3          3     FALSE   sfLDOF
+
+Nominal boundaries at the full level (0.025):
+     analysis 1  analysis 2 analysis 3
+H1 0.0001035057 0.006012207 0.02312812
+H2 0.0001035057 0.006012207 0.02312812
+v Trial success function compiled and sourced successfully.
+Simulate and transform 2.6 s; optimise 105 s
+Optimiser: w1 = 0.1802, gain 0.69231. Grid: w1 = 0.15, gain 0.69230, plateau [0.09, 0.28]
+$local_power_by_analysis
+   analysis 1 analysis 2 analysis 3
+H1    0.00402     0.3227     0.7650
+H2    0.02366     0.5198     0.8868
+
+$time_distribution
+    never analysis 1 analysis 2 analysis 3
+H1 0.2350    0.00402     0.3187     0.4423
+H2 0.1132    0.02366     0.4961     0.3670
+
+graphicalMCP on 200 trials: 0 disagreements in 400 reject or retain decisions; 0 in the decision times of 346 rejections
+
+==================== E. Constrained graph ====================
+<multigrain_graph_constraint>
+Constraints on hypothesis weights:
+H1 H2 H3 
+ 1  0  0 
+
+Constraints on transition matrix:
+   H1 H2 H3
+H1  0 NA NA
+H2  0  0  1
+H3  0  1  0
+Optimised in 110 s: gain 0.66697 (free optimum in 02: 0.66696)
+w = 1 0 0 
+   H1    H2    H3
+H1  0 0.927 0.073
+H2  0 0.000 1.000
+H3  0 1.000 0.000
+Fixed entries respected and H1's row sums to 1: TRUE 
+
+==================== F. Four hypotheses, two analyses ====================
+Optimised in 129 s
+     optimised           holm fixed_sequence 
+       0.66567        0.63080        0.66176 
+w = 0.945 0.044 0.011 0 
+      H1    H2    H3    H4
+H1 0.000 0.963 0.031 0.006
+H2 0.000 0.000 0.903 0.097
+H3 0.559 0.000 0.000 0.441
+H4 0.000 0.469 0.531 0.000
+
+==================== G. Reproducibility ====================
+Same seed, two threads, run twice: identical result: TRUE 
+Same seed, one thread against two: identical result: TRUE 
+w1 = 0.162771 (two threads), 0.162771 (repeat), 0.162771 (one thread)
+
+Optimisation seconds (2 threads):
+three_looks constrained    four_hyp 
+      104.6       110.4       128.8 

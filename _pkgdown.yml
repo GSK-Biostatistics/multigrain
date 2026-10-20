@@ -35,6 +35,8 @@ articles:
   navbar: Details
   contents:
   - articles/graph_constraint
+  - articles/trial_success
+  - articles/gsd-joint-spending
 
 reference:
   - title: Optimisation
@@ -69,6 +71,19 @@ reference:
     - calc_power_pvals
     - is_graph_valid
     - graph_optimal_get_control
+
+  - title: Group sequential designs
+    desc: >
+      Simulate, transform, value and optimise a design with interim analyses
+    contents:
+    - simulate_pvalues_gsd
+    - transform_pvalues_gsd
+    - sf_hsd_opt
+    - resolve_pvalues_gsd
+    - trial_success_gsd
+    - stopping_rule_gsd
+    - graph_optimise_gsd
+    - calc_power_pvals_gsd
 
   - title: Plotting
     desc: >

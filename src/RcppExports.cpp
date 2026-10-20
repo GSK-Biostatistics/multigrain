@@ -79,6 +79,40 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// graph_shortcut_gsd
+List graph_shortcut_gsd(const NumericMatrix& pvals, const double alpha, const NumericVector& w, const NumericMatrix& G, const int K, Rcpp::Nullable<Rcpp::LogicalMatrix> stop_rule);
+RcppExport SEXP _multigrain_graph_shortcut_gsd(SEXP pvalsSEXP, SEXP alphaSEXP, SEXP wSEXP, SEXP GSEXP, SEXP KSEXP, SEXP stop_ruleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type pvals(pvalsSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::LogicalMatrix> >::type stop_rule(stop_ruleSEXP);
+    rcpp_result_gen = Rcpp::wrap(graph_shortcut_gsd(pvals, alpha, w, G, K, stop_rule));
+    return rcpp_result_gen;
+END_RCPP
+}
+// graph_shortcut_gsd_parallel
+List graph_shortcut_gsd_parallel(const NumericMatrix& pvals, const double alpha, const NumericVector& w, const NumericMatrix& G, const int K, int num_threads, int grain_size, Rcpp::Nullable<Rcpp::LogicalMatrix> stop_rule);
+RcppExport SEXP _multigrain_graph_shortcut_gsd_parallel(SEXP pvalsSEXP, SEXP alphaSEXP, SEXP wSEXP, SEXP GSEXP, SEXP KSEXP, SEXP num_threadsSEXP, SEXP grain_sizeSEXP, SEXP stop_ruleSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type pvals(pvalsSEXP);
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    Rcpp::traits::input_parameter< const int >::type K(KSEXP);
+    Rcpp::traits::input_parameter< int >::type num_threads(num_threadsSEXP);
+    Rcpp::traits::input_parameter< int >::type grain_size(grain_sizeSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::LogicalMatrix> >::type stop_rule(stop_ruleSEXP);
+    rcpp_result_gen = Rcpp::wrap(graph_shortcut_gsd_parallel(pvals, alpha, w, G, K, num_threads, grain_size, stop_rule));
+    return rcpp_result_gen;
+END_RCPP
+}
 // graph_violation_score_cpp
 double graph_violation_score_cpp(NumericVector w, NumericMatrix G);
 RcppExport SEXP _multigrain_graph_violation_score_cpp(SEXP wSEXP, SEXP GSEXP) {
@@ -98,6 +132,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_multigrain_esch_mutation_rcpp", (DL_FUNC) &_multigrain_esch_mutation_rcpp, 3},
     {"_multigrain_graph_shortcut", (DL_FUNC) &_multigrain_graph_shortcut, 4},
     {"_multigrain_graph_shortcut_parallel", (DL_FUNC) &_multigrain_graph_shortcut_parallel, 6},
+    {"_multigrain_graph_shortcut_gsd", (DL_FUNC) &_multigrain_graph_shortcut_gsd, 6},
+    {"_multigrain_graph_shortcut_gsd_parallel", (DL_FUNC) &_multigrain_graph_shortcut_gsd_parallel, 8},
     {"_multigrain_graph_violation_score_cpp", (DL_FUNC) &_multigrain_graph_violation_score_cpp, 2},
     {NULL, NULL, 0}
 };

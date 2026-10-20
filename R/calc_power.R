@@ -171,6 +171,28 @@ calc_power_pvals <- function(
     if (is.null(x)) {
         return(list())
     }
+    # A `multigrain_trial_success_gsd` object inherits from
+    # `multigrain_trial_success`, but its compiled function expects the group
+    # sequential kernel's decision-time matrix. Handing it the logical
+    # rejection matrix scores every rejection as an analysis-1 rejection,
+    # silently (design record, section 4.10).
+    abort_gsd_gain <- function(what) {
+        cli::cli_abort(
+            c(
+                "{what} was created with {.fn trial_success_gsd} and needs \\
+                the analysis at which each hypothesis was rejected.",
+                x = "{.fn calc_power_pvals} supplies only fixed-sample \\
+                rejection indicators, so every rejection would be scored as \\
+                an analysis-1 rejection.",
+                i = "Use {.fn calc_power_pvals_gsd} with p-values \\
+                transformed by {.fn transform_pvalues_gsd}."
+            ),
+            call = call
+        )
+    }
+    if (is_trial_success_gsd(x)) {
+        abort_gsd_gain(cli::format_inline("{.arg custom_power}"))
+    }
     if (is.function(x) || is_trial_success(x)) {
         return(list(custom_power = x))
     }
@@ -183,6 +205,18 @@ calc_power_pvals <- function(
     }
     for (i in seq_along(x)) {
         item <- x[[i]]
+        if (is_trial_success_gsd(item)) {
+            nms_i <- names(x)
+            label <- if (is.null(nms_i)) NA_character_ else nms_i[[i]]
+            what <- if (!is.na(label) && nzchar(label)) {
+                cli::format_inline(
+                    "Element {.field {label}} of {.arg custom_power}"
+                )
+            } else {
+                cli::format_inline("Element {i} of {.arg custom_power}")
+            }
+            abort_gsd_gain(what)
+        }
         if (!is.function(item) && !is_trial_success(item)) {
             cli::cli_abort(
                 "Each element of {.arg custom_power} must be a function or a \\
