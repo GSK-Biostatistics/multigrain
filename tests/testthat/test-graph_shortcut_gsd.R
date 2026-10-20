@@ -710,8 +710,8 @@ test_that("without a rule the kernel reproduces the committed reference", {
     reference <- readRDS(test_path("data", "gsd_kernel_reference.rds"))
     alpha <- 0.025
 
+    # nolint next: object_name_linter.
     expected_stop <- function(out, m, K) {
-        # nolint: object_name_linter.
         ifelse(
             rowSums(out$rejected) == m,
             apply(out$time, 1L, max),

@@ -18,7 +18,7 @@ opt_hsd_gain_4 <- trial_success_gsd(
 opt_hsd_rule <- stopping_rule_gsd(r1)
 
 opt_hsd_run <- function(
-    spec = hsd_opt_spec(),
+    spec = hsd_opt_spec(), # nolint: object_usage_linter.
     gain = opt_hsd_gain_3,
     seed = 202,
     ...
@@ -28,7 +28,7 @@ opt_hsd_run <- function(
             pvals = spec,
             graph_constraint = graph_constraint_free(spec$m),
             trial_success = gain,
-            control = hsd_opt_control(),
+            control = hsd_opt_control(), # nolint: object_usage_linter.
             verbose = "silent",
             ...
         )
@@ -36,14 +36,15 @@ opt_hsd_run <- function(
 }
 
 opt_hsd_result <- function() {
-    hsd_opt_cached("opt_result_d1", opt_hsd_run())
+    hsd_opt_cached("opt_result_d1", opt_hsd_run()) # nolint: object_usage_linter.
 }
 
 opt_hsd_result_d2 <- function() {
     hsd_opt_cached(
+        # nolint: object_usage_linter.
         "opt_result_d2",
         opt_hsd_run(
-            spec = hsd_opt_spec_d2(),
+            spec = hsd_opt_spec_d2(), # nolint: object_usage_linter.
             gain = opt_hsd_gain_4,
             seed = 303,
             stopping_rule = opt_hsd_rule
@@ -53,8 +54,9 @@ opt_hsd_result_d2 <- function() {
 
 # The prepared local options of the tiny control at the d = 1 fixture.
 opt_hsd_local_opts <- function(spec = hsd_opt_spec()) {
+    # nolint: object_usage_linter.
     control_prepare_dims(
-        hsd_opt_control(),
+        hsd_opt_control(), # nolint: object_usage_linter.
         nsim = spec$nsim,
         m = spec$m
     )$local_opt

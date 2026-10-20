@@ -420,8 +420,8 @@ is_trial_success_gsd <- function(x) {
 # Settle the number of analyses `K`: the common table length when tables are
 # given (checked against an explicit `K`), otherwise the explicit `K`, or
 # NULL when neither is available (design record, section 10 item 6).
+# nolint next: object_name_linter.
 .gsd_gain_K <- function(
-    # nolint: object_name_linter.
     tables,
     K, # nolint: object_name_linter.
     call = rlang::caller_env()

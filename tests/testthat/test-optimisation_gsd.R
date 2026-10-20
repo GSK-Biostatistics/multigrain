@@ -370,7 +370,7 @@ test_that("mismatched dimensions and gain classes abort", {
     )
     expect_error(
         graph_optimise_gsd(
-            opt_pvals_gsd$pvals[,, 1L],
+            opt_pvals_gsd$pvals[,, 1L], # nolint: commas_linter.
             graph_constraint_free(3),
             opt_gain_gsd,
             verbose = "silent"

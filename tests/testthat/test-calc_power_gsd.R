@@ -362,7 +362,7 @@ test_that("mean_decision_look is NA for an unreachable hypothesis", {
 
 test_that("at K = 1 the shared fields equal calc_power_pvals()", {
     gsd <- calc_power_pvals_gsd(cp_pvals_k1, cp_w, cp_g)
-    fixed <- calc_power_pvals(cp_pvals_k1$pvals[,, 1L], cp_w, cp_g)
+    fixed <- calc_power_pvals(cp_pvals_k1$pvals[,, 1L], cp_w, cp_g) # nolint: commas_linter.
 
     expect_identical(gsd$local_power, fixed$local_power)
     expect_identical(gsd$exp_rejections, fixed$exp_rejections)
@@ -396,7 +396,7 @@ test_that("a fixed-sample gain is scored on the rejection indicators", {
         custom_power = list(total = fixed_gain)
     )
     fixed_k1 <- calc_power_pvals(
-        cp_pvals_k1$pvals[,, 1L],
+        cp_pvals_k1$pvals[,, 1L], # nolint: commas_linter.
         cp_w,
         cp_g,
         custom_power = list(total = fixed_gain)
@@ -573,7 +573,7 @@ test_that("alpha is bounded by the level of the p-value object", {
 
 test_that("a plain matrix is not accepted as pvals", {
     expect_error(
-        calc_power_pvals_gsd(cp_pvals_gsd$pvals[,, 1L], cp_w, cp_g),
+        calc_power_pvals_gsd(cp_pvals_gsd$pvals[,, 1L], cp_w, cp_g), # nolint: commas_linter.
         "multigrain_pvals_gsd"
     )
 })

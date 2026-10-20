@@ -80,15 +80,17 @@ opt_obj_feasible <- function(x, constraint) {
 
 opt_obj_d1 <- function() {
     hsd_opt_cached(
+        # nolint: object_usage_linter.
         "obj_setup_d1",
-        opt_obj_setup(hsd_opt_spec(), opt_obj_gain_3)
+        opt_obj_setup(hsd_opt_spec(), opt_obj_gain_3) # nolint: object_usage_linter.
     )
 }
 
 opt_obj_d2 <- function() {
     hsd_opt_cached(
+        # nolint: object_usage_linter.
         "obj_setup_d2",
-        opt_obj_setup(hsd_opt_spec_d2(), opt_obj_gain_4)
+        opt_obj_setup(hsd_opt_spec_d2(), opt_obj_gain_4) # nolint: object_usage_linter.
     )
 }
 
@@ -123,7 +125,7 @@ opt_obj_oracle <- function(setup, num_threads = 1L, stop_rule = NULL) {
     n_cmp <- 0L
     reached <- apply(genes, 1L, opt_obj_feasible, setup$constraint)
     # not vacuous: most comparisons reach the kernel
-    expect_gte(sum(reached), 15L)
+    expect_gte(sum(reached), 15L) # nolint: object_usage_linter.
 
     for (k in seq_len(nrow(nodes))) {
         at <- nodes[k, ]
@@ -132,7 +134,7 @@ opt_obj_oracle <- function(setup, num_threads = 1L, stop_rule = NULL) {
         u <- (at - 0.5) / n_nodes
         for (j in seq_len(nrow(genes))) {
             x <- genes[j, ]
-            expect_identical(fn(c(x, u)), ref(x))
+            expect_identical(fn(c(x, u)), ref(x)) # nolint: object_usage_linter.
             n_cmp <- n_cmp + 1L
         }
     }
