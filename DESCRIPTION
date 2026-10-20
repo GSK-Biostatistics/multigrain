@@ -53,7 +53,6 @@ Suggests:
 LinkingTo:
     Rcpp,
     RcppParallel
-Config/multigrain/build: 1.0.0-fast-shortcut
 Config/Needs/website: rmarkdown, gMCP, graphicalMCP, gridExtra
 Config/roxygen2/markdown: TRUE
 Config/roxygen2/version: 8.1.0

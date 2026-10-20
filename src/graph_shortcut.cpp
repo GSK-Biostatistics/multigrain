@@ -18,6 +18,9 @@
 //   Each step is O(m) and there is no per-trial copy of the graph. All
 //   hypotheses that qualify at S are rejected together; this reaches the
 //   same final set because local weights only grow as S shrinks.
+//   The approach (weights for every intersection computed once, then a
+//   per-trial walk) follows graph_test_shortcut_fast() in graphicalMCP
+//   (Xi and Brockmann, 2024); this is an independent C++ implementation.
 //
 // Sequential kernel (the original implementation, kept as the fallback for
 // large m and as the test oracle):
@@ -79,7 +82,7 @@ constexpr int TABLE_HARD_MAX_M = 20;
 // "auto" uses the table kernel when 2^m <= TABLE_KAPPA * N. The table build
 // costs O(2^m m^2) once per call; the sequential kernel costs
 // O(N m^2 (1 + r)) for r rejections per trial, so the break-even ratio
-// 2^m / N grows with r. Measured serially (dev/review/shortcut_table/):
+// 2^m / N grows with r. In serial benchmarks on the fast-shortcut branch,
 // the table kernel was faster in every case up to 2^m / N = 1.64, and the
 // sequential kernel first won (at low power) at 2.62. TABLE_KAPPA = 2 keeps
 // "auto" no slower than the sequential kernel.

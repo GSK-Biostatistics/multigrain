@@ -6,7 +6,9 @@
   trial, instead of updating the graph after every rejection. This is faster
   for small and moderate numbers of hypotheses and gives the same rejections;
   the previous algorithm is still used for large numbers of hypotheses. There
-  is no user-visible API change.
+  is no user-visible API change. The approach follows
+  `graph_test_shortcut_fast()` in the graphicalMCP package (Xi and Brockmann,
+  2024).
 
 # multigrain 1.0.0
 
