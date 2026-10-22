@@ -182,13 +182,61 @@ Some implementation details matter for correctness:
 By Section 2.3, the critical values depend only on the unrejected set $S$. There are $2^m$ possible sets, and for the $m$ values multigrain usually works with (up to about 12), $2^m$ is far smaller than the number of simulated trials. So:
 
 1. **Once per call,** compute $c_j(S)$ for all $2^m$ sets and store them in a table.
-2. **For each trial,** walk through the table instead of updating a graph.
+2. **For each trial,** look the critical values up in the table instead of updating a graph.
 
 This follows `graph_test_shortcut_fast()` in the graphicalMCP package (Xi and Brockmann, 2024), but is an independent C++ implementation.
 
 ### 5.2 Storing Sets as Bitmasks
 
-A set $S$ is stored as an integer whose bit $j-1$ is 1 when $H_j \in S$, as in the table in Section 3.1. The table is a flat array of $2^m \times m$ doubles, with row `S` holding $c_1(S), \dots, c_m(S)$. At the maximum $m = 20$ that is $2^{20} \times 20$ doubles, or 160 MB. That is one reason for the hard limit `TABLE_HARD_MAX_M = 20`; the other is that it keeps the 32-bit mask valid.
+The table needs one row per set $S$, so the code needs a quick way to turn a set into a row number. It uses a **bitmask**.
+
+**What a bitmask is.** Any whole number can be written in binary, as a string of 0s and 1s, where the digits from the right are worth 1, 2, 4, 8, and so on. A bitmask uses those binary digits ("bits") as yes/no flags. The rightmost bit says whether $H_1$ is in the set, the next one $H_2$, and so on. A set of $m$ hypotheses is therefore just a number between 0 and $2^m - 1$:
+
+$$\text{mask}(S) = \sum_{j \in S} 2^{\,j-1}.$$
+
+For $m = 3$, every possible set:
+
+| Set $S$ | Bits ($H_3 H_2 H_1$) | Mask |
+|---|---|---:|
+| $\emptyset$ | `000` | 0 |
+| $\{H_1\}$ | `001` | 1 |
+| $\{H_2\}$ | `010` | 2 |
+| $\{H_1, H_2\}$ | `011` | 3 |
+| $\{H_3\}$ | `100` | 4 |
+| $\{H_1, H_3\}$ | `101` | 5 |
+| $\{H_2, H_3\}$ | `110` | 6 |
+| $\{H_1, H_2, H_3\}$ | `111` | 7 |
+
+Every set gets a different number, and the numbers run from 0 to $2^m - 1$ with no gaps. So the mask can be used directly as the row number of the table, which is the numbering used in Section 3.1.
+
+**Set operations become bit operations.** In C++ these are single, very cheap instructions:
+
+| What the code needs | C++ (`src/graph_shortcut.cpp`) | Meaning | R equivalent |
+|---|---|---|---|
+| The full set | `(1u << m) - 1` | all $m$ bits set: $2^m - 1$ | `2^m - 1` |
+| Is $H_{i+1}$ in $S$? | `(S >> i) & 1u` | shift $S$ right by $i$ places and read the last bit | `bitwAnd(S, 2^i) != 0` |
+| Remove $H_{k+1}$ from $S$ | `S & ~(1u << k)` | clear bit $k$ | `bitwAnd(S, bitwNot(2^k))` |
+| Remove several at once | `S &= ~rej` | clear every bit set in `rej` | `bitwAnd(S, bitwNot(rej))` |
+| Is $S$ empty? | `S == 0` | no bits set | `S == 0` |
+
+The code counts bits from 0, so bit `i` is hypothesis $H_{i+1}$.
+
+**The lookup example of Section 5.4, in bits.** Here $m = 3$ and $\mathbf{p} = (0.010,\ 0.012,\ 0.030)$:
+
+1. Start at `S = 7` (`111`). Row 7 of the table gives $(0.0125, 0.0125, 0)$.
+2. $H_1$ and $H_2$ pass, so the code collects them as `rej = 3` (`011`).
+3. `S & ~rej` is `111` with the bits of `011` cleared, which is `100` = 4.
+4. Row 4 is $\{H_3\}$, with level 0.025. Since $p_3 = 0.030$, nothing passes, so the loop stops.
+5. The rejected set is `7 & ~4` = `011`, that is $H_1$ and $H_2$.
+
+**From R.** Row `mask + 1` of `graph_shortcut_table()` is set `mask`; the `+ 1` is there because R counts rows from 1. To find a set's row from R:
+
+```r
+mask <- sum(2^(c(1, 3) - 1))  # {H1, H3} -> 5
+tab[mask + 1, ]
+```
+
+**Memory.** The table is a flat array of $2^m \times m$ doubles, with row `S` holding $c_1(S), \dots, c_m(S)$. At the maximum $m = 20$ that is $2^{20} \times 20$ doubles, or 160 MB. Memory is what sets the hard limit `TABLE_HARD_MAX_M = 20`. The mask is stored in a 32-bit unsigned integer, which could hold up to 31 hypotheses with room for the `1u << m` shift, so the limit of 20 also keeps every mask valid.
 
 ### 5.3 Building the Table (`CritTableBuilder`)
 
@@ -201,23 +249,40 @@ The builder visits every set once, depth-first, starting from the full set.
 
 The total cost is $O(2^m m^2)$ per call, independent of $N$.
 
-### 5.4 Walking the Table (`walk_crit_table()`)
+### 5.4 Testing a Trial by Lookup (`walk_crit_table()`)
 
-For each trial:
+Once the table exists, testing a trial needs no graph at all. Starting with every hypothesis unrejected, the code repeats three steps:
 
-1. Start at the full set: `S = (1 << m) - 1`.
-2. Look up row `S`, and mark **every** $j \in S$ with $p_j < c_j(S)$.
-3. If none qualify, stop. Otherwise remove them all from `S` and go back to step 2.
-4. The rejected hypotheses are the bits of the full set that are no longer in `S`.
+1. **Look up** the row for the current set $S$. It holds the critical values $c_j(S)$.
+2. **Compare** each unrejected $p_j$ with its critical value, and reject **every** hypothesis with $p_j < c_j(S)$, not just the first.
+3. **Stop** if nothing was rejected. Otherwise remove the rejected hypotheses from $S$ and go back to step 1.
 
-Rejecting all qualifying hypotheses at once is safe because levels only grow as $S$ shrinks. A hypothesis that qualifies now still qualifies after the others are removed, so the final set is the same as with one-at-a-time rejection. Each step is $O(m)$, with no graph copy and no division.
+The hypotheses that end up outside $S$ are the trial's rejections.
 
-In the example of Section 3, take $\mathbf{p} = (0.010,\ 0.012,\ 0.030)$:
+Rejecting all qualifying hypotheses at once is safe, because critical values only grow as $S$ shrinks (Section 2.3). A hypothesis that passes now would still pass after the others are removed, so the final set is the same as rejecting them one at a time. In the code this loop is `walk_crit_table()`.
 
-* **At the full set,** both $H_1$ and $H_2$ qualify ($0.010$ and $0.012 < 0.0125$), so the walk removes both in one step and moves to mask 4.
-* **At $\{H_3\}$,** $p_3 = 0.030 \ge 0.025$, so the walk stops.
+**Example.** Use the graph from Section 3, with the trial $\mathbf{p} = (0.010,\ 0.012,\ 0.030)$.
 
-The sequential kernel reaches the same answer in two steps.
+*Sequential kernel (Section 4): updates the weights and graph after each rejection.*
+
+| Round | Unrejected $S$ | Critical values | Test | Work done afterwards |
+|---|---|---|---|---|
+| 1 | $\{H_1, H_2, H_3\}$ | $(0.0125,\ 0.0125,\ 0)$ | first to pass is $H_1$: reject it | pass $H_1$'s level on, and update the graph (divisions included) |
+| 2 | $\{H_2, H_3\}$ | $(-,\ 0.01875,\ 0.00625)$ | $0.012 < 0.01875$: reject $H_2$ | pass $H_2$'s level on |
+| 3 | $\{H_3\}$ | $(-,\ -,\ 0.025)$ | $0.030 \ge 0.025$: stop | none |
+
+*Lookup: reads the critical values from the table built once for this graph (Section 3.1).*
+
+| Round | Unrejected $S$ | Row read | Test | Next set |
+|---|---|---|---|---|
+| 1 | $\{H_1, H_2, H_3\}$ | row 7: $(0.0125,\ 0.0125,\ 0)$ | $H_1$ and $H_2$ both pass: reject both | $\{H_3\}$, row 4 |
+| 2 | $\{H_3\}$ | row 4: $(-,\ -,\ 0.025)$ | $0.030 \ge 0.025$: stop | none |
+
+Both give the same answer: $H_1$ and $H_2$ are rejected and $H_3$ is not. The lookup gets there in two rounds of comparisons and does no arithmetic on weights or graphs. The sequential kernel needs three rounds, with a graph update in between.
+
+When the p-values only clear their levels one at a time, the lookup takes the same path as the sequential kernel; it just reads each row instead of computing it. For the trial $\mathbf{p} = (0.010,\ 0.018,\ 0.015)$ from Section 3, the lookup reads rows 7, 6 and 4, rejecting $H_1$, then $H_2$, then $H_3$.
+
+**Why it is faster.** Each round costs $m$ comparisons. The sequential kernel instead pays $O(m^2)$ per trial to copy the graph, and another $O(m^2)$ per rejection to update it. The table costs $O(2^m m^2)$ to build, but that is paid once per graph, however many trials there are.
 
 ---
 
@@ -277,9 +342,9 @@ Before the fix, under `"auto"`, one copy of this row gave one answer and four co
 
 The sequential kernel is the reference, so the table kernel defers to it whenever a decision is too close to call.
 
-* **Near-tie flag.** During the walk, a trial is flagged if any p-value it compares lies within a relative $10^{-6}$ of the critical value: $\lvert p_j - c_j(S)\rvert < 10^{-6}\, c_j(S)$ (`TIE_REL_TOL`). That trial is then rerun with `sequential_trial()`.
+* **Near-tie flag.** During the lookup, a trial is flagged if any p-value it compares lies within a relative $10^{-6}$ of the critical value: $\lvert p_j - c_j(S)\rvert < 10^{-6}\, c_j(S)$ (`TIE_REL_TOL`). That trial is then rerun with `sequential_trial()`.
   - **Rate.** Only about 6 in a million trials are rerun with continuous p-values; with p-values rounded to 3 dp, up to a few percent are.
-  - **Why the walk's own comparisons are enough.** Levels only grow as $S$ shrinks. If no comparison the walk makes is close, the sequential kernel cannot keep a hypothesis the walk rejects, or reject one the walk keeps.
+  - **Why checking the lookup's own comparisons is enough.** Levels only grow as $S$ shrinks. If none of the lookup's comparisons is close, the sequential kernel cannot keep a hypothesis the lookup rejects, or reject one the lookup keeps.
 * **Ill-conditioned graphs.** The rounding difference between the kernels grows as $\varepsilon/d$, where $d = 1 - g_{kj}g_{jk}$ is the smallest graph-update denominator. When two hypotheses pass almost all their weight to each other, $d$ is tiny. The fixed tolerance then no longer covers the difference, so the whole call runs on the sequential kernel instead (`MIN_DENOM` $= 10^{-6}$). The builder finds $d$ like this:
   - It checks pairs only within three-member sets $\{i, k, l\}$, because denominators only fall as $S$ shrinks and the sequential kernel only updates the graph while three or more hypotheses remain.
   - It counts a pair only if $g_{il}$ or $g_{kl}$ is non-zero. A pair that sends nothing outside itself only ever divides exact zeros, so its denominator cannot cause a difference however small it is. This keeps common optimiser graphs on the fast path: there, small edges are zeroed and a near-degenerate pair is often left with nothing else in its rows.
@@ -287,7 +352,7 @@ The sequential kernel is the reference, so the table kernel defers to it wheneve
 
 **The result.** The output is identical to the sequential kernel's for every graph, every $N$ and every thread count. A development sweep of 79 million trials over random, sparse, round-number and near-degenerate graphs found no differences. Without the fix it found 3,422. The scripts are in `dev/review/shortcut_table/`, which is untracked.
 
-**The cost.** The extra check makes the table walk roughly 10% slower in low-power settings, where most trials stop after one step, and no slower at high power.
+**The cost.** The extra check makes testing by lookup roughly 10% slower in low-power settings, where most trials stop after one step, and no slower at high power.
 
 ---
 
@@ -333,8 +398,9 @@ The sequential kernel is the reference, so the table kernel defers to it wheneve
 | Local weight $w_j(S)$, critical value $c_j(S)$ | $H_j$'s weight, and its level $\alpha w_j(S)$, once exactly the hypotheses outside $S$ have been rejected |
 | Closed test | Rejects $H_j$ if every intersection hypothesis containing it is rejected; the graphical procedure is a shortcut for one |
 | Sequential kernel | One-at-a-time implementation that updates the graph after each rejection; the reference |
-| Table kernel | Precomputes $c_j(S)$ for every $S$ and walks the table |
-| Near-tie | A p-value within a relative $10^{-6}$ of a critical value the walk compares it with |
+| Table kernel | Precomputes $c_j(S)$ for every $S$, then tests each trial by looking them up |
+| Bitmask | A set of hypotheses stored as one whole number, one binary digit per hypothesis (Section 5.2) |
+| Near-tie | A p-value within a relative $10^{-6}$ of a critical value the lookup compares it with |
 
 **References:**
 * Bretz F, Maurer W, Brannath W, Posch M (2009). A graphical approach to sequentially rejective multiple test procedures. *Statistics in Medicine* 28:586–604. This is the algorithm and the order-independence result.
