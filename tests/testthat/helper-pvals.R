@@ -6,3 +6,10 @@ pvals_fixture <- withr::with_seed(5, {
     sims <- mvtnorm::rmvnorm(5e4, mean = ncp_vec, sigma = corr)
     stats::pnorm(sims, lower.tail = FALSE)
 })
+
+# High-power p-values (independent, mean z = 3), so most trials reject
+# several hypotheses
+pvals_high_power <- withr::with_seed(11, {
+    z <- matrix(stats::rnorm(2000 * 6, mean = 3), ncol = 6)
+    stats::pnorm(z, lower.tail = FALSE)
+})

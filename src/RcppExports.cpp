@@ -79,6 +79,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// graph_shortcut_kernel
+std::string graph_shortcut_kernel(const int n_trials, const int m);
+RcppExport SEXP _multigrain_graph_shortcut_kernel(SEXP n_trialsSEXP, SEXP mSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const int >::type n_trials(n_trialsSEXP);
+    Rcpp::traits::input_parameter< const int >::type m(mSEXP);
+    rcpp_result_gen = Rcpp::wrap(graph_shortcut_kernel(n_trials, m));
+    return rcpp_result_gen;
+END_RCPP
+}
+// graph_shortcut_table
+NumericMatrix graph_shortcut_table(const double alpha, const NumericVector& w, const NumericMatrix& G);
+RcppExport SEXP _multigrain_graph_shortcut_table(SEXP alphaSEXP, SEXP wSEXP, SEXP GSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< const NumericVector& >::type w(wSEXP);
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type G(GSEXP);
+    rcpp_result_gen = Rcpp::wrap(graph_shortcut_table(alpha, w, G));
+    return rcpp_result_gen;
+END_RCPP
+}
 // graph_violation_score_cpp
 double graph_violation_score_cpp(NumericVector w, NumericMatrix G);
 RcppExport SEXP _multigrain_graph_violation_score_cpp(SEXP wSEXP, SEXP GSEXP) {
@@ -98,6 +123,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_multigrain_esch_mutation_rcpp", (DL_FUNC) &_multigrain_esch_mutation_rcpp, 3},
     {"_multigrain_graph_shortcut", (DL_FUNC) &_multigrain_graph_shortcut, 4},
     {"_multigrain_graph_shortcut_parallel", (DL_FUNC) &_multigrain_graph_shortcut_parallel, 6},
+    {"_multigrain_graph_shortcut_kernel", (DL_FUNC) &_multigrain_graph_shortcut_kernel, 2},
+    {"_multigrain_graph_shortcut_table", (DL_FUNC) &_multigrain_graph_shortcut_table, 3},
     {"_multigrain_graph_violation_score_cpp", (DL_FUNC) &_multigrain_graph_violation_score_cpp, 2},
     {NULL, NULL, 0}
 };

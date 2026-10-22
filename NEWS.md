@@ -1,5 +1,19 @@
 # multigrain (development version)
 
+## New functionality
+
+## Minor improvements and bug fixes
+
+* The graphical shortcut used to score candidate graphs (in `graph_optimise()`,
+  `calc_power_pvals()` and pruning) now pre-computes the local critical values
+  for every intersection once per graph and looks them up in each simulated
+  trial, instead of updating the graph after every rejection. This is faster
+  for small and moderate numbers of hypotheses and gives the same rejections;
+  the previous algorithm is still used for large numbers of hypotheses. There
+  is no user-visible API change. The approach follows
+  `graph_test_shortcut_fast()` in the graphicalMCP package (Xi and Brockmann,
+  2024).
+
 # multigrain 1.0.0
 
 * Initial release.
