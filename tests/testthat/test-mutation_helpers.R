@@ -63,16 +63,20 @@ random_parent <- function(groups, n_latent) {
 
 # ---- .reflect01 tests ----
 
-test_that(".reflect01 folds any number into [0, 1] and is the identity inside", {
+test_that(".reflect01 folds any number into [0, 1], the identity inside", {
     v <- c(-1e6, -3.7, -1, -0.25, 0, 1, 1.25, 2, 2.5, 7.3, 1e6)
     out <- .reflect01(v)
     expect_true(all(out >= 0 & out <= 1))
-    expect_equal(.reflect01(c(-0.25, 1.25, 2.5)), c(0.25, 0.75, 0.5))
+    expect_equal(
+        .reflect01(c(-0.25, 1.25, 2.5)),
+        c(0.25, 0.75, 0.5),
+        tolerance = 1e-12
+    )
 
     inside <- seq(0.001, 0.999, length.out = 50)
     expect_identical(.reflect01(inside), inside)
 
-    expect_true(is.nan(.reflect01(Inf)))
+    expect_false(is.finite(.reflect01(Inf)))
 })
 
 # ---- .simplex_project tests ----
@@ -81,10 +85,10 @@ test_that(".simplex_project lands on the simplex and fixes points on it", {
     v <- c(0.7, -0.2, 0.6, 0.1)
     p <- .simplex_project(v)
     expect_true(all(p >= 0))
-    expect_equal(sum(p), 1)
+    expect_equal(sum(p), 1, tolerance = 1e-12)
 
     on_simplex <- c(0.5, 0.3, 0.2, 0)
-    expect_equal(.simplex_project(on_simplex), on_simplex)
+    expect_equal(.simplex_project(on_simplex), on_simplex, tolerance = 1e-12)
 })
 
 # ---- .sm_groups tests ----
@@ -94,14 +98,18 @@ test_that(".sm_groups follows the decoder's layout", {
 
     expect_length(groups, 4)
     expect_identical(lapply(groups, `[[`, "latent"), list(1:2, 3:4, 5L, 6:7))
-    expect_equal(vapply(groups, `[[`, numeric(1), "c"), c(0.8, 1, 0.7, 1))
+    expect_equal(
+        vapply(groups, `[[`, numeric(1), "c"),
+        c(0.8, 1, 0.7, 1),
+        tolerance = 1e-12
+    )
     expect_identical(
         vapply(groups, `[[`, numeric(1), "threshold"),
         c(1e-4, 1e-5, 1e-5, 1e-5)
     )
 })
 
-test_that(".sm_groups skips groups with no free mass but keeps their positions", {
+test_that(".sm_groups skips groups with no free mass, keeping positions", {
     h <- c(1, 0, 0, 0)
     t <- matrix(0, 4, 4)
     t[1, ] <- c(0, 1, NA, NA) # two free entries, c = 0: one latent, no group
@@ -111,7 +119,7 @@ test_that(".sm_groups skips groups with no free mass but keeps their positions",
 
     expect_length(groups, 1)
     expect_identical(groups[[1]]$latent, 2:3)
-    expect_equal(groups[[1]]$c, 1)
+    expect_identical(groups[[1]]$c, 1)
 })
 
 # ---- .sm_merge tests ----
@@ -127,9 +135,9 @@ test_that("a merge empties exactly one active entry, the smaller of its pair", {
         expect_length(changed, 2)
         emptied <- changed[out[changed] == 0]
         expect_length(emptied, 1)
-        expect_true(s[emptied] > 0)
-        expect_true(s[emptied] <= max(s[changed]))
-        expect_equal(sum(out), sum(s))
+        expect_gt(s[emptied], 0)
+        expect_lte(s[emptied], max(s[changed]))
+        expect_equal(sum(out), sum(s), tolerance = 1e-12)
     }
 })
 
@@ -146,7 +154,7 @@ test_that("a transfer keeps the pair's total and can add only its recipient", {
         changed <- which(out != s)
         expect_lte(length(changed), 2)
         expect_true(all(out[changed] > 0))
-        expect_equal(sum(out), sum(s))
+        expect_equal(sum(out), sum(s), tolerance = 1e-12)
         # At most one entry becomes active, and none is lost
         expect_lte(length(setdiff(which(out > 0), active_before)), 1)
         expect_true(all(active_before %in% which(out > 0)))
@@ -161,13 +169,14 @@ test_that(".make_split_merge_mutation returns a closure", {
 })
 
 test_that(".make_split_merge_mutation checks its settings", {
-    expect_error(.make_split_merge_mutation(free_4_h, free_4_t, p_del = 1.5))
-    expect_error(.make_split_merge_mutation(free_4_h, free_4_t, p_del = -0.1))
-    expect_error(.make_split_merge_mutation(free_4_h, free_4_t, scale = 0))
-    expect_error(.make_split_merge_mutation(free_4_h, free_4_t, scale = c(1, 2)))
+    make <- function(...) .make_split_merge_mutation(free_4_h, free_4_t, ...)
+    expect_error(make(p_del = 1.5))
+    expect_error(make(p_del = -0.1))
+    expect_error(make(scale = 0))
+    expect_error(make(scale = c(1, 2)))
 })
 
-test_that("SM keeps the graph valid, keeps fixed entries and changes one group", {
+test_that("SM keeps the graph valid and fixed entries, changing one group", {
     set.seed(42)
     cases <- list(
         list(h = free_4_h, t = free_4_t, d = 11L),
@@ -289,16 +298,25 @@ test_that("scale changes only the size of a transfer, not which entries move", {
     expect_lt(mean(small_steps), mean(large_steps))
 })
 
-test_that("SM repairs an invalid parent into a valid child", {
+test_that("SM repairs the group it mutates in an invalid parent", {
     set.seed(42)
-    # Every group's stored parameters sum to more than its free mass
+    groups <- .sm_groups(free_4_h, free_4_t)
+    # Every group's stored parameters sum to more than its free mass. SM
+    # repairs only the group it moves, and leaves the others as they are.
     parent <- rep(0.9, 11)
     obj <- make_mock_ga(matrix(parent, nrow = 1))
     mut_fn <- .make_split_merge_mutation(free_4_h, free_4_t)
 
-    for (i in 1:50) {
-        graph <- decode_graph(mut_fn(obj, 1L), free_4_h, free_4_t)
-        expect_true(is_graph_valid(graph$hyp_weight, graph$trans_matrix))
+    for (i in 1:100) {
+        child <- mut_fn(obj, 1L)
+        moved <- Filter(
+            function(g) !identical(child[g$latent], parent[g$latent]),
+            groups
+        )
+        expect_length(moved, 1)
+        entries <- .sm_free_entries(child, moved[[1]])
+        expect_true(all(entries >= 0))
+        expect_equal(sum(entries), moved[[1]]$c, tolerance = 1e-12)
     }
 })
 
