@@ -126,6 +126,16 @@ test_that("ties behind a near-degenerate pair agree", {
             expect_lt(attr(tab, "min_denom"), 1e-6)
         }
     }
+
+    # The pair with nothing outside it, as create_obj_func() leaves it after
+    # zeroing small edges: harmless however small the denominator (it only
+    # divides exact zeros), so the table path is used
+    G <- near_degenerate(1e-9)
+    G[1:2, 3:4] <- 0
+    tab <- graph_shortcut_table(alpha, w, G)
+    expect_gte(attr(tab, "min_denom"), 1e-6)
+    pvals <- cbind(alpha * w[1], alpha * w[2], 0, tab[9, 4] * (1 + u))
+    expect_identical_kernels(shortcut_all_kernels(pvals, alpha, w, G))
 })
 
 # Edge cases -------------------------------------------------------------
