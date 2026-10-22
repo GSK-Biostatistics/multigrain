@@ -83,7 +83,7 @@ test_that("auto agrees with forced kernels either side of table_max_m", {
     }
 })
 
-### EDGE CASES ###
+# Edge cases -------------------------------------------------------------
 
 test_that("p = 0 with level 0 is never rejected and the walk terminates", {
     w <- c(0, 0.5, 0.5)
