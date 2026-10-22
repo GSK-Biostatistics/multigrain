@@ -1,4 +1,0 @@
-Build 1.0.0-fast-shortcut (1.0.0.9000), kernels: sequential/table, iterations 20, graphs 2
-m=19 N= 200000  sequential=314.31ms table=137.22ms sequential=315.63ms table=137.94ms  [0.6 min]
-m=19 N=1000000  sequential=1607.06ms table=323.91ms sequential=1549.63ms table=301.52ms  [2.7 min]
-Done in 2.7 min

@@ -31,7 +31,7 @@ shortcut_all_kernels <- function(pvals, alpha, w, G) {
 
 expect_all_identical <- function(outs) {
     for (nm in names(outs)[-1]) {
-        expect_identical(outs[[nm]], outs[[1]], label = nm)
+        testthat::expect_identical(outs[[nm]], outs[[1]], label = nm)
     }
 }
 
@@ -40,15 +40,18 @@ pvals_high_power <- withr::with_seed(11, {
     stats::pnorm(z, lower.tail = FALSE)
 })
 
-### AGREEMENT ###
+# Agreement --------------------------------------------------------------
 
 test_that("forced kernels agree on random graphs (m = 2..6)", {
     for (m in 2:6) {
         for (seed in 1:4) {
             gr <- make_test_graph(m, seed = 100 * m + seed)
-            expect_all_identical(
-                shortcut_all_kernels(pvals_fixture[1:2000, 1:m], 0.025, gr$w, gr$G)
-            )
+            expect_all_identical(shortcut_all_kernels(
+                pvals_fixture[1:2000, 1:m],
+                0.025,
+                gr$w,
+                gr$G
+            ))
             expect_all_identical(
                 shortcut_all_kernels(pvals_high_power[, 1:m], 0.025, gr$w, gr$G)
             )
@@ -80,7 +83,7 @@ test_that("auto agrees with forced kernels either side of table_max_m", {
     }
 })
 
-### EDGE CASES ###
+# Edge cases -------------------------------------------------------------
 
 test_that("p = 0 with level 0 is never rejected and the walk terminates", {
     w <- c(0, 0.5, 0.5)
@@ -199,7 +202,7 @@ test_that("weights near the objective's zeroing thresholds agree", {
     }
 })
 
-### OPTIONS AND KERNEL CHOICE ###
+# Options and kernel choice ----------------------------------------------
 
 test_that("invalid multigrain.shortcut_kernel values give a clear error", {
     gr <- make_test_graph(3, seed = 1)
@@ -234,7 +237,10 @@ test_that("invalid multigrain.shortcut_table_max_m values give a clear error", {
 test_that("kernel choice follows the options and the size rule", {
     # Defaults: table for small m at large N, sequential beyond the cap
     expect_identical(graph_shortcut_kernel(1e6, 3), "table")
-    expect_identical(graph_shortcut_kernel(.Machine$integer.max, 21), "sequential")
+    expect_identical(
+        graph_shortcut_kernel(.Machine$integer.max, 21),
+        "sequential"
+    )
     expect_identical(graph_shortcut_kernel(1, 10), "sequential")
     expect_identical(graph_shortcut_kernel(1e6, 0), "sequential")
 
@@ -260,7 +266,7 @@ test_that("kernel choice follows the options and the size rule", {
 })
 
 test_that("auto uses the table kernel exactly when 2^m <= 2 * N", {
-    # TABLE_KAPPA = 2, calibrated in dev/review/shortcut_table_report.md
+    # TABLE_KAPPA = 2, see the comment on it in src/graph_shortcut.cpp
     for (m in c(8, 14, 17, 20)) {
         expect_identical(graph_shortcut_kernel(2^(m - 1), m), "table")
         expect_identical(graph_shortcut_kernel(2^(m - 1) - 1, m), "sequential")
@@ -283,7 +289,7 @@ test_that("forcing the table kernel above m = 20 errors before allocating", {
     )
 })
 
-### TABLE BUILDER ###
+# Table builder ----------------------------------------------------------
 
 test_that("graph_shortcut_table() matches calc_local_weights() * alpha", {
     alpha <- 0.025
