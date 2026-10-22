@@ -2,7 +2,9 @@
 
 ## multigrain (development version)
 
-### New functionality and improvements
+### New functionality
+
+### Minor improvements and bug fixes
 
 - The graphical shortcut used to score candidate graphs (in
   [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md),
