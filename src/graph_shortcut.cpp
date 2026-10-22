@@ -108,8 +108,9 @@ constexpr double TIE_REL_TOL = 1e-6;
 // smallest graph-update denominator 1 - g_ik g_ki. In a sweep of 59 million
 // trials (m = 2 to 12, dense, sparse, grid and near-degenerate graphs) the
 // relative gap stayed below 11 eps / d, growing roughly like m eps / d.
-// TIE_REL_TOL covers it only while d is not tiny, so when the smallest
-// non-zero d is below MIN_DENOM the whole call uses the sequential kernel.
+// TIE_REL_TOL covers it only while d is not tiny, so when the smallest d that
+// divides a non-zero entry is below MIN_DENOM the whole call uses the
+// sequential kernel.
 // At d = MIN_DENOM and m = 20 the gap is about 5e-9, well inside TIE_REL_TOL.
 constexpr double MIN_DENOM = 1e-6;
 
@@ -360,13 +361,17 @@ struct SequentialShortcutWorker : public Worker {
 // graph update and degenerate-denominator rule. A set reached by rejecting in
 // increasing index order therefore gets bit-identical critical values.
 //
-// The builder also records the smallest non-zero denominator 1 - g_ik g_ki
-// over all pairs in all three-member sets (see MIN_DENOM). Transition weights
-// only grow as the set shrinks, so this is the smallest denominator the
-// sequential kernel can meet: it updates the graph only while at least three
-// hypotheses remain. An exactly zero denominator comes from a pair that sends
-// all its weight to each other; both kernels zero those rows, so it is left
-// out.
+// The builder also records the smallest denominator 1 - g_ik g_ki over all
+// pairs in all three-member sets {i, k, l} (see MIN_DENOM), counting a pair
+// only when g_il or g_kl is non-zero. Transition weights only grow as the set
+// shrinks, so this bounds every denominator the sequential kernel can divide
+// a non-zero entry by: it updates the graph only while at least three
+// hypotheses remain. A pair with no weight outside itself is harmless however
+// small its denominator: the entries divided are exactly zero in both kernels
+// (each is a sum of products of zeros), so both give zero. This covers pairs
+// that become exactly degenerate after removals, where rounding can leave
+// the denominator at 1 ulp, and optimiser graphs whose small edges were zeroed
+// without renormalising.
 class CritTableBuilder {
 public:
   CritTableBuilder(const int m, double* crit)
@@ -402,15 +407,21 @@ private:
       row[i] = a[i];
     }
 
-    // Three-member set (depth = number removed): check its denominators
+    // Three-member set {i, k, l} (depth = number removed): check the pair
+    // denominators
     if (m - depth == 3) {
-      for (int i = 0; i < m; ++i) {
-        if (!((S >> i) & 1u)) continue;
-        for (int k = i + 1; k < m; ++k) {
-          if (!((S >> k) & 1u)) continue;
-          const double denom = 1.0 - G[i + k * m] * G[k + i * m];
-          if (denom > 0.0 && denom < min_denom_) min_denom_ = denom;
-        }
+      int h[3];
+      for (int i = 0, n = 0; i < m; ++i) {
+        if ((S >> i) & 1u) h[n++] = i;
+      }
+      for (int r = 0; r < 3; ++r) {
+        const int i = h[r], k = h[(r + 1) % 3], l = h[(r + 2) % 3];
+        // Removing k divides (g_il + g_ik g_kl) by the denominator, and
+        // removing i divides (g_kl + g_ki g_il); both are exactly zero when
+        // g_il = g_kl = 0, whatever the denominator
+        if (G[i + l * m] == 0.0 && G[k + l * m] == 0.0) continue;
+        const double denom = 1.0 - G[i + k * m] * G[k + i * m];
+        if (denom < min_denom_) min_denom_ = denom;
       }
     }
 
@@ -747,8 +758,9 @@ std::string graph_shortcut_kernel(const int n_trials, const int m) {
 //' @return NumericMatrix (2^m x m). Row `mask + 1` holds alpha * w_j(S) for
 //'   the set S whose bit j - 1 is H_j; 0 for hypotheses outside S. Row 1
 //'   (the empty set) is all zero. Attribute `min_denom` is the smallest
-//'   non-zero graph-update denominator over three-member sets; when it is
-//'   below MIN_DENOM (1e-6) the kernels use the sequential algorithm.
+//'   graph-update denominator over pairs in three-member sets that send
+//'   weight to the third member; when it is below MIN_DENOM (1e-6) the
+//'   kernels use the sequential algorithm.
 //' @name graph_shortcut_table
 //' @noRd
 // [[Rcpp::export]]
