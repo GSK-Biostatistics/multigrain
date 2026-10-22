@@ -34,6 +34,7 @@ articles:
 - title: Details
   navbar: Details
   contents:
+  - articles/trial_success
   - articles/graph_constraint
 
 reference:
