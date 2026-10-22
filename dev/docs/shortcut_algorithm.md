@@ -149,7 +149,7 @@ By convention, $c_j(S) = 0$ whenever $H_j \notin S$. Note that $c_j(S') \ge c_j(
 
 ## 4. The Sequential Method (`sequential_trial()`)
 
-The sequential method is the direct per-trial implementation of Algorithm 1 in Section 2.2 and serves as the reference implementation against which the lookup-table method is validated. It is implemented in [`sequential_trial()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp#L246-L322), which is called by the single-threaded loop in `graph_shortcut()`, the multithreaded worker `SequentialShortcutWorker`, and the near-tie fallback in `walk_crit_table()`.
+The sequential method is the direct per-trial implementation of Algorithm 1 in Section 2.2 and serves as the reference implementation against which the lookup-table method is validated. It is implemented in [`sequential_trial()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp), which is called by the single-threaded loop in `graph_shortcut()`, the multithreaded worker `SequentialShortcutWorker`, and the near-tie fallback in `walk_crit_table()`.
 
 Before iterating over trials, the caller precomputes the initial critical values `init_a[i] = w[i] * alpha` ($i = 0, \dots, m - 1$ in 0-based C++ indexing) and allocates reusable working vectors (`SequentialScratch`: `cur_a`, `cur_G`, `new_G`, and `cur_p`) so that no dynamic memory allocation occurs inside the trial loop. For each trial row `set`, `sequential_trial()` executes the following steps:
 
@@ -228,7 +228,7 @@ tab[mask + 1, ]               # returns c_1(S), ..., c_m(S)
 
 ### 5.3 Constructing the Table via Depth-First Traversal (`CritTableBuilder`)
 
-Rather than computing each subset $S$ from scratch, [`CritTableBuilder`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp#L375-L470) constructs the $2^m$ rows of `crit` via a depth-first traversal of the subset lattice starting from the full set $S = \{1, \dots, m\}$ (`depth = 0`).
+Rather than computing each subset $S$ from scratch, [`CritTableBuilder`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp) constructs the $2^m$ rows of `crit` via a depth-first traversal of the subset lattice starting from the full set $S = \{1, \dots, m\}$ (`depth = 0`).
 
 To ensure that every non-empty subset $S$ is visited once along a unique path, hypotheses are removed in **strictly increasing index order**. If the most recently removed hypothesis leading to the current subset $S$ had 0-based index `last` (with `last = -1` at the root), `dfs(S, depth, last)` only branches by removing indices $k \in \{\text{last} + 1, \dots, m - 1\}$. Consequently, every proper subset $S$ is generated from the unique parent subset $S \cup \{k_{\max}\}$, where $k_{\max}$ is the largest index absent from $S$.
 
@@ -242,7 +242,7 @@ Because the recursion has maximum depth $m$, `CritTableBuilder` allocates only $
 
 ### 5.4 Evaluating a Trial by Table Lookup (`walk_crit_table()`)
 
-Once `crit` has been populated, [`walk_crit_table()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp#L492-L535) evaluates each trial `set` without performing any weight or matrix arithmetic:
+Once `crit` has been populated, [`walk_crit_table()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp) evaluates each trial `set` without performing any weight or matrix arithmetic:
 
 1. Extract the trial's $p$-values into `cur_p[0..m-1]` and initialise the unrejected set bitmask to `S = full` ($2^m - 1$).
 2. Point `row` to `crit + S * m`, which holds $c_1(S), \dots, c_m(S)$.
@@ -276,7 +276,7 @@ When hypotheses only qualify cascade-fashion one after another (as in Section 3 
 
 Constructing the lookup table costs $O(2^m m^2)$ once per call, whereas the sequential method costs $O(N m^2 (1 + \bar{r}))$ across $N$ trials. Precomputing the table is therefore advantageous when $2^m$ is not too large relative to $N$.
 
-Under the default `"auto"` setting, [`use_table_kernel()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp#L168-L184) selects the lookup-table method when both of the following conditions hold:
+Under the default `"auto"` setting, [`use_table_kernel()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp) selects the lookup-table method when both of the following conditions hold:
 
 1. $1 \le m \le m_{\max}$, where $m_{\max} \le 20$ defaults to `TABLE_HARD_MAX_M = 20`.
 2. $2^m \le \kappa N$, where $\kappa =$ `TABLE_KAPPA` $= 2.0$.
@@ -298,7 +298,7 @@ Because trials are independent, `graph_shortcut_parallel()` partitions the trial
 
 * **Shared read-only data:** Raw pointers to `pvals`, `G`, `init_a`, and (when using the lookup-table method) `crit` are obtained on the main R thread before entering `parallelFor`. When the lookup-table method is used, `build_crit_table()` builds `crit` once on the main thread and all worker threads read from it concurrently.
 * **Disjoint output writes and thread-local scratch space:** Worker threads never call the R C API. Each trial `set` writes only to entries `set + i * N` ($i = 0, \dots, m - 1$) of the pre-allocated output matrix `ans`, avoiding write contention. Scratch buffers (`SequentialScratch` or `cur_p`) are allocated locally inside `Worker::operator()(begin, end)`, once per dispatched chunk of trials.
-* **Chunk size (`grain_size`) tuning:** When `grain_size = -1` (the default), [`choose_grain_size()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp#L189-L219) chooses the minimum chunk size so that each chunk performs roughly $10^5$ inner-loop operations (estimating $m^3$ operations per trial for the sequential method and $m^2$ operations per trial for the lookup-table method), subject to creating at least $4 \times \text{num\_threads}$ chunks for load balancing and clamping the chunk size to $[1, 10000]$.
+* **Chunk size (`grain_size`) tuning:** When `grain_size = -1` (the default), [`choose_grain_size()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp) chooses the minimum chunk size so that each chunk performs roughly $10^5$ inner-loop operations (estimating $m^3$ operations per trial for the sequential method and $m^2$ operations per trial for the lookup-table method), subject to creating at least $4 \times \text{num\_threads}$ chunks for load balancing and clamping the chunk size to $[1, 10000]$.
 
 ---
 
@@ -354,7 +354,7 @@ The way `CritTableBuilder` computes `min_denom` relies on two structural propert
 1. **Checking three-hypothesis subsets $\{i, k, l\}$ suffices:** Because transition weights $g_{ik}(S)$ only grow as $S$ shrinks, $g_{ik}(S) g_{ki}(S)$ is largest—and the denominator $1 - g_{ik}(S) g_{ki}(S)$ is smallest—at the smallest subsets where a graph update actually occurs. Since `sequential_trial()` skips the graph update once only two unrejected hypotheses remain (`sumrej < m - 1`), the smallest subsets at which a denominator $1 - g_{ik} g_{ki}$ is ever divided by are the three-member subsets $S = \{i, k, l\}$.
 2. **Only pairs $(i, k)$ with positive outgoing weight to the third hypothesis $l$ can cause a discrepancy:** At a three-member subset $\{i, k, l\}$, removing $k$ divides the numerator $g_{il} + g_{ik} g_{kl}$ by $1 - g_{ik} g_{ki}$, whereas removing $i$ divides $g_{kl} + g_{ki} g_{il}$ by $1 - g_{ik} g_{ki}$. Because every transition entry is a sum of non-negative products, any entry that is zero in exact arithmetic evaluates to exact floating-point `0.0` under every removal order. Therefore, if both $g_{il} = 0$ and $g_{kl} = 0$ (meaning the pair $\{i, k\}$ sends no weight to $l$), both numerators are exact `0.0`, and dividing `0.0` by any non-zero denominator—or setting the row to `0.0` when the denominator rounds to `0.0`—yields exact `0.0` in both methods. Furthermore, since transition entries are non-decreasing as $S$ shrinks, $g_{il}(S) = g_{kl}(S) = 0$ at $\{i, k, l\}$ implies $g_{il}(S') = g_{kl}(S') = 0$ at every larger superset $S' \supset \{i, k, l\}$.
 
-Accordingly, at each three-member subset $\{i, k, l\}$, [`CritTableBuilder::dfs()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp#L412-L426) includes the denominator $1 - g_{ik} g_{ki}$ in `min_denom` if and only if $g_{il} \ne 0$ or $g_{kl} \ne 0$. Filtering out pairs with no outgoing weight to $l$ is important in practice: during numerical optimisation, `create_obj_func()` truncates very small edge weights to zero, frequently leaving two hypotheses that pass $100\%$ of their weight to each other ($g_{ik} = g_{ki} = 1$) and $0\%$ elsewhere. Because $g_{il} = g_{kl} = 0$ for every third hypothesis $l$, such graphs are completely unaffected by rounding in $1 - g_{ik} g_{ki}$ and remain on the fast lookup-table path.
+Accordingly, at each three-member subset $\{i, k, l\}$, [`CritTableBuilder::dfs()`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/graph_shortcut.cpp) includes the denominator $1 - g_{ik} g_{ki}$ in `min_denom` if and only if $g_{il} \ne 0$ or $g_{kl} \ne 0$. Filtering out pairs with no outgoing weight to $l$ is important in practice: during numerical optimisation, `create_obj_func()` truncates very small edge weights to zero, frequently leaving two hypotheses that pass $100\%$ of their weight to each other ($g_{ik} = g_{ki} = 1$) and $0\%$ elsewhere. Because $g_{il} = g_{kl} = 0$ for every third hypothesis $l$, such graphs are completely unaffected by rounding in $1 - g_{ik} g_{ki}$ and remain on the fast lookup-table path.
 
 For diagnostic and testing purposes, `multigrain:::graph_shortcut_table(alpha, w, G)` attaches `min_denom` as the `"min_denom"` attribute of the returned matrix.
 
