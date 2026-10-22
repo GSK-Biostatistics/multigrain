@@ -1,6 +1,8 @@
 # multigrain (development version)
 
-## New functionality and improvements
+## New functionality
+
+## Minor improvements and bug fixes
 
 * The graphical shortcut used to score candidate graphs (in `graph_optimise()`,
   `calc_power_pvals()` and pruning) now pre-computes the local critical values
