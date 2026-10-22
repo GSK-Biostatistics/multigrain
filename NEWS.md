@@ -1,7 +1,9 @@
 # multigrain (development version)
 
+## New functionality and improvements
+
 * The graphical shortcut used to score candidate graphs (in `graph_optimise()`,
-  `calc_power_pvals()` and pruning) now precomputes the local critical values
+  `calc_power_pvals()` and pruning) now pre-computes the local critical values
   for every intersection once per graph and looks them up in each simulated
   trial, instead of updating the graph after every rejection. This is faster
   for small and moderate numbers of hypotheses and gives the same rejections;
