@@ -289,7 +289,7 @@ test_that("forcing the table kernel above m = 20 errors before allocating", {
     )
 })
 
-### TABLE BUILDER ###
+# Table builder ----------------------------------------------------------
 
 test_that("graph_shortcut_table() matches calc_local_weights() * alpha", {
     alpha <- 0.025
