@@ -1,44 +1,9 @@
 # Table kernel for graph_shortcut() / graph_shortcut_parallel(). The table
 # kernel (precomputed critical values for every intersection) must give
-# exactly the same rejections as the sequential kernel, which is the oracle.
-
-shortcut_kernels <- c("sequential", "table", "auto")
-
-# Every kernel through every backend: serial, num_threads = 1 and 2.
-shortcut_all_kernels <- function(pvals, alpha, w, G) {
-    out <- list()
-    for (k in shortcut_kernels) {
-        withr::with_options(list(multigrain.shortcut_kernel = k), {
-            out[[paste0(k, "_serial")]] <- graph_shortcut(pvals, alpha, w, G)
-            out[[paste0(k, "_t1")]] <- graph_shortcut_parallel(
-                pvals,
-                alpha,
-                w,
-                G,
-                num_threads = 1
-            )
-            out[[paste0(k, "_t2")]] <- graph_shortcut_parallel(
-                pvals,
-                alpha,
-                w,
-                G,
-                num_threads = 2
-            )
-        })
-    }
-    out
-}
-
-expect_all_identical <- function(outs) {
-    for (nm in names(outs)[-1]) {
-        testthat::expect_identical(outs[[nm]], outs[[1]], label = nm)
-    }
-}
-
-pvals_high_power <- withr::with_seed(11, {
-    z <- matrix(stats::rnorm(2000 * 6, mean = 3), ncol = 6)
-    stats::pnorm(z, lower.tail = FALSE)
-})
+# exactly the same rejections as the sequential kernel, which is the oracle,
+# including when a p-value ties with a critical value (see "Ties").
+# Helpers (shortcut_all_kernels(), expect_identical_kernels()) are in
+# helper-graph_shortcut.R; p-value fixtures are in helper-pvals.R.
 
 # Agreement --------------------------------------------------------------
 
@@ -46,13 +11,13 @@ test_that("forced kernels agree on random graphs (m = 2..6)", {
     for (m in 2:6) {
         for (seed in 1:4) {
             gr <- make_test_graph(m, seed = 100 * m + seed)
-            expect_all_identical(shortcut_all_kernels(
+            expect_identical_kernels(shortcut_all_kernels(
                 pvals_fixture[1:2000, 1:m],
                 0.025,
                 gr$w,
                 gr$G
             ))
-            expect_all_identical(
+            expect_identical_kernels(
                 shortcut_all_kernels(pvals_high_power[, 1:m], 0.025, gr$w, gr$G)
             )
         }
@@ -66,7 +31,7 @@ test_that("forced kernels agree for m = 1", {
         1,
         matrix(0, 1, 1)
     )
-    expect_all_identical(outs)
+    expect_identical_kernels(outs)
     expect_identical(
         as.vector(outs[[1]]),
         pvals_fixture[1:2000, 1] < 0.025
@@ -77,9 +42,89 @@ test_that("auto agrees with forced kernels either side of table_max_m", {
     withr::local_options(list(multigrain.shortcut_table_max_m = 3))
     for (m in 3:4) {
         gr <- make_test_graph(m, seed = m)
-        expect_all_identical(
+        expect_identical_kernels(
             shortcut_all_kernels(pvals_high_power[, 1:m], 0.025, gr$w, gr$G)
         )
+    }
+})
+
+# Ties -------------------------------------------------------------------
+
+# The table and the sequential kernel reach a set's critical values along
+# different removal orders, so they can differ in the last bits. A p-value
+# within rounding of a critical value must still give the sequential
+# kernel's decision, whatever the kernel and number of rows.
+
+test_that("a tie at a set reached in a different order matches sequential", {
+    alpha <- 0.025
+    w <- c(0.1, 0.4, 0.5)
+    G <- matrix(0.5, 3, 3)
+    diag(G) <- 0
+    p <- c(0.005, 0, 0.025)
+
+    # Guard: the example must still produce a tie, so the test stays meaningful
+    expect_false(identical(graph_shortcut_table(alpha, w, G)[5, 3], 0.025))
+    expect_identical(graph_shortcut_kernel(4, 3), "table")
+    expect_identical(graph_shortcut_kernel(1, 3), "sequential")
+
+    for (n in c(1, 4)) {
+        pvals <- matrix(p, nrow = n, ncol = 3, byrow = TRUE)
+        outs <- shortcut_all_kernels(pvals, alpha, w, G)
+        expect_identical_kernels(outs)
+        expect_identical(
+            as_int_mat(outs[[1]]),
+            matrix(c(1L, 1L, 0L), nrow = n, ncol = 3, byrow = TRUE)
+        )
+    }
+})
+
+test_that("rounded p-values on round-number graphs agree", {
+    for (m in 3:6) {
+        pvals <- round(pvals_fixture[1:2000, 1:m], 3)
+        for (seed in 1:10) {
+            gr <- make_grid_graph(m, seed = 1000 * m + seed)
+            expect_identical_kernels(
+                shortcut_all_kernels(pvals, 0.025, gr$w, gr$G)
+            )
+        }
+    }
+})
+
+test_that("ties behind a near-degenerate pair agree", {
+    # H1 and H2 pass all but delta of their weight to each other, so the
+    # graph update divides by about 2 * delta and amplifies rounding.
+    near_degenerate <- function(delta) {
+        rbind(
+            c(0, 1 - delta, 0.3 * delta, 0.7 * delta),
+            c(1 - delta, 0, 0.6 * delta, 0.4 * delta),
+            c(0.2, 0.5, 0, 0.3),
+            c(0.6, 0.1, 0.3, 0)
+        )
+    }
+    alpha <- 0.025
+    w <- c(0.1, 0.4, 0.3, 0.2)
+    u <- seq(-1e-9, 1e-9, by = 1e-12)
+
+    # delta = 1e-5 (the scale of the objective's zeroing threshold) uses the
+    # table with the near-tie fallback; delta = 1e-9 is below MIN_DENOM, so
+    # the whole call uses the sequential kernel.
+    for (delta in c(1e-5, 1e-9)) {
+        G <- near_degenerate(delta)
+        tab <- graph_shortcut_table(alpha, w, G)
+
+        # The sequential kernel rejects H3 (p = 0), then H1 and H2 (p at
+        # their full-set levels), then compares p4 with its level at {H4};
+        # the table builder reaches {H4} by removing H1, H2, H3. p4 sits
+        # within a relative 1e-9 of the table's value.
+        c4 <- tab[9, 4]
+        pvals <- cbind(alpha * w[1], alpha * w[2], 0, c4 * (1 + u))
+        expect_identical_kernels(shortcut_all_kernels(pvals, alpha, w, G))
+
+        if (delta == 1e-5) {
+            expect_gte(attr(tab, "min_denom"), 1e-6)
+        } else {
+            expect_lt(attr(tab, "min_denom"), 1e-6)
+        }
     }
 })
 
@@ -92,7 +137,7 @@ test_that("p = 0 with level 0 is never rejected and the walk terminates", {
     pvals[, 1] <- 0
 
     outs <- shortcut_all_kernels(pvals, 0.025, w, G)
-    expect_all_identical(outs)
+    expect_identical_kernels(outs)
     expect_false(any(outs[[1]][, 1]))
     expect_true(any(outs[[1]][, 2]))
 })
@@ -108,7 +153,7 @@ test_that("p equal to alpha * w at the full set is not rejected", {
     )
 
     outs <- shortcut_all_kernels(pvals, alpha, w, G)
-    expect_all_identical(outs)
+    expect_identical_kernels(outs)
     expect_identical(
         as_int_mat(outs[[1]]),
         rbind(c(0L, 0L, 0L), c(1L, 1L, 0L), c(0L, 0L, 0L))
@@ -117,7 +162,7 @@ test_that("p equal to alpha * w at the full set is not rejected", {
 
 test_that("degenerate denominators (g_ij = g_ji = 1) agree", {
     G2 <- matrix(c(0, 1, 1, 0), 2, 2)
-    expect_all_identical(
+    expect_identical_kernels(
         shortcut_all_kernels(pvals_high_power[, 1:2], 0.025, c(0.5, 0.5), G2)
     )
 
@@ -128,10 +173,10 @@ test_that("degenerate denominators (g_ij = g_ji = 1) agree", {
         c(0.5, 0.5, 0, 0)
     )
     w4 <- c(0.25, 0.25, 0.25, 0.25)
-    expect_all_identical(
+    expect_identical_kernels(
         shortcut_all_kernels(pvals_high_power[, 1:4], 0.025, w4, G4)
     )
-    expect_all_identical(
+    expect_identical_kernels(
         shortcut_all_kernels(pvals_fixture[1:2000, 1:4], 0.025, w4, G4)
     )
 })
@@ -148,7 +193,7 @@ test_that("zero weights and isolated nodes are never rejected", {
     pvals[, 4] <- 1e-12
 
     outs <- shortcut_all_kernels(pvals, 0.025, w, G)
-    expect_all_identical(outs)
+    expect_identical_kernels(outs)
     expect_false(any(outs[[1]][, 4]))
     expect_true(any(outs[[1]][, 3]))
 })
@@ -157,7 +202,7 @@ test_that("rows of G summing to less than 1 agree", {
     for (m in 3:6) {
         gr <- make_test_graph(m, seed = 200 + m)
         G <- gr$G * 0.6
-        expect_all_identical(
+        expect_identical_kernels(
             shortcut_all_kernels(pvals_high_power[, 1:m], 0.025, gr$w, G)
         )
     }
@@ -197,7 +242,7 @@ test_that("weights near the objective's zeroing thresholds agree", {
                     )
                 }
             }
-            expect_all_identical(vals)
+            expect_identical_kernels(vals)
         }
     }
 })
