@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   articles/get-started: get-started.html
   articles/graph_constraint: graph_constraint.html
-last_built: 2026-10-20T15:45Z
+last_built: 2026-10-22T10:07Z
 urls:
   reference: https://gsk-biostatistics.github.io/multigrain/reference
   article: https://gsk-biostatistics.github.io/multigrain/articles
