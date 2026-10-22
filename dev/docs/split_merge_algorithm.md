@@ -17,13 +17,12 @@
 
 When designing a graphical multiple-testing procedure (Bretz et al., 2009), `graph_optimise()` searches for an initial hypothesis weight vector $\mathbf{w}$ and a transition matrix $\mathbf{G}$ that maximise a user-defined trial-success criterion across simulated clinical trials (Spiers et al., 2026).
 
-Because the simulated objective function is a step function of the rejection thresholds—and can have multiple local optima—`graph_optimise()` begins with a global search using a genetic algorithm (`GA::ga()`) before polishing the best candidate graph with local derivative-free optimisation (`nloptr::nloptr()` using COBYLA) and pruning redundant weights and edges (`prune_graph()`).
+Because the simulated objective function is a step function of the rejection thresholds—and can have multiple local optima—`graph_optimise()` begins with a global evolutionary search before polishing the best candidate graph with local derivative-free optimisation (`nloptr::nloptr()` using COBYLA) and pruning redundant weights and edges (`prune_graph()`).
 
-Inside the genetic algorithm, `multigrain` maintains a population of candidate graphs and evolves them across generations:
+Although the global search is executed via `GA::ga()`, it is an **evolution strategy** rather than a traditional genetic algorithm:
 
-* Crossover between different graphs is disabled (`pcrossover = 0`), and every member of the population is mutated in every generation (`pmutation = 1`).
-* Elitism preserves the best candidate graphs found so far, and periodic Nelder–Mead local search (`optim = TRUE`, `poptim = 0.2`) refines promising candidates.
-* Exploration of the space of valid graphs is driven by the custom **split–merge mutation operator** created by `.make_split_merge_mutation()`:
+* **No crossover (`pcrossover = 0`, `pmutation = 1`):** Candidate graphs are never recombined via crossover; instead, every non-elite member of the population is mutated in every generation. `GA::ga()` is used as an execution wrapper that provides population management, rank-based selection, elitism, periodic Nelder–Mead local search (`optim = TRUE`, `poptim = 0.2`), and stopping criteria (`maxiter`, `run`).
+* **From Fast Evolution Strategies (FES) to Split–Merge:** Earlier versions of `multigrain` (Spiers et al., 2026) followed the Fast Evolution Strategy framework of Yao et al. (1999), perturbing individual coordinates with independent Cauchy draws. In current `multigrain`, exploration is driven by the custom **split–merge mutation operator** created by `.make_split_merge_mutation()`:
 
 ```r
 mutation_fn <- multigrain:::.make_split_merge_mutation(
@@ -35,7 +34,7 @@ mutation_fn <- multigrain:::.make_split_merge_mutation(
 # Returns a closure function(object, parent) passed to GA::ga(mutation = ...)
 ```
 
-Think of the mutation operator as the genetic-algorithm analogue of a proposal distribution in Metropolis–Hastings Markov chain Monte Carlo (MCMC): given a parent graph in the current population, it proposes a modified child graph to be evaluated on the simulated $p$-value matrix via `graph_shortcut()`.
+Think of the mutation operator as the evolutionary analogue of a proposal distribution in Metropolis–Hastings Markov chain Monte Carlo (MCMC): given a parent graph in the current population, it proposes a modified child graph to be evaluated on the simulated $p$-value matrix via `graph_shortcut()`.
 
 At a high level, a graphical procedure consists of up to $m + 1$ independent parameter groups—the vector of initial hypothesis weights $\mathbf{w}$ and the $m$ rows of the transition matrix $\mathbf{G}$—each of which sums to $1$. On each call, the split–merge operator selects one group and applies one of two moves:
 
@@ -89,7 +88,7 @@ $$\mathbf{s} = (s_1, \dots, s_k) = \left(\frac{p_1}{c}, \dots, \frac{p_k}{c}\rig
 
 ### 2.3 Why Mutating Simplex-Constrained Parameters Requires Care
 
-Because `GA::ga()` passes the flat parameter vector $\mathbf{x}$ (containing $k - 1$ stored numbers per group) to the mutation function, it is tempting to mutate $\mathbf{x}$ directly. Earlier versions of `multigrain` used an independent coordinate-wise Cauchy perturbation on the stored entries of $\mathbf{x}$ (archived in [`dev/archived_code/cauchy_mutation.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/dev/archived_code/cauchy_mutation.R)). However, mutating parameters subject to sum-to-one constraints introduces four subtle pitfalls that the split–merge algorithm is designed to avoid:
+Because `GA::ga()` passes the flat parameter vector $\mathbf{x}$ (containing $k - 1$ stored numbers per group) to the mutation function, it is tempting to mutate $\mathbf{x}$ directly. The original Fast Evolution Strategy implementation in `multigrain` applied independent coordinate-wise Cauchy perturbations to the stored entries of $\mathbf{x}$ (archived in [`dev/archived_code/cauchy_mutation.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/dev/archived_code/cauchy_mutation.R)). However, mutating parameters subject to sum-to-one constraints introduces four subtle pitfalls that the split–merge algorithm is designed to avoid:
 
 1. **Violating the sum-to-one constraint (invalid child graphs):** If stored parameters $p_1, \dots, p_{k-1}$ in $[0, 1]$ are perturbed independently, their sum $\sum_{j=1}^{k-1} p_j$ frequently exceeds $c$. When that happens, the derived $k$-th entry $p_k = c - \sum_{j=1}^{k-1} p_j$ becomes negative, producing an invalid graph that `create_obj_func()` rejects with a penalty without ever running `graph_shortcut()`.
 2. **Positional bias toward the derived $k$-th entry:** Because only $k - 1$ entries are stored explicitly and the $k$-th entry absorbs whatever mass is left over, any operation applied directly to the stored coordinates treats the $k$-th hypothesis differently from the first $k - 1$ hypotheses. For example, setting a stored parameter $p_j$ to zero automatically transfers all of its mass into the derived entry $p_k$. Over many generations, this causes weight to accumulate on whichever hypothesis happens to be listed last in the group, making the optimisation result sensitive to how the user numbered the hypotheses.
@@ -98,14 +97,14 @@ Because `GA::ga()` passes the flat parameter vector $\mathbf{x}$ (containing $k 
 
 The split–merge operator resolves all four issues by:
 
-* **Decoding to simplex shares $\mathbf{s}$ before mutating** (and choosing entries uniformly across all $k$ positions, including the derived $k$-th entry), which eliminates positional bias and guarantees that every child graph satisfies the sum-to-one constraints.
+* **Decoding to simplex shares $\mathbf{s}$ before mutating** (and choosing entries uniformly across all $k$ positions, including the derived $k$-th entry), which eliminates positional bias and guarantees that every mutated group satisfies the sum-to-one constraint.
 * **Separating edge removal from weight tuning**, using a dedicated **merge** move to zero out entries and a **transfer** move with boundary reflection (rather than clipping) so that no mutation ever returns a copy of its parent.
 
 ---
 
 ## 3. How the Split–Merge Algorithm Works
 
-The split–merge operator adapts two classic ideas from MCMC on simplexes to evolutionary graph optimisation: dimension-changing **split and merge moves** on simplex weights (Richardson and Green, 1997) and **pairwise mass-redistribution steps** that adjust two simplex entries while holding the remaining entries fixed (Smith, 2014).
+The split–merge operator adapts the idea of dimension-changing **split and merge moves** on simplex weights (Richardson and Green, 1997) to evolutionary graph search, combining a merge move that combines two positive weights into one with a pairwise transfer move that re-splits the combined weight of two chosen entries while holding the remaining entries in the group fixed.
 
 ### 3.1 Active vs. Inactive Entries
 
@@ -136,7 +135,7 @@ Within the selected group (which has at least two active entries):
 
 Because $s_{\text{large}} + s_{\text{small}}$ is unchanged and all other entries in $\mathbf{s}$ are untouched, the shares still sum to $1$, and the number of active entries in the group decreases by $1$.
 
-**Why fold the smaller entry into the larger?** If a mutation suddenly deleted a large weight (for example, $w_1 = 0.8$), the resulting child graph would behave very differently from its parent and would almost always have lower power, causing the genetic algorithm to reject it. By always absorbing the *smaller* of the two randomly chosen active entries into the larger, the merge move preferentially prunes small or moderate weights, producing a gentler structural step that selection is much more likely to retain.
+**Why fold the smaller entry into the larger?** If a mutation suddenly deleted a large weight (for example, $w_1 = 0.8$), the resulting child graph would behave very differently from its parent and would almost always have lower power, causing selection to discard it. By always absorbing the *smaller* of the two randomly chosen active entries into the larger, the merge move preferentially prunes small or moderate weights, producing a gentler structural step that selection is much more likely to retain.
 
 ### 3.4 The Transfer Move (`.sm_transfer()`)
 
@@ -286,21 +285,25 @@ The implementation in [`R/mutation_helpers.R`](https://github.com/GSK-Biostatist
 
 Two defensive numerical details in `R/mutation_helpers.R` are worth noting when reading or maintaining the code:
 
-### 5.1 Repairing Out-of-Bounds Parents (`.simplex_project()`)
+### 5.1 Repairing Out-of-Bounds Parents (`.simplex_project()`) and What Survives
 
-Every child produced by `.sm_merge()` or `.sm_transfer()` lies on the simplex. However, `GA::ga()` is configured with `optim = TRUE`, which periodically runs `stats::optim(..., method = "Nelder-Mead")` on individuals in the population. Because Nelder–Mead operates in the unconstrained box $[0, 1]^d$, it can leave a group's stored parameters summing to slightly more than $c$, so the derived $k$-th entry in `.sm_free_entries(x, g)` is negative when that individual is later selected as a parent.
+Once a candidate graph is valid (all groups lie on their simplexes), every merge or transfer move keeps the mutated group on the simplex. How, then, can `.sm_to_shares(x, g)` ever encounter a group with a negative derived entry (`any(v < 0)`)?
 
-Whenever `.sm_to_shares(x, g)` detects a negative entry (`any(v < 0)`), it repairs the group before mutating by projecting $\mathbf{v}$ onto the unit simplex via `.simplex_project(v)`:
+* **Where invalid parents come from:** In Generation 0, `.graph_optimise_ga()` seeds the initial population with valid starting graphs (`suggestions = x0`, such as the equal-weight and fixed-sequence graphs), and fills the remaining population slots using `.cauchy_population()` (`esch_population_rcpp()` in [`src/esch.cpp`](https://github.com/GSK-Biostatistics/multigrain/blob/main/src/esch.cpp)). Because `.cauchy_population()` draws each stored parameter independently on $[0, 1]$, any group with $k \ge 3$ free entries (at least two stored parameters) will frequently have stored parameters that sum to more than $c$, making its derived $k$-th entry negative. (By contrast, Nelder–Mead local search via `optim = TRUE` does not introduce invalid individuals into a valid population, because `create_obj_func()` returns a negative penalty `sum(v[v < 0]) < 0` whenever any weight or transition entry is negative, causing Nelder–Mead to reject out-of-simplex steps.)
+* **How `.simplex_project()` repairs a group:** Whenever `.sm_to_shares(x, g)` detects `any(v < 0)`, it projects $\mathbf{v}$ onto the unit simplex using the standard $O(k \log k)$ Euclidean projection algorithm (Duchi et al., 2008):
+  ```r
+  .simplex_project <- function(v) {
+    u <- sort(v, decreasing = TRUE)
+    rho <- max(which(u - (cumsum(u) - 1) / seq_along(u) > 0))
+    pmax(v - (sum(u[seq_len(rho)]) - 1) / rho, 0)
+  }
+  ```
+  Geometrically, `.simplex_project(v)` shifts all entries of $\mathbf{v}$ by a single scalar $\theta = (\sum_{j=1}^\rho u_j - 1) / \rho$ and clamps negative entries to zero (`pmax(v - theta, 0)`), where $\rho$ is chosen so the remaining positive entries sum to $1$. If $\mathbf{v}$ is already on the unit simplex, it is returned unchanged.
+* **What survives into the child vector:** At the start of each mutation call, `.make_split_merge_mutation()` computes `shares <- lapply(groups, function(g) .sm_to_shares(x, g))` so that it can inspect the active entries of every group when deciding which groups are eligible for a merge. However, `.sm_from_shares(x, groups[[k]], ...)` only writes the updated shares back into `x[groups[[k]]$latent]` for the **single mutated group `k`**, and `GA::ga()` replaces the parent in `@population` with that returned vector `x`:
+  - For the chosen group `k`, the **projected and mutated** parameters are written into `x` and survive in the population.
+  - For all other groups (`j != k`), the **original unprojected** parameters in `x[groups[[j]]$latent]` remain untouched.
 
-```r
-.simplex_project <- function(v) {
-  u <- sort(v, decreasing = TRUE)
-  rho <- max(which(u - (cumsum(u) - 1) / seq_along(u) > 0))
-  pmax(v - (sum(u[seq_len(rho)]) - 1) / rho, 0)
-}
-```
-
-This is the standard $O(k \log k)$ Euclidean simplex projection algorithm (Duchi et al., 2008): geometrically, it shifts all entries of $\mathbf{v}$ down (or up) by a single constant $\theta = (\sum_{j=1}^\rho u_j - 1) / \rho$ and clamps negative results to zero (`pmax(v - theta, 0)`), where $\rho$ is chosen so that the remaining positive entries sum to $1$. If $\mathbf{v}$ is already on the unit simplex, `.simplex_project(v)` returns $\mathbf{v}$ unchanged.
+  Consequently, any descendant of the valid seed graphs (`x0`) is valid in every group from Generation 0 onward and never triggers `.simplex_project()`. Meanwhile, an invalid random individual from `.cauchy_population()` that has multiple out-of-bounds groups has its groups repaired one group per mutation—each repair reducing the magnitude of its negative penalty in `create_obj_func()` until either selection replaces the lineage with a valid one or all of its groups have been projected onto the simplex.
 
 ### 5.2 Preventing Negative Derived Entries from Floating-Point Rounding (`.sm_from_shares()`)
 
@@ -373,8 +376,8 @@ All invariants of the split–merge operator are verified in [`tests/testthat/te
 ### 6.3 References
 
 * Bretz F, Maurer W, Brannath W, Posch M (2009). A graphical approach to sequentially rejective multiple test procedures. *Statistics in Medicine* 28(4):586–604. (Introduces the graphical multiple-testing framework parameterised by $\mathbf{w}$ and $\mathbf{G}$.)
-* Spiers A D V, Grayling M J, Wheeler G M, Mander A P (2026). Gain-function optimisation of graphical multiple testing procedures for confirmatory clinical trials. *arXiv:2609.19994v1*. (Describes the `multigrain` optimisation pipeline combining a genetic algorithm, local COBYLA refinement, and post-optimisation pruning.)
+* Spiers A D V, Grayling M J, Wheeler G M, Mander A P (2026). Gain-function optimisation of graphical multiple testing procedures for confirmatory clinical trials. *arXiv:2609.19994v1*. (Describes the `multigrain` optimisation pipeline combining global evolutionary search, local COBYLA refinement, and post-optimisation pruning.)
+* Yao X, Liu Y, Lin G (1999). Evolutionary programming made faster. *IEEE Transactions on Evolutionary Computation* 3(2):82–102. (Introduces the Cauchy-mutation Fast Evolution Strategy framework used in earlier versions of `multigrain`.)
 * Richardson S, Green P J (1997). On Bayesian analysis of mixtures with an unknown number of components. *Journal of the Royal Statistical Society: Series B* 59(4):731–792. (Introduces split and merge moves on simplex weights that change the number of active components while conserving their sum.)
-* Smith A (2014). A Gibbs sampler on the $n$-simplex. *Annals of Applied Probability* 24(1):114–130. (Analyses pairwise moves on the unit simplex that redistribute mass between two randomly chosen coordinates while holding the remaining coordinates fixed.)
 * Carvalho Pinto E, Doerr C (2018). Towards a more practice-aware runtime analysis of evolutionary algorithms. *arXiv:1812.00493*. (Demonstrates the efficiency gain from mutation operators that prevent offspring identical to their parent.)
 * Duchi J, Shalev-Shwartz S, Singer Y, Chandra T (2008). Efficient projections onto the $\ell_1$-ball for learning in high dimensions. *Proceedings of the 25th International Conference on Machine Learning (ICML)*, 272–279. (Gives the $O(k \log k)$ sorting algorithm used by `.simplex_project()` to project an out-of-bounds vector onto the unit simplex.)
