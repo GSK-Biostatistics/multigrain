@@ -40,7 +40,7 @@ pvals_high_power <- withr::with_seed(11, {
     stats::pnorm(z, lower.tail = FALSE)
 })
 
-### AGREEMENT ###
+# Agreement --------------------------------------------------------------
 
 test_that("forced kernels agree on random graphs (m = 2..6)", {
     for (m in 2:6) {
