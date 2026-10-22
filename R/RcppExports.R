@@ -113,7 +113,9 @@ graph_shortcut_kernel <- function(n_trials, m) {
 #' @param G NumericMatrix (m x m) transition matrix.
 #' @return NumericMatrix (2^m x m). Row `mask + 1` holds alpha * w_j(S) for
 #'   the set S whose bit j - 1 is H_j; 0 for hypotheses outside S. Row 1
-#'   (the empty set) is all zero.
+#'   (the empty set) is all zero. Attribute `min_denom` is the smallest
+#'   non-zero graph-update denominator over three-member sets; when it is
+#'   below MIN_DENOM (1e-6) the kernels use the sequential algorithm.
 #' @name graph_shortcut_table
 #' @noRd
 graph_shortcut_table <- function(alpha, w, G) {
