@@ -39,8 +39,8 @@ Think of the mutation operator as the genetic-algorithm analogue of a proposal d
 
 At a high level, a graphical procedure consists of up to $m + 1$ independent weight budgets: the vector of initial hypothesis weights $\mathbf{w}$ and the $m$ rows of the transition matrix $\mathbf{G}$. On each call, the split–merge operator selects one weight budget and applies one of two moves:
 
-1. **A merge move** (with probability `p_del = 0.45`), which picks two active weights in the chosen budget and folds the smaller weight into the larger one, setting the smaller weight to zero. This removes an edge or initial weight, simplifying the graph.
-2. **A transfer move** (with probability $1 - \text{p\_del} = 0.55$, or whenever no budget has two active weights to merge), which picks one active weight and one other weight in the same budget and shifts a random fraction of their combined mass between them. When the second weight is already positive, this tunes the balance between the two weights; when the second weight is zero, it splits the first weight and activates a previously unused edge or hypothesis weight.
+1. **A merge move** (with probability $p_{\text{del}} = 0.45$), which picks two active weights in the chosen budget and folds the smaller weight into the larger one, setting the smaller weight to zero. This removes an edge or initial weight, simplifying the graph.
+2. **A transfer move** (with probability $1 - p_{\text{del}} = 0.55$, or whenever no budget has two active weights to merge), which picks one active weight and one other weight in the same budget and shifts a random fraction of their combined mass between them. When the second weight is already positive, this tunes the balance between the two weights; when the second weight is zero, it splits the first weight and activates a previously unused edge or hypothesis weight.
 
 Within the package, the mutation operator interacts with three components:
 
