@@ -2,10 +2,12 @@
 
 ## multigrain (development version)
 
+### New functionality and improvements
+
 - The graphical shortcut used to score candidate graphs (in
   [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md),
   [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md)
-  and pruning) now precomputes the local critical values for every
+  and pruning) now pre-computes the local critical values for every
   intersection once per graph and looks them up in each simulated trial,
   instead of updating the graph after every rejection. This is faster
   for small and moderate numbers of hypotheses and gives the same
