@@ -19,7 +19,7 @@
 #'
 #' @param verbose An optional string controlling verbosity (`"detail"` >
 #'   `"info"` > `"silent"`). Verbosity can also be set at package level with the
-#'   `multigrain_verbosity` option (see [multigrain_verbosity()]):
+#'   `multigrain.verbosity` option (see [multigrain_verbosity()]):
 #'     * `"info"` (default): will inform about the successful compilation of the
 #'    trial success function.
 #'     * `"detail"`: no additional information available, will have the same
