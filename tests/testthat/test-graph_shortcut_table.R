@@ -202,7 +202,7 @@ test_that("weights near the objective's zeroing thresholds agree", {
     }
 })
 
-### OPTIONS AND KERNEL CHOICE ###
+# Options and kernel choice ----------------------------------------------
 
 test_that("invalid multigrain.shortcut_kernel values give a clear error", {
     gr <- make_test_graph(3, seed = 1)
