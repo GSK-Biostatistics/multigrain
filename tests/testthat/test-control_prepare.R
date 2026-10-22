@@ -34,8 +34,8 @@ test_that("default_control", {
     expect_identical(
         default_ctrl$global_opt,
         list(
-            pcrossover = 0.2,
-            pmutation = 0.8,
+            pcrossover = 0,
+            pmutation = 1,
             maxiter = 1e+05,
             popSize = 200,
             run = 200,
@@ -82,8 +82,8 @@ test_that("control_prepare injects the expected defaults", {
     expect_identical(
         prep_ctrl$global_opt,
         list(
-            pcrossover = 0.2,
-            pmutation = 0.8,
+            pcrossover = 0,
+            pmutation = 1,
             maxiter = 1e+05,
             popSize = 200L,
             run = 200,

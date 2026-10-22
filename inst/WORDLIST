@@ -1,6 +1,9 @@
 arXiv
 Autoplot
 Bonferroni
+Brannath
+Bretz
+Brockmann
 CMD
 COBYLA
 FEV
@@ -12,10 +15,12 @@ HPC
 MTP
 MVN
 Mander
+Maurer
 Mul
 NCPs
 NLOPT
 ORCID
+Posch
 Secondaries
 ULP
 aphical
@@ -30,6 +35,7 @@ geq
 ggplot
 ggraph
 gh
+graphicalMCP
 investigational
 mathbb
 mathbf
