@@ -230,7 +230,7 @@ $$\mathbf{x} = (0.40,\ 0.16,\ \ 0.50,\ 0.00,\ \ 0.35,\ \ 0.20,\ 0.50).$$
 
 ### 4.2 Tracing a Merge Move on Group 1 (Initial Weights)
 
-Suppose the mutation operator selects a **merge move** ($U < 0.45$) and chooses **Group 1** (the initial weights $w_1, w_2, w_4$, with $c = 0.8$ and `latent = 1:2`):
+Suppose the mutation operator selects a **merge move** ($U < 0.45$) and chooses **Group 1** (the initial weights $w_1, w_2, w_4$, with $c = 0.8$ and `latent = 1:2`). **Figure 1** illustrates the three stages of this move:
 
 1. **Decode to simplex shares (`.sm_to_shares()`):**
    * Stored entries: $p_1 = x_1 = 0.40$ ($w_1$) and $p_2 = x_2 = 0.16$ ($w_2$).
@@ -250,9 +250,11 @@ Suppose the mutation operator selects a **merge move** ($U < 0.45$) and chooses 
      $$\mathbf{x}_{\text{child}} = (0.40,\ 0.00,\ \ 0.50,\ 0.00,\ \ 0.35,\ \ 0.20,\ 0.50).$$
    * When decoded by `recover_full_weights()`, the child graph has initial weights $\mathbf{w} = (0.40,\ 0.00,\ 0.20,\ 0.40)$: hypothesis $H_2$'s initial weight has been cleanly set to zero and absorbed into $H_4$.
 
+![Figure 1: Merge move on Group 1 (initial hypothesis weights, c = 0.80)](../diagrams/split_merge_fig1_merge.svg)
+
 ### 4.3 Tracing a Transfer Move on Group 2 (Transition Row 1)
 
-Now suppose instead that the operator performs a **transfer move** on **Group 2** (transition row 1: free entries $g_{12}, g_{13}, g_{14}$ with $c = 1.0$ and `latent = 3:4`):
+Now suppose instead that the operator performs a **transfer move** on **Group 2** (transition row 1: free entries $g_{12}, g_{13}, g_{14}$ with $c = 1.0$ and `latent = 3:4`). **Figure 2** shows how the transfer move behaves depending on whether the randomly chosen recipient is already active (Case A, weight tuning) or inactive (Case B, splitting to activate an empty edge):
 
 1. **Decode to simplex shares:**
    * Stored entries: $p_1 = x_3 = 0.50$ ($g_{12}$) and $p_2 = x_4 = 0.00$ ($g_{13}$).
@@ -263,6 +265,8 @@ Now suppose instead that the operator performs a **transfer move** on **Group 2*
    * Recipient $j$ is drawn uniformly from the remaining entries $\{2, 3\}$:
      * **Case A ($j = 3$, active recipient $g_{14}$ — Tuning):** The pair total is $t = s_1 + s_3 = 0.50 + 0.50 = 1.00$, and the donor's current fraction is $u = 0.50 / 1.00 = 0.50$. If the Cauchy draw is $C = -0.5$, then $u + 0.2 C = 0.40$, which lies inside $(0, 1)$ so $u_{\text{new}} = 0.40$. The updated shares are $s_1 = 0.40$ and $s_3 = 0.60$, giving $\mathbf{s}_{\text{new}} = (0.40,\ 0.00,\ 0.60)$ (tuning the split between $g_{12}$ and $g_{14}$ while leaving $g_{13} = 0$).
      * **Case B ($j = 2$, inactive recipient $g_{13}$ — Splitting / Activating):** The pair total is $t = s_1 + s_2 = 0.50 + 0.00 = 0.50$, and the donor starts with $100\%$ of the pair's mass ($u = 0.50 / 0.50 = 1.00$). Suppose the Cauchy draw is $C = +0.5$, pushing outward to $v = 1.00 + 0.2(0.5) = 1.10$. Instead of clipping back to $1.00$, `.reflect01(1.10)` reflects $1.10$ across $1$ to $u_{\text{new}} = 2 - 1.10 = 0.90$. The donor retains $s_1 = 0.50 \times 0.90 = 0.45$ and the previously empty recipient receives $s_2 = 0.50 - 0.45 = 0.05$, giving $\mathbf{s}_{\text{new}} = (0.45,\ 0.05,\ 0.50)$ and activating edge $H_1 \to H_3$.
+
+![Figure 2: Transfer move on Group 2 (transition row 1: weight tuning vs. splitting)](../diagrams/split_merge_fig2_transfer.svg)
 
 ---
 
