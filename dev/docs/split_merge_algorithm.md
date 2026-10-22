@@ -5,7 +5,7 @@
 **Contents**
 
 1. [Overview](#1-overview)
-2. [Background: Weight Budgets, Simplexes, and Parameter Encoding](#2-background-weight-budgets-simplexes-and-parameter-encoding)
+2. [Background: Simplexes, Parameter Groups, and Encoding](#2-background-simplexes-parameter-groups-and-encoding)
 3. [How the Split–Merge Algorithm Works](#3-how-the-splitmerge-algorithm-works)
 4. [Worked Example ($m = 4$)](#4-worked-example-m--4)
 5. [Implementation Details in `R/mutation_helpers.R`](#5-implementation-details-in-rmutation_helpersr)
@@ -37,22 +37,22 @@ mutation_fn <- multigrain:::.make_split_merge_mutation(
 
 Think of the mutation operator as the genetic-algorithm analogue of a proposal distribution in Metropolis–Hastings Markov chain Monte Carlo (MCMC): given a parent graph in the current population, it proposes a modified child graph to be evaluated on the simulated $p$-value matrix via `graph_shortcut()`.
 
-At a high level, a graphical procedure consists of up to $m + 1$ independent weight budgets: the vector of initial hypothesis weights $\mathbf{w}$ and the $m$ rows of the transition matrix $\mathbf{G}$. On each call, the split–merge operator selects one weight budget and applies one of two moves:
+At a high level, a graphical procedure consists of up to $m + 1$ independent parameter groups—the vector of initial hypothesis weights $\mathbf{w}$ and the $m$ rows of the transition matrix $\mathbf{G}$—each of which sums to $1$. On each call, the split–merge operator selects one group and applies one of two moves:
 
-1. **A merge move** (with probability $p_{\text{del}} = 0.45$), which picks two active weights in the chosen budget and folds the smaller weight into the larger one, setting the smaller weight to zero. This removes an edge or initial weight, simplifying the graph.
-2. **A transfer move** (with probability $1 - p_{\text{del}} = 0.55$, or whenever no budget has two active weights to merge), which picks one active weight and one other weight in the same budget and shifts a random fraction of their combined mass between them. When the second weight is already positive, this tunes the balance between the two weights; when the second weight is zero, it splits the first weight and activates a previously unused edge or hypothesis weight.
+1. **A merge move** (with probability $p_{\text{del}} = 0.45$), which picks two active entries in the chosen group and folds the smaller entry into the larger one, setting the smaller entry to zero. This removes an edge or initial weight, simplifying the graph.
+2. **A transfer move** (with probability $1 - p_{\text{del}} = 0.55$, or whenever no group has two active entries to merge), which picks one active entry and one other free entry in the same group and shifts a random fraction of their combined mass between them. When the second entry is already positive, this tunes the balance between the two entries; when the second entry is zero, it splits the first entry and activates a previously unused edge or hypothesis weight.
 
 Within the package, the mutation operator interacts with three components:
 
 | Component | Source file | Role |
 |---|---|---|
 | `.graph_optimise_ga()` | [`R/optimisation.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/R/optimisation.R) | Instantiates `.make_split_merge_mutation()` and passes it to `GA::ga()` |
-| `.make_split_merge_mutation()` and helpers | [`R/mutation_helpers.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/R/mutation_helpers.R) | Decodes a parent's weight budgets, applies a merge or transfer move, and encodes the child vector |
+| `.make_split_merge_mutation()` and helpers | [`R/mutation_helpers.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/R/mutation_helpers.R) | Decodes a parent's parameter groups, applies a merge or transfer move, and encodes the child vector |
 | `create_obj_func()`, `split_theta()`, `recover_full_weights()`, `recover_full_trans_matrix()` | [`R/objective_function.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/R/objective_function.R) | Decodes the parameter vector into $(\mathbf{w}, \mathbf{G})$, zeroes out below-threshold entries, and evaluates trial success |
 
 ---
 
-## 2. Background: Weight Budgets, Simplexes, and Parameter Encoding
+## 2. Background: Simplexes, Parameter Groups, and Encoding
 
 ### 2.1 Why Optimise on Simplexes? (Exhaustive Graphs and Fewer Decision Variables)
 
@@ -60,24 +60,24 @@ In the general graphical framework of Bretz et al. (2009), the initial weights $
 
 $$\sum_{j=1}^m w_j \le 1 \qquad \text{and} \qquad \sum_{\substack{k=1 \\ k \ne i}}^m g_{ik} \le 1 \quad \text{for each } i = 1, \dots, m.$$
 
-However, any weight left unallocated is simply discarded: allocating less than $100\%$ of the initial significance level $\alpha$, or transferring less than $100\%$ of a rejected hypothesis's weight to the remaining hypotheses, can never increase the power to reject any hypothesis. During optimisation, `multigrain` therefore restricts attention to *exhaustive* graphs in which every weight budget sums to $1$:
+However, any weight left unallocated is simply discarded: allocating less than $100\%$ of the initial significance level $\alpha$, or transferring less than $100\%$ of a rejected hypothesis's weight to the remaining hypotheses, can never increase the power to reject any hypothesis. During optimisation, `multigrain` therefore restricts attention to *exhaustive* graphs in which the initial weights and every transition row sum to $1$:
 
 $$\sum_{j=1}^m w_j = 1 \qquad \text{and} \qquad \sum_{\substack{k=1 \\ k \ne i}}^m g_{ik} = 1 \quad \text{for each } i = 1, \dots, m.$$
 
-In mathematics, a vector of $k$ non-negative numbers $\mathbf{s} = (s_1, \dots, s_k)$ that sum to $1$ ($s_j \ge 0$ and $\sum_{j=1}^k s_j = 1$) is called a point on the **unit simplex**. Geometrically, for $k = 2$ the unit simplex is the line segment from $(1, 0)$ to $(0, 1)$, and for $k = 3$ it is the triangle with vertices $(1, 0, 0)$, $(0, 1, 0)$, and $(0, 0, 1)$. For practical purposes, "a point on the simplex" simply means a set of non-negative proportions (or **shares**) that divide up a fixed total budget of $100\%$.
+In mathematics, a vector of $k$ non-negative numbers $\mathbf{s} = (s_1, \dots, s_k)$ that sum to $1$ ($s_j \ge 0$ and $\sum_{j=1}^k s_j = 1$) is called a point on the **unit simplex**. Geometrically, for $k = 2$ the unit simplex is the line segment from $(1, 0)$ to $(0, 1)$, and for $k = 3$ it is the triangle with vertices $(1, 0, 0)$, $(0, 1, 0)$, and $(0, 0, 1)$. For practical purposes, "a point on the simplex" simply means a vector of non-negative proportions (or **shares**) that add up to $1$.
 
 Enforcing the sum-to-one constraint on the initial weights and on every transition row has two major benefits for numerical optimisation:
 
 1. **No wasted significance level:** Every candidate graph evaluated by the optimiser uses the full significance level $\alpha$ and redistributes all rejected weight.
 2. **Fewer decision variables to optimise:** Whenever $k$ free weights must add up to a known total, choosing the first $k - 1$ weights automatically determines the $k$-th weight as whatever is left over. This removes one decision variable from the initial weight vector and one from each of the $m$ transition rows. For an unconstrained graph with $m$ hypotheses, the number of decision variables drops from $m + m(m - 1) = m^2$ to $(m - 1) + m(m - 2) = m^2 - m - 1$ (for example, from $16$ to $11$ when $m = 4$).
 
-### 2.2 Weight Groups, Constraints, and the Residual Encoding
+### 2.2 Parameter Groups, Constraints, and the Residual Encoding
 
 A user can fix specific initial weights or transition edges via `graph_constraint()` (for instance, fixing a weight to $0$ to forbid an edge, or fixing $w_1 = 0.5$). In `hyp_constraint` and `trans_constraint`, fixed entries hold their numeric value and free entries are marked as `NA` (with the diagonal of `trans_constraint` always fixed to $0$).
 
 This structure divides a graph into independent **groups** of free entries—one group for the free entries of $\mathbf{w}$, and one group for the free entries of each row of $\mathbf{G}$:
 
-* Suppose a group has $k$ free entries and its fixed entries sum to $f$. Then the **free mass** (remaining budget) available to be divided among those $k$ free entries is
+* Suppose a group has $k$ free entries and its fixed entries sum to $f$. Then the **free mass** available to be divided among those $k$ free entries is
   $$c = 1 - f.$$
 * If $k = 0$ or $k = 1$ (or if $c = 0$), the group has no degrees of freedom: its entries are completely determined by the constraints and require no optimisation parameters.
 * If $k \ge 2$, the optimiser stores only the first $k - 1$ free entries $(p_1, \dots, p_{k-1})$ in the parameter vector $\mathbf{x}$, and the decoder functions `recover_full_weights()` and `recover_full_trans_matrix()` in [`R/objective_function.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/R/objective_function.R) compute the $k$-th free entry as the **derived (residual) entry**:
@@ -87,18 +87,18 @@ Dividing a group's $k$ free entries $(p_1, \dots, p_k)$ by its free mass $c$ con
 
 $$\mathbf{s} = (s_1, \dots, s_k) = \left(\frac{p_1}{c}, \dots, \frac{p_k}{c}\right), \qquad \text{where } s_j \ge 0 \text{ and } \sum_{j=1}^k s_j = 1.$$
 
-### 2.3 Why Mutating Weight Budgets Requires Care
+### 2.3 Why Mutating Simplex-Constrained Parameters Requires Care
 
-Because `GA::ga()` passes the flat parameter vector $\mathbf{x}$ (containing $k - 1$ stored numbers per group) to the mutation function, it is tempting to mutate $\mathbf{x}$ directly. Earlier versions of `multigrain` used an independent coordinate-wise Cauchy perturbation on the stored entries of $\mathbf{x}$ (archived in [`dev/archived_code/cauchy_mutation.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/dev/archived_code/cauchy_mutation.R)). However, mutating constrained weight budgets introduces four subtle pitfalls that the split–merge algorithm is designed to avoid:
+Because `GA::ga()` passes the flat parameter vector $\mathbf{x}$ (containing $k - 1$ stored numbers per group) to the mutation function, it is tempting to mutate $\mathbf{x}$ directly. Earlier versions of `multigrain` used an independent coordinate-wise Cauchy perturbation on the stored entries of $\mathbf{x}$ (archived in [`dev/archived_code/cauchy_mutation.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/dev/archived_code/cauchy_mutation.R)). However, mutating parameters subject to sum-to-one constraints introduces four subtle pitfalls that the split–merge algorithm is designed to avoid:
 
-1. **Breaking the weight budget (invalid child graphs):** If stored parameters $p_1, \dots, p_{k-1}$ in $[0, 1]$ are perturbed independently, their sum $\sum_{j=1}^{k-1} p_j$ frequently exceeds $c$. When that happens, the derived $k$-th entry $p_k = c - \sum_{j=1}^{k-1} p_j$ becomes negative, producing an invalid graph that `create_obj_func()` rejects with a penalty without ever running `graph_shortcut()`.
+1. **Violating the sum-to-one constraint (invalid child graphs):** If stored parameters $p_1, \dots, p_{k-1}$ in $[0, 1]$ are perturbed independently, their sum $\sum_{j=1}^{k-1} p_j$ frequently exceeds $c$. When that happens, the derived $k$-th entry $p_k = c - \sum_{j=1}^{k-1} p_j$ becomes negative, producing an invalid graph that `create_obj_func()` rejects with a penalty without ever running `graph_shortcut()`.
 2. **Positional bias toward the derived $k$-th entry:** Because only $k - 1$ entries are stored explicitly and the $k$-th entry absorbs whatever mass is left over, any operation applied directly to the stored coordinates treats the $k$-th hypothesis differently from the first $k - 1$ hypotheses. For example, setting a stored parameter $p_j$ to zero automatically transfers all of its mass into the derived entry $p_k$. Over many generations, this causes weight to accumulate on whichever hypothesis happens to be listed last in the group, making the optimisation result sensitive to how the user numbered the hypotheses.
-3. **Wasted evaluations from boundary clipping (duplicate offspring):** A natural way to respect the budget $c$ is to pick two entries $(i, j)$ in a group and shift a random amount of weight between them while keeping their sum $t = s_i + s_j$ fixed. However, if a group already has several zero entries (sparse edges) and out-of-bounds steps are simply clipped back to the interval $[0, 1]$, any pair where one entry is already $0$ sits on the boundary of $[0, 1]$. Half of all symmetric random steps will push further past the boundary, get clipped back to their starting value, and return a child graph that is identical to its parent. Evaluating an unchanged child graph runs a full Monte Carlo simulation of `graph_shortcut()` for no new information (Carvalho Pinto and Doerr, 2018).
+3. **Wasted evaluations from boundary clipping (duplicate offspring):** A natural way to preserve the free mass $c$ is to pick two entries $(i, j)$ in a group and shift a random amount of weight between them while keeping their sum $t = s_i + s_j$ fixed. However, if a group already has several zero entries (sparse edges) and out-of-bounds steps are simply clipped back to the interval $[0, 1]$, any pair where one entry is already $0$ sits on the boundary of $[0, 1]$. Half of all symmetric random steps will push further past the boundary, get clipped back to their starting value, and return a child graph that is identical to its parent. Evaluating an unchanged child graph runs a full Monte Carlo simulation of `graph_shortcut()` for no new information (Carvalho Pinto and Doerr, 2018).
 4. **Balancing graph sparsity with continuous weight tuning:** Clinical trial graphs often benefit from *sparsity*—setting unhelpful transition edges or starting weights cleanly to zero so that rejected $\alpha$ is concentrated on the most promising pathways. Continuous random perturbations are effective at tuning the exact split between positive weights, but rarely land on exact zero to remove an edge.
 
 The split–merge operator resolves all four issues by:
 
-* **Decoding to simplex shares $\mathbf{s}$ before mutating** (and choosing entries uniformly across all $k$ positions, including the derived $k$-th entry), which eliminates positional bias and guarantees that every child graph satisfies the sum-to-one budget.
+* **Decoding to simplex shares $\mathbf{s}$ before mutating** (and choosing entries uniformly across all $k$ positions, including the derived $k$-th entry), which eliminates positional bias and guarantees that every child graph satisfies the sum-to-one constraints.
 * **Separating edge removal from weight tuning**, using a dedicated **merge** move to zero out entries and a **transfer** move with boundary reflection (rather than clipping) so that no mutation ever returns a copy of its parent.
 
 ---
@@ -144,7 +144,7 @@ Within the selected group of $k \ge 2$ free entries:
 
 1. **Pick a donor $i$:** Choose $i$ uniformly at random from the group's active entries (or, in the rare case that rounding left no entry above the threshold, choose `which.max(s)`).
 2. **Pick a recipient $j$:** Choose $j$ uniformly at random from the remaining $k - 1$ free entries in the group—regardless of whether $j$ is currently active or inactive.
-3. **Compute the pair budget and current split:** Let
+3. **Compute the pair total and current split:** Let
    $$t = s_i + s_j > 0 \qquad \text{and} \qquad u = \frac{s_i}{t} \in (0, 1]$$
    be the combined share of the pair and the fraction of that combined share currently held by the donor $i$.
 4. **Perturb the split with a reflected Cauchy step:** Draw a standard Cauchy random variable $C \sim \text{Cauchy}(0, 1)$, perturb $u$ by `scale * C` (with default `scale` $\sigma = 0.2$), and reflect the result into the unit interval via `.reflect01()`:
@@ -208,7 +208,7 @@ At `multigrain`'s default `p_del = 0.45` (where $\frac{p_{\text{del}}}{1 - p_{\t
 
 To see how `.make_split_merge_mutation()` operates on a concrete graph, consider $m = 4$ hypotheses with the constrained layout used in [`tests/testthat/test-mutation_helpers.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/tests/testthat/test-mutation_helpers.R):
 
-* **Hypothesis weight constraints (`hyp_constraint`):** `(NA, NA, 0.2, NA)`. Here $w_3 = 0.2$ is fixed, leaving $k = 3$ free weights ($w_1, w_2, w_4$) that share a remaining budget of $c = 1 - 0.2 = 0.8$.
+* **Hypothesis weight constraints (`hyp_constraint`):** `(NA, NA, 0.2, NA)`. Here $w_3 = 0.2$ is fixed, leaving $k = 3$ free weights ($w_1, w_2, w_4$) with free mass $c = 1 - 0.2 = 0.8$.
 * **Transition matrix constraints (`trans_constraint`):**
   $$\mathbf{G}_{\text{constraint}} = \begin{pmatrix} 0 & \text{NA} & \text{NA} & \text{NA} \\ 1 & 0 & 0 & 0 \\ \text{NA} & \text{NA} & 0 & 0.3 \\ \text{NA} & \text{NA} & \text{NA} & 0 \end{pmatrix}.$$
   Here row 2 is completely fixed ($g_{21} = 1$), row 3 has one fixed off-diagonal entry ($g_{34} = 0.3$) and two free entries ($g_{31}, g_{32}$) sharing $c = 1 - 0.3 = 0.7$, and rows 1 and 4 each have three free off-diagonal entries sharing $c = 1$.
@@ -364,7 +364,7 @@ All invariants of the split–merge operator are verified in [`tests/testthat/te
 | $\mathbf{w} = (w_1, \dots, w_m)$ | Initial hypothesis weight vector ($w_j \ge 0$, $\sum_{j=1}^m w_j = 1$) |
 | $\mathbf{G} = (g_{ik})$ | $m \times m$ transition matrix ($g_{ii} = 0$, $g_{ik} \ge 0$, $\sum_{k \ne i} g_{ik} = 1$) |
 | $k$ | Number of free (`NA`) entries in a single group (the initial weights or one transition row) |
-| $c = 1 - \sum_{\text{fixed}} v_j$ | Free mass (remaining weight budget) shared by the $k$ free entries of a group |
+| $c = 1 - \sum_{\text{fixed}} v_j$ | Free mass ($1$ minus the sum of fixed entries) shared by the $k$ free entries of a group |
 | $\mathbf{s} = (s_1, \dots, s_k)$ | Decoded shares on the unit simplex ($s_j \ge 0$, $\sum_{j=1}^k s_j = 1$), where each free entry equals $c s_j$ |
 | $\tau$ (`threshold`) | Minimum weight for an entry to be treated as active ($\tau_w = 10^{-4}$ for initial weights, $\tau_g = 10^{-5}$ for transition entries) |
 | `p_del` ($0.45$) | Probability of attempting a merge move on a mutation call |
