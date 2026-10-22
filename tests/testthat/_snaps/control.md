@@ -34,8 +34,8 @@
       * maxeval: 5000
       * print_level: 0
       global optimisation:
-      * pcrossover: 0.2
-      * pmutation: 0.8
+      * pcrossover: 0
+      * pmutation: 1
       * maxiter: 1e+05
       * popSize: 200
       * run: 200

@@ -21,7 +21,6 @@
 # generation), with exploitation handled by Nelder-Mead local search
 # (optim = TRUE, poptim = 0.2) and elitism preserving the best solution(s).
 
-
 # The variable groups of the latent vector, in the order the decoder reads it.
 #
 # Every group with two or more free entries takes up k - 1 latent positions.
