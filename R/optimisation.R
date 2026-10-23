@@ -33,7 +33,7 @@
 #'   various graph optimisation parameters. Created with [multigrain_control()].
 #' @param verbose An optional string controlling verbosity (`"detail"` >
 #'   `"info"` > `"silent"`). Verbosity can also be set at package level with the
-#'   `multigrain_verbosity` option (see [multigrain_verbosity()]):
+#'   `multigrain.verbosity` option (see [multigrain_verbosity()]):
 #'     * `"info"` (default): will only show milestones / informational messages
 #'     highlighting the progress of the optimisation at coarse-grained level.
 #'     * `"detail"`: will show milestones and information about fine-grained

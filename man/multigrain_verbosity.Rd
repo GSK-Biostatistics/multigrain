@@ -8,10 +8,10 @@ multigrain_verbosity()
 }
 \value{
 A string indicating the verbosity level as set with options or
-\code{"info"} if \code{multigrain_verbosity} is unset.
+\code{"info"} if \code{multigrain.verbosity} is unset.
 }
 \description{
-\code{multigrain_verbosity()} returns the option named \code{multigrain_verbosity},
+\code{multigrain_verbosity()} returns the option named \code{multigrain.verbosity},
 which controls multigrain's verbosity. There are 3 possible levels
 (\code{"detail"} > \code{"info"} > \code{"silent"}):
 \itemize{
@@ -24,7 +24,7 @@ printed to the console. Errors and warnings are still thrown normally.
 }
 }
 \details{
-If the \code{multigrain_verbosity} option is unset, then the \code{"info"} level will
+If the \code{multigrain.verbosity} option is unset, then the \code{"info"} level will
 be used.
 }
 \examples{

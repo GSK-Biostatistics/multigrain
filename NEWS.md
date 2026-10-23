@@ -2,6 +2,10 @@
 
 ## New functionality
 
+## Changes
+
+* Renamed the `multigrain_verbosity`option to `multigrain.verbosity`. The retrieval function (`multigrain_verbosity()`) remains unchanged.
+
 ## Minor improvements and bug fixes
 
 * The graphical shortcut used to score candidate graphs (in `graph_optimise()`,
