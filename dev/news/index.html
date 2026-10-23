@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">multigrain</a>
 
-    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.0.9001</small>
+    <small class="nav-text text-danger me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="In-development version">1.0.0.9002</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -44,6 +44,10 @@
 <div class="section level3">
 <h3 id="new-functionality-development-version">New functionality<a class="anchor" aria-label="anchor" href="#new-functionality-development-version"></a></h3>
 </div>
+<div class="section level3">
+<h3 id="changes-development-version">Changes<a class="anchor" aria-label="anchor" href="#changes-development-version"></a></h3>
+<ul><li>Renamed the <code>multigrain_verbosity</code>option to <code>multigrain.verbosity</code>. The retrieval function (<code><a href="../reference/multigrain_verbosity.html">multigrain_verbosity()</a></code>) remains unchanged.</li>
+</ul></div>
 <div class="section level3">
 <h3 id="minor-improvements-and-bug-fixes-development-version">Minor improvements and bug fixes<a class="anchor" aria-label="anchor" href="#minor-improvements-and-bug-fixes-development-version"></a></h3>
 <ul><li>The graphical shortcut used to score candidate graphs (in <code><a href="../reference/graph_optimisation.html">graph_optimise()</a></code>, <code><a href="../reference/calc_power_pvals.html">calc_power_pvals()</a></code> and pruning) now pre-computes the local critical values for every intersection once per graph and looks them up in each simulated trial, instead of updating the graph after every rejection. This is faster for small and moderate numbers of hypotheses and gives the same rejections; the previous algorithm is still used for large numbers of hypotheses. There is no user-visible API change. The approach follows <code>graph_test_shortcut_fast()</code> in the graphicalMCP package (Xi and Brockmann, 2024).</li>

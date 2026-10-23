@@ -94,7 +94,7 @@ graph_optimize(
 
   An optional string controlling verbosity (`"detail"` \> `"info"` \>
   `"silent"`). Verbosity can also be set at package level with the
-  `multigrain_verbosity` option (see
+  `multigrain.verbosity` option (see
   [`multigrain_verbosity()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_verbosity.md)):
 
   - `"info"` (default): will only show milestones / informational
@@ -183,22 +183,22 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [11.2s]
+#> ✔ Running global optimization [20.6s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [9ms]
+#> ✔ Evaluating trial success of globally optimised graph [14ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [29ms]
+#> ✔ Running local optimization [60ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [9ms]
+#> ✔ Evaluating trial success of locally optimised graph [14ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [13ms]
+#> ✔ Pruning redundant weights and edges [16ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [4ms]
+#> ✔ Evaluating trial success of pruned graph [6ms]
 #> 
 # }
 ```

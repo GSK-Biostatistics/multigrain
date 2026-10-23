@@ -4,6 +4,13 @@
 
 ### New functionality
 
+### Changes
+
+- Renamed the `multigrain_verbosity`option to `multigrain.verbosity`.
+  The retrieval function
+  ([`multigrain_verbosity()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_verbosity.md))
+  remains unchanged.
+
 ### Minor improvements and bug fixes
 
 - The graphical shortcut used to score candidate graphs (in
