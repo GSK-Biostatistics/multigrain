@@ -26,7 +26,7 @@ trial_success(objective, verbose = multigrain_verbosity())
 
   An optional string controlling verbosity (`"detail"` \> `"info"` \>
   `"silent"`). Verbosity can also be set at package level with the
-  `multigrain_verbosity` option (see
+  `multigrain.verbosity` option (see
   [`multigrain_verbosity()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_verbosity.md)):
 
   - `"info"` (default): will inform about the successful compilation of
