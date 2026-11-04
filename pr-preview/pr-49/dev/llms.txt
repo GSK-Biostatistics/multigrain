@@ -31,13 +31,13 @@ graphical multiple testing procedures for confirmatory clinical trials*
 
 ### Key features
 
-| Step                | Function                                                                                                 | Purpose                                                                |
-|---------------------|----------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------|
-| Simulate p-values   | [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md) | Draw p-values from a multivariate normal test-statistic model          |
-| Define success      | [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md)       | Specify what “trial success” means (compiled to C++ for speed)         |
-| Constrain the graph | [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md) | Fix weights, edges, or testing hierarchies                             |
-| Optimise            | [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md) | Find the graph that maximises expected trial success                   |
-| Evaluate            | [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md) | Compute local power, disjunctive/conjunctive power, and custom metrics |
+| Step | Function | Purpose |
+|----|----|----|
+| Simulate p-values | [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md) | Draw p-values from a multivariate normal test-statistic model |
+| Define success | [`trial_success()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/trial_success.md) | Specify what “trial success” means (compiled to C++ for speed) |
+| Constrain the graph | [`graph_constraint()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_constraint.md) | Fix weights, edges, or testing hierarchies |
+| Optimise | [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md) | Find the graph that maximises expected trial success |
+| Evaluate | [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md) | Compute local power, disjunctive/conjunctive power, and custom metrics |
 
 ## Installation
 

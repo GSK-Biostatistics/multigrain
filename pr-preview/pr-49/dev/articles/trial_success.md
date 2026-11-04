@@ -4,14 +4,14 @@
 
 A graphical test (see [Getting
 started](https://gsk-biostatistics.github.io/multigrain/dev/articles/get-started.md))
-applies a graph $(\mathbf{w},\mathbf{G})$ to simulated p-values and
-produces a rejection pattern $\mathbf{r} = (r_{1},\ldots,r_{m})$ for
-each trial, where $r_{i} = 1$ if $H_{i}$ is rejected. A **gain
-function** $\psi(\mathbf{r})$ assigns a numerical score to each pattern
-— average power, disjunctive power, a regulatory hurdle, or any
+applies a graph $`(\mathbf{w}, \mathbf{G})`$ to simulated p-values and
+produces a rejection pattern $`\mathbf{r} = (r_1, \ldots, r_m)`$ for
+each trial, where $`r_i = 1`$ if $`H_i`$ is rejected. A **gain
+function** $`\psi(\mathbf{r})`$ assigns a numerical score to each
+pattern — average power, disjunctive power, a regulatory hurdle, or any
 composite you design.
 [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
-searches for the graph that maximises $E\lbrack\psi(\mathbf{r})\rbrack$.
+searches for the graph that maximises $`\mathrm{E}[\psi(\mathbf{r})]`$.
 
 Because FWER control holds for every valid graph, the choice among them
 is free to be made on value grounds. The gain is a score on whatever
@@ -61,9 +61,9 @@ trial_success((r1 && r2) * (1 + 0.3 * r3 + 0.2 * r4))$func(rej)
 
 The first example returns approximately 2.4, not 0.6. That is correct —
 it counts the expected *number* of rejections across four hypotheses,
-not a probability. Divide by $m$ to get average power. The gain function
-is on whatever scale you define; it does not need to lie in
-$\lbrack 0,1\rbrack$.
+not a probability. Divide by $`m`$ to get average power. The gain
+function is on whatever scale you define; it does not need to lie in
+$`[0, 1]`$.
 
 To inject values from your R session into the expression, use rlang’s
 \[`!!`\]\[rlang::injection-operator\] operator:
@@ -85,7 +85,7 @@ trial_success(!!w * r1 + r2 + r3)
 
 ### Group sequential designs
 
-In a group sequential design you test each hypothesis at $K$ planned
+In a group sequential design you test each hypothesis at $`K`$ planned
 analyses (e.g., one interim and one final). The outcome of a simulated
 trial is not just *which* hypotheses were rejected but *when* each
 rejection was declared. An early rejection — allowing a programme to
@@ -109,37 +109,37 @@ Decision time is the analysis at which the *procedure declared* the
 rejection. This is not necessarily the analysis at which the data first
 crossed a boundary. Alpha recycling can delay the declaration. For
 example, suppose PFS data are fully mature at analysis 1 but PFS carries
-zero initial weight ($w_{\text{PFS}} = 0$). PFS cannot reject at
-analysis 1 because it has no $\alpha$ to spend. At analysis 2, OS
+zero initial weight ($`w_{\text{PFS}} = 0`$). PFS cannot reject at
+analysis 1 because it has no $`\alpha`$ to spend. At analysis 2, OS
 rejects and recycles its entire level to PFS. PFS then rejects — on its
-analysis-1 data — but the decision time is $\tau_{\text{PFS}} = 2$, not
-1.
+analysis-1 data — but the decision time is $`\tau_{\text{PFS}} = 2`$,
+not 1.
 
 #### Discount tables
 
 You assign values to declaration analyses by passing one or more named
-numeric vectors through `...`. For $K = 2$ analyses:
+numeric vectors through `...`. For $`K = 2`$ analyses:
 
 ``` r
 d = c(1, 0.75)   # full value at analysis 1, 75% at analysis 2
 ```
 
-You supply only the $K$ values for analyses 1 through $K$. The value for
-“never rejected” ($t_{i} = 0$) is **added automatically** as zero — you
-do not include it yourself.
+You supply only the $`K`$ values for analyses 1 through $`K`$. The value
+for “never rejected” ($`t_i = 0`$) is **added automatically** as zero —
+you do not include it yourself.
 
 In the `objective` expression, apply a table to a decision time as
-`d(t1)`. When $t_{1} = 0$ the result is 0; when $t_{1} = 1$ the result
-is `d[1]`; when $t_{1} = 2$ the result is `d[2]`.
+`d(t1)`. When $`t_1 = 0`$ the result is 0; when $`t_1 = 1`$ the result
+is `d[1]`; when $`t_1 = 2`$ the result is `d[2]`.
 
 The same table can be shared across hypotheses, as in `d(t1) + d(t2)`,
 or each hypothesis can use a different table, as in
-`d_pfs(t1) + d_os(t2)`. All tables must contain $K$ values, but the
+`d_pfs(t1) + d_os(t2)`. All tables must contain $`K`$ values, but the
 values may differ.
 
 > **Discounts are indexed by analysis, not information fraction**
 >
-> A discount vector maps the shared analysis indices $1,\ldots,K$ to
+> A discount vector maps the shared analysis indices $`1, \ldots, K`$ to
 > values. It does not look up or interpolate from the numeric
 > information fraction. Information fractions determine the group
 > sequential boundaries and may differ by hypothesis; the gain function
@@ -147,15 +147,15 @@ values may differ.
 
 #### Worked example: hypothesis-specific discounts
 
-Consider a trial with two hypotheses — PFS ($H_{1}$) and OS ($H_{2}$) —
-and $K = 2$ analyses. PFS is fully mature at analysis 1, while OS has
+Consider a trial with two hypotheses — PFS ($`H_1`$) and OS ($`H_2`$) —
+and $`K = 2`$ analyses. PFS is fully mature at analysis 1, while OS has
 70% information at analysis 1 and reaches full information at analysis
 2:
 
 | Analysis | PFS information fraction | PFS discount | OS information fraction | OS discount |
-|----------|-------------------------:|-------------:|------------------------:|------------:|
-| 1        |                      1.0 |         1.00 |                     0.7 |        1.00 |
-| 2        |                      1.0 |         0.50 |                     1.0 |        0.75 |
+|----|---:|---:|---:|---:|
+| 1 | 1.0 | 1.00 | 0.7 | 1.00 |
+| 2 | 1.0 | 0.50 | 1.0 | 0.75 |
 
 You value PFS at 0.4 and OS at 0.6. A PFS declaration delayed until
 analysis 2 retains 50% of its early value, whereas an OS declaration at
@@ -179,19 +179,20 @@ gain
 
 The gain for every possible combination of decision times is:
 
-|                                     | $t_{2} = 0$ (OS never) | $t_{2} = 1$ (OS at analysis 1) | $t_{2} = 2$ (OS at analysis 2) |
-|-------------------------------------|------------------------|--------------------------------|--------------------------------|
-| **$t_{1} = 0$ (PFS never)**         | 0.000                  | 0.600                          | 0.450                          |
-| **$t_{1} = 1$ (PFS at analysis 1)** | 0.400                  | 1.000                          | 0.850                          |
-| **$t_{1} = 2$ (PFS at analysis 2)** | 0.200                  | 0.800                          | 0.650                          |
+|  | $`t_2 = 0`$ (OS never) | $`t_2 = 1`$ (OS at analysis 1) | $`t_2 = 2`$ (OS at analysis 2) |
+|----|----|----|----|
+| **$`t_1 = 0`$ (PFS never)** | 0.000 | 0.600 | 0.450 |
+| **$`t_1 = 1`$ (PFS at analysis 1)** | 0.400 | 1.000 | 0.850 |
+| **$`t_1 = 2`$ (PFS at analysis 2)** | 0.200 | 0.800 | 0.650 |
 
-Reading the table: $(t_{1} = 0,t_{2} = 1)$ means PFS was not rejected
-and OS was rejected at analysis 1. The gain is
-$0.4 \times d_{PFS}(0) + 0.6 \times d_{OS}(1) = 0 + 0.6 \times 1 = 0.6$.
-The entry $(t_{1} = 2,t_{2} = 2)$ — both declared at analysis 2 — gives
-$0.4 \times 0.50 + 0.6 \times 0.75 = 0.65$.
+Reading the table: $`(t_1 = 0, t_2 = 1)`$ means PFS was not rejected and
+OS was rejected at analysis 1. The gain is
+$`0.4 \times d_{\mathrm{PFS}}(0) + 0.6 \times d_{\mathrm{OS}}(1) =
+0 + 0.6 \times 1 = 0.6`$. The entry $`(t_1 = 2, t_2 = 2)`$ — both
+declared at analysis 2 — gives
+$`0.4 \times 0.50 + 0.6 \times 0.75 = 0.65`$.
 
-For PFS, $t_{1} = 2$ still selects the second discount value even though
+For PFS, $`t_1 = 2`$ still selects the second discount value even though
 its information fraction was already 1 at analysis 1. The discount
 reflects the later **declaration**, not a second information-fraction
 lookup. This is the alpha-recycling case described above: mature PFS
@@ -263,7 +264,8 @@ round(power$time_distribution, 3)
 ```
 
 The gain can be checked by hand from the decision-time distribution:
-$0.4 \times (0.966 + 0.50 \times 0.006) + 0.6 \times (0.667 + 0.75 \times 0.255) \approx 0.903$.
+$`0.4 \times (0.966 + 0.50 \times 0.006) + 0.6 \times (0.667 + 0.75 \times 0.255)
+\approx 0.903`$.
 
 #### Stopping for efficacy
 
@@ -273,9 +275,9 @@ early only once every hypothesis has been rejected. If the trial will in
 fact stop for efficacy at an interim analysis, a hypothesis can then be
 counted as rejected at a look the trial would never have reached, so
 late rejections, and every power that counts them, are overstated. In a
-two-hypothesis design that stops once $H_{1}$ is rejected, a graph
-reported at a gain of 0.708 with $H_{2}$ power 0.754 was worth 0.663
-with $H_{2}$ power 0.614 once the stop was taken into account (section
+two-hypothesis design that stops once $`H_1`$ is rejected, a graph
+reported at a gain of 0.708 with $`H_2`$ power 0.754 was worth 0.663
+with $`H_2`$ power 0.614 once the stop was taken into account (section
 7.4 of `dev/review/gsd_user_testing/README.md`).
 
 A stopping rule is its own object, created with
@@ -318,7 +320,7 @@ control under any rule: a stopped trial keeps the rejections it has
 declared and makes no new ones.
 
 The gain below values each claim at its own decision look. It is
-evaluated on a design with three hypotheses and $K = 2$ analyses:
+evaluated on a design with three hypotheses and $`K = 2`$ analyses:
 
 ``` r
 set.seed(20261013)
@@ -362,7 +364,7 @@ round(power$local_power, 3)
 `stop_distribution` is the proportion of simulated trials that stopped
 at each analysis, and `mean_stop_look` its mean. Every other field of
 the result, and the gain, is computed from the stopped trials: here the
-power of $H_{2}$ and $H_{3}$ is lower than the 0.732 and 0.741 the same
+power of $`H_2`$ and $`H_3`$ is lower than the 0.732 and 0.741 the same
 graph has without the rule. The optimised result records the rule, and
 its [`print()`](https://rdrr.io/r/base/print.html) and
 [`summary()`](https://rdrr.io/r/base/summary.html) show it with the
@@ -379,30 +381,32 @@ stopping-look distribution.
 #### Optimising the spending parameter
 
 A stopping rule also changes which spending function suits each
-hypothesis. If the trial stops once $H_{1}$ is rejected, $H_{2}$ gets no
-analysis after that stop, so spending more of $H_{2}$’s level at the
+hypothesis. If the trial stops once $`H_1`$ is rejected, $`H_2`$ gets no
+analysis after that stop, so spending more of $`H_2`$’s level at the
 interim becomes worth more. In the user testing (sections 7.4 and 7.5 of
 `dev/review/gsd_user_testing/README.md`) the design below had a best
-gain of 0.6707 (at $w_{1} = 0.32$) with an O’Brien–Fleming-type function
-for $H_{2}$. With a Pocock-type function for $H_{2}$ the best gain rose
-to 0.6903 (at $w_{1} = 0.46$). That gain is 14 times the gap between the
-best graph and Holm, so under the rule the choice of $H_{2}$’s spending
+gain of 0.6707 (at $`w_1 = 0.32`$) with an O’Brien–Fleming-type function
+for $`H_2`$. With a Pocock-type function for $`H_2`$ the best gain rose
+to 0.6903 (at $`w_1 = 0.46`$). That gain is 14 times the gap between the
+best graph and Holm, so under the rule the choice of $`H_2`$’s spending
 function mattered more than the graph did.
 
 Instead of trying spending functions one at a time, you can tag a
 hypothesis with
 [`sf_hsd_opt()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/sf_hsd_opt.md).
-Its Hwang–Shih–DeCani parameter $\gamma$ is then chosen together with
-the graph. At an interim analysis at half the information, $\gamma = -4$
-has spent about 12% of the level (close to O’Brien–Fleming) and
-$\gamma = 1$ about 62% (close to Pocock). Given a tagged entry,
+Its Hwang–Shih–DeCani parameter $`\gamma`$ is then chosen together with
+the graph. At an interim analysis at half the information,
+$`\gamma = -4`$ has spent about 12% of the level (close to
+O’Brien–Fleming) and $`\gamma = 1`$ about 62% (close to Pocock). Given a
+tagged entry,
 [`transform_pvalues_gsd()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/transform_pvalues_gsd.md)
 returns a *spending spec* instead of transformed p-values. The spec
 holds the raw p-values and a boundary table for every value the search
-may try: by default $\gamma$ runs from $-4$ to $1$ in steps of $0.25$,
-21 values, each checked for well ordering when the spec is built.
-Building the tables is the slow part, about 20 seconds here. A spec can
-be reused with other gains and stopping rules on the same draws.
+may try: by default $`\gamma`$ runs from $`-4`$ to $`1`$ in steps of
+$`0.25`$, 21 values, each checked for well ordering when the spec is
+built. Building the tables is the slow part, about 20 seconds here. A
+spec can be reused with other gains and stopping rules on the same
+draws.
 
 ``` r
 set.seed(20261007)
@@ -433,11 +437,11 @@ spec
 #> Boundary tables built: 21
 ```
 
-To optimise the graph and $\gamma$ together, pass the spec to
+To optimise the graph and $`\gamma`$ together, pass the spec to
 [`graph_optimise_gsd()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise_gsd.md)
-in place of the p-values. The gain values $H_{1}$ at 0.6 and $H_{2}$ at
+in place of the p-values. The gain values $`H_1`$ at 0.6 and $`H_2`$ at
 0.4, a claim at the final analysis is worth 0.8 of one at the interim,
-and the trial stops once $H_{1}$ is rejected:
+and the trial stops once $`H_1`$ is rejected:
 
 ``` r
 gain <- trial_success_gsd(0.6 * d(t1) + 0.4 * d(t2), d = c(1, 0.8))
@@ -481,11 +485,12 @@ result
 ```
 
 The search runs in two stages. First a genetic algorithm searches the
-graph and $\gamma$ together. Then the graph is re-optimised at every one
-of the 21 values of $\gamma$, starting each time from a neighbouring
-value’s graph. The second stage traces how the best achievable gain
-depends on $\gamma$, the *profile*. Most of the run (77 seconds here, on
-two threads) is the genetic algorithm, as it is without
+graph and $`\gamma`$ together. Then the graph is re-optimised at every
+one of the 21 values of $`\gamma`$, starting each time from a
+neighbouring value’s graph. The second stage traces how the best
+achievable gain depends on $`\gamma`$, the *profile*. Most of the run
+(77 seconds here, on two threads) is the genetic algorithm, as it is
+without
 [`sf_hsd_opt()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/sf_hsd_opt.md).
 The chosen value is in `result$spending_param`, the label per hypothesis
 in `result$spending`, and the profile in `result$spending_profile`.
@@ -521,44 +526,44 @@ summary(result)
 #> GA visited 21 of 21 nodes
 ```
 
-The table has one row per value of $\gamma$. `gain` is the best gain
+The table has one row per value of $`\gamma`$. `gain` is the best gain
 with the graph re-optimised at that value, and `gain_fixed_graph` is the
 gain of the chosen graph kept as it is. `diff` is how far the row falls
 short of the optimum, computed on the same simulated trials, and `se` is
 the standard error of that difference.
 [`print()`](https://rdrr.io/r/base/print.html) sums the table up as two
-*plateaus*: the range of $\gamma$ around the optimum whose gain is
-within $5 \times 10^{-4}$ of the best.
+*plateaus*: the range of $`\gamma`$ around the optimum whose gain is
+within $`5 \times 10^{-4}`$ of the best.
 
-Here the optimum is $\gamma = -0.25$, between the two textbook choices,
-with a gain of 0.6930. Both plateaus run from $-0.75$ to $0$, so any
-$\gamma$ in that range is as good as the optimum to within the precision
-of the simulation. Below $-1$ the gain falls steadily: at $\gamma = -4$,
-close to O’Brien–Fleming, it is 0.0128 lower, about 37 standard errors.
-Above $0.25$ the gain falls more slowly. The two gain columns barely
-differ because the best graph hardly moves with $\gamma$ in this design.
-Every row’s re-optimised weight on $H_{1}$ lies between 0.40 and 0.46,
-and the plateau of $w_{1}$ under this rule is wide. When the best graph
-does move with the parameter, the fixed-graph plateau is the narrower of
-the two, and the re-optimised one is the one to read.
+Here the optimum is $`\gamma = -0.25`$, between the two textbook
+choices, with a gain of 0.6930. Both plateaus run from $`-0.75`$ to
+$`0`$, so any $`\gamma`$ in that range is as good as the optimum to
+within the precision of the simulation. Below $`-1`$ the gain falls
+steadily: at $`\gamma = -4`$, close to O’Brien–Fleming, it is 0.0128
+lower, about 37 standard errors. Above $`0.25`$ the gain falls more
+slowly. The two gain columns barely differ because the best graph hardly
+moves with $`\gamma`$ in this design. Every row’s re-optimised weight on
+$`H_1`$ lies between 0.40 and 0.46, and the plateau of $`w_1`$ under
+this rule is wide. When the best graph does move with the parameter, the
+fixed-graph plateau is the narrower of the two, and the re-optimised one
+is the one to read.
 
-On the same draws, optimising the graph with $H_{2}$’s spending fixed
+On the same draws, optimising the graph with $`H_2`$’s spending fixed
 gives the user testing’s comparison (these runs are in the example
 script):
 
-| $H_{2}$ spending                                                                                                      | $w_{1}$ |   Gain |
-|-----------------------------------------------------------------------------------------------------------------------|--------:|-------:|
-| `sfLDOF` (O’Brien–Fleming type)                                                                                       |   0.292 | 0.6709 |
-| `sfLDPocock` (Pocock type)                                                                                            |   0.549 | 0.6905 |
-| [`sf_hsd_opt()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/sf_hsd_opt.md), chosen $\gamma = -0.25$ |   0.445 | 0.6930 |
+| $`H_2`$ spending | $`w_1`$ | Gain |
+|----|---:|---:|
+| `sfLDOF` (O’Brien–Fleming type) | 0.292 | 0.6709 |
+| `sfLDPocock` (Pocock type) | 0.549 | 0.6905 |
+| [`sf_hsd_opt()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/sf_hsd_opt.md), chosen $`\gamma = -0.25`$ | 0.445 | 0.6930 |
 
 These reproduce the 0.6707 → 0.6903 of the user testing. Choosing
-$\gamma$ adds a further 0.0025 over a fixed Pocock function, which is
+$`\gamma`$ adds a further 0.0025 over a fixed Pocock function, which is
 small next to the 0.0196 gained by moving away from O’Brien–Fleming. So
-the main point of the earlier finding stands: under this rule, $H_{2}$
-should spend early. The profile adds that $H_{2}$ need not spend quite
-as early as Pocock, and that anywhere in $\lbrack-0.75,0\rbrack$ will
-do.
+the main point of the earlier finding stands: under this rule, $`H_2`$
+should spend early. The profile adds that $`H_2`$ need not spend quite
+as early as Pocock, and that anywhere in $`[-0.75, 0]`$ will do.
 
 The parameter and the graph were chosen on the same simulated trials
 that score them, so the reported gain is optimistic, as it is for an
@@ -597,7 +602,7 @@ reported: here the optimism is smaller than the simulation noise. Only
 the 21 values of the lattice can be resolved, since only their tables
 were built and checked.
 [`sf_hsd_opt()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/sf_hsd_opt.md)
-takes `bounds` (within $-10$ to $2$) and `step` (`0.5`, `0.25` or
+takes `bounds` (within $`-10`$ to $`2`$) and `step` (`0.5`, `0.25` or
 `0.125`) to change the lattice. If the optimum sits on a bound, the gain
 may still be rising beyond it. Hypotheses tagged with the same `id`
 share one parameter.
@@ -661,7 +666,7 @@ mistakes compile without error and produce silently wrong results.
 > optimiser responds by making the stop less likely, which can move the
 > optimal graph away from the primary hypothesis. In the user testing
 > (section 7.4 of `dev/review/gsd_user_testing/README.md`), with a rule
-> that stops once $H_{1}$ is rejected, the optimal weight on $H_{1}$
+> that stops once $`H_1`$ is rejected, the optimal weight on $`H_1`$
 > fell from 0.98 without the rule to 0.32 with it. Optimise the graph
 > with and without the rule, compare the two, and decide what the design
 > is for before adopting either.
@@ -670,6 +675,5 @@ mistakes compile without error and produce silently wrong results.
 >
 > 1.  **Always parenthesise** expressions around `&&` and `||` to avoid
 >     precedence surprises.
-> 2.  **The gain is on your own scale**, not $\lbrack 0,1\rbrack$.
->     Normalise it yourself for reporting; only relative values affect
->     the optimiser.
+> 2.  **The gain is on your own scale**, not $`[0, 1]`$. Normalise it
+>     yourself for reporting; only relative values affect the optimiser.

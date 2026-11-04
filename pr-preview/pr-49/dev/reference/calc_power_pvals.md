@@ -120,6 +120,17 @@ A list containing:
 - the expected number of rejections. Optionally, you can specify
   user-defined trial success criteria via `custom_power`.
 
+## References
+
+Bretz, F., Maurer, W., Brannath, W., and Posch, M. (2009). A graphical
+approach to sequentially rejective multiple test procedures. *Statistics
+in Medicine*, 28(4), 586–604.
+[doi:10.1002/sim.3495](https://doi.org/10.1002/sim.3495)
+
+Xi, D. and Brockmann, E. (2024). *graphicalMCP: Graphical multiple
+comparison procedures*. R package version 0.2.6.
+<https://CRAN.R-project.org/package=graphicalMCP>
+
 ## Examples
 
 ``` r

@@ -54,7 +54,14 @@
   the best gain, and [`summary()`](https://rdrr.io/r/base/summary.html)
   the profile. A result without optimised spending is unchanged.
 
-### Bug fixes
+### Changes
+
+- Renamed the `multigrain_verbosity` option to `multigrain.verbosity`.
+  The retrieval function
+  ([`multigrain_verbosity()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_verbosity.md))
+  remains unchanged.
+
+### Minor improvements and bug fixes
 
 - [`graph_optimise_gsd()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise_gsd.md)
   and
@@ -72,6 +79,17 @@
   [`graph_optimise_gsd()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimise_gsd.md)
   and
   [`calc_power_pvals_gsd()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals_gsd.md).
+- The graphical shortcut used to score candidate graphs (in
+  [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md),
+  [`calc_power_pvals()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/calc_power_pvals.md)
+  and pruning) now pre-computes the local critical values for every
+  intersection once per graph and looks them up in each simulated trial,
+  instead of updating the graph after every rejection. This is faster
+  for small and moderate numbers of hypotheses and gives the same
+  rejections; the previous algorithm is still used for large numbers of
+  hypotheses. There is no user-visible API change. The approach follows
+  `graph_test_shortcut_fast()` in the graphicalMCP package (Xi and
+  Brockmann, 2024).
 
 ## multigrain 1.0.0
 

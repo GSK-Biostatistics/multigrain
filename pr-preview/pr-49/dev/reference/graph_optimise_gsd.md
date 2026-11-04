@@ -105,7 +105,7 @@ graph_optimise_gsd(
 
   An optional string controlling verbosity (`"detail"` \> `"info"` \>
   `"silent"`). Verbosity can also be set at package level with the
-  `multigrain_verbosity` option (see
+  `multigrain.verbosity` option (see
   [`multigrain_verbosity()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_verbosity.md)):
 
   - `"info"` (default): will only show milestones / informational
@@ -327,22 +327,22 @@ result <- graph_optimise_gsd(
     num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [7.7s]
+#> ✔ Running global optimization [6.3s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [15ms]
+#> ✔ Evaluating trial success of globally optimised graph [14ms]
 #> 
 #> ℹ Running local optimization
 #> ✔ Running local optimization [11ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [14ms]
+#> ✔ Evaluating trial success of locally optimised graph [13ms]
 #> 
 #> ℹ Pruning redundant weights and edges
 #> ✔ Pruning redundant weights and edges [8ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [7ms]
+#> ✔ Evaluating trial success of pruned graph [6ms]
 #> 
 
 # choose the spending parameter of H2 jointly with the graph
@@ -359,16 +359,16 @@ result_spending <- graph_optimise_gsd(
     num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [9.7s]
+#> ✔ Running global optimization [8.2s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [16ms]
+#> ✔ Evaluating trial success of globally optimised graph [15ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [14ms]
+#> ✔ Running local optimization [13ms]
 #> 
 #> ℹ Profiling spending parameters: gamma
-#> ✔ Profiling spending parameters: gamma [166ms]
+#> ✔ Profiling spending parameters: gamma [146ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
 #> ✔ Evaluating trial success of locally optimised graph [18ms]
@@ -377,7 +377,7 @@ result_spending <- graph_optimise_gsd(
 #> ✔ Pruning redundant weights and edges [8ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [15ms]
+#> ✔ Evaluating trial success of pruned graph [7ms]
 #> 
 result_spending$spending_param
 #> gamma 
