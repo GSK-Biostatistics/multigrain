@@ -148,3 +148,12 @@ result <- calc_power_pvals(
 
 result
 }
+\references{
+Bretz, F., Maurer, W., Brannath, W., and Posch, M. (2009). A graphical
+approach to sequentially rejective multiple test procedures.
+\emph{Statistics in Medicine}, 28(4), 586--604. \doi{doi:10.1002/sim.3495}
+
+Xi, D. and Brockmann, E. (2024). \emph{graphicalMCP: Graphical multiple
+comparison procedures}. R package version 0.2.6.
+\url{https://CRAN.R-project.org/package=graphicalMCP}
+}

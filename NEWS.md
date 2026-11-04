@@ -38,7 +38,12 @@
   range of values within 5e-4 of the best gain, and `summary()` the profile.
   A result without optimised spending is unchanged.
 
-## Bug fixes
+## Changes
+
+* Renamed the `multigrain_verbosity` option to `multigrain.verbosity`. The
+  retrieval function (`multigrain_verbosity()`) remains unchanged.
+
+## Minor improvements and bug fixes
 
 * `graph_optimise_gsd()` and `calc_power_pvals_gsd()` now check that the graph
   has as many hypotheses as the p-values and abort with a message naming both
@@ -48,6 +53,15 @@
   with `trial_success_gsd()`, which needs decision times; previously the object
   was accepted and every rejection was silently scored as an analysis-1
   rejection. Use `graph_optimise_gsd()` and `calc_power_pvals_gsd()`.
+* The graphical shortcut used to score candidate graphs (in `graph_optimise()`,
+  `calc_power_pvals()` and pruning) now pre-computes the local critical values
+  for every intersection once per graph and looks them up in each simulated
+  trial, instead of updating the graph after every rejection. This is faster
+  for small and moderate numbers of hypotheses and gives the same rejections;
+  the previous algorithm is still used for large numbers of hypotheses. There
+  is   no user-visible API change. The approach follows
+  `graph_test_shortcut_fast()` in the graphicalMCP package (Xi and Brockmann,
+  2024).
 
 # multigrain 1.0.0
 

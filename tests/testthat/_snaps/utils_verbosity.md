@@ -4,7 +4,7 @@
       multigrain_verbosity()
     Condition
       Error in `multigrain_verbosity()`:
-      ! Option "multigrain_verbosity" must be one of: info, detail, or silent.
+      ! Option "multigrain.verbosity" must be one of: info, detail, or silent.
 
 ---
 
@@ -12,7 +12,7 @@
       multigrain_verbosity()
     Condition
       Error in `multigrain_verbosity()`:
-      ! Option "multigrain_verbosity" must be one of: info, detail, or silent.
+      ! Option "multigrain.verbosity" must be one of: info, detail, or silent.
 
 ---
 
@@ -20,5 +20,5 @@
       multigrain_verbosity()
     Condition
       Error in `multigrain_verbosity()`:
-      ! Option "multigrain_verbosity" must be one of: info, detail, or silent.
+      ! Option "multigrain.verbosity" must be one of: info, detail, or silent.
 

@@ -27,7 +27,7 @@ if also given, must agree with it. When neither is given \code{K} is left
 
 \item{verbose}{An optional string controlling verbosity (\code{"detail"} >
 \code{"info"} > \code{"silent"}). Verbosity can also be set at package level with the
-\code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
+\code{multigrain.verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
 \itemize{
 \item \code{"info"} (default): informs about successful compilation of the
 trial success function.

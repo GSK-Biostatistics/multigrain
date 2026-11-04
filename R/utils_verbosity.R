@@ -2,7 +2,7 @@ verbosity_levels <- c("info", "detail", "silent")
 
 #' Multigrain verbosity
 #'
-#' `multigrain_verbosity()` returns the option named `multigrain_verbosity`,
+#' `multigrain_verbosity()` returns the option named `multigrain.verbosity`,
 #' which controls multigrain's verbosity. There are 3 possible levels
 #' (`"detail"` > `"info"` > `"silent"`):
 #' * `"info"` (default): will only show milestones / informational messages
@@ -12,21 +12,21 @@ verbosity_levels <- c("info", "detail", "silent")
 #' * `"silent"`: no information about the progress of the optimisation is
 #' printed to the console. Errors and warnings are still thrown normally.
 #'
-#' If the `multigrain_verbosity` option is unset, then the `"info"` level will
+#' If the `multigrain.verbosity` option is unset, then the `"info"` level will
 #' be used.
 #'
 #' @returns A string indicating the verbosity level as set with options or
-#' `"info"` if `multigrain_verbosity` is unset.
+#' `"info"` if `multigrain.verbosity` is unset.
 #'
 #' @export
 #' @examples
 #' multigrain_verbosity()
 multigrain_verbosity <- function() {
-    mv_opt <- getOption("multigrain_verbosity", "info")
+    mv_opt <- getOption("multigrain.verbosity", "info")
 
     if (!rlang::is_string(mv_opt) || !(mv_opt %in% verbosity_levels)) {
         cli::cli_abort(
-            'Option "multigrain_verbosity" must be one of: \\
+            'Option "multigrain.verbosity" must be one of: \\
             {.or {.field {verbosity_levels}}}.'
         )
     }

@@ -66,7 +66,7 @@ various graph optimisation parameters. Created with \code{\link[=multigrain_cont
 
 \item{verbose}{An optional string controlling verbosity (\code{"detail"} >
 \code{"info"} > \code{"silent"}). Verbosity can also be set at package level with the
-\code{multigrain_verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
+\code{multigrain.verbosity} option (see \code{\link[=multigrain_verbosity]{multigrain_verbosity()}}):
 \itemize{
 \item \code{"info"} (default): will only show milestones / informational messages
 highlighting the progress of the optimisation at coarse-grained level.
