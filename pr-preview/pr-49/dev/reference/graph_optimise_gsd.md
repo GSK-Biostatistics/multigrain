@@ -327,7 +327,7 @@ result <- graph_optimise_gsd(
     num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [6.3s]
+#> ✔ Running global optimization [7.1s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
 #> ✔ Evaluating trial success of globally optimised graph [14ms]
@@ -359,7 +359,7 @@ result_spending <- graph_optimise_gsd(
     num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [8.2s]
+#> ✔ Running global optimization [9.2s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
 #> ✔ Evaluating trial success of globally optimised graph [15ms]
@@ -368,13 +368,13 @@ result_spending <- graph_optimise_gsd(
 #> ✔ Running local optimization [13ms]
 #> 
 #> ℹ Profiling spending parameters: gamma
-#> ✔ Profiling spending parameters: gamma [146ms]
+#> ✔ Profiling spending parameters: gamma [155ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [18ms]
+#> ✔ Evaluating trial success of locally optimised graph [15ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [8ms]
+#> ✔ Pruning redundant weights and edges [7ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
 #> ✔ Evaluating trial success of pruned graph [7ms]
