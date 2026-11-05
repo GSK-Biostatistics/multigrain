@@ -1,7 +1,7 @@
 # Spending-parameter search: merge check and search quality
 
-**Status, 2026-11-05 00:30:** Parts 1, 2 and 3 are complete for m = 4. Part 4 (m = 6, and one spending parameter
-per hypothesis) was still running when this version was pushed; if Part 4 says "pending", those runs did not finish.
+**Status, 2026-11-05 01:20:** Parts 1 to 4 are complete, except the last subsection of Part 4 (more seeds on the start
+effect), which was still running when this version was pushed. If it says "pending", those runs did not finish.
 
 Run with R 4.6.1, GA 3.2.5, nloptr 2.2.1, gsDesign 3.11.0, on `gsd-build-spending` at `e103474`.
 
@@ -9,21 +9,23 @@ Run with R 4.6.1, GA 3.2.5, nloptr 2.2.1, gsDesign 3.11.0, on `gsd-build-spendin
 
 1. **The merge did not weaken the search.** Before and after `e103474`, the spending search is bit-for-bit
    identical, and the mutation has not changed.
-2. **I could not reproduce a joint-search failure at m = 4.** With 5 seeds on each side, the joint search is within
-   the fixed-node GA's own seed noise at 5 of the 6 nodes where they can be compared. It averages 0.00015 to 0.0006
-   below a fixed-node GA at the best node, for roughly 12 to 17 times less computing than running every node.
-3. **Starting in the middle is not the cause on these designs.** Moving the start or making the initial spending
-   genes uniform has no consistent effect, and the search found the top of the lattice in 20 of 20 runs on the design
-   where that was the optimum.
-4. **The clear failure is `global_search = FALSE`.** It usually picks a good node but a poorer graph, up to about 0.004
-   to 0.005 below the GA runs, and that holds from any start.
-5. **Repeated runs give very different graphs with almost the same gain**, for the fixed-node GA as much as for the
-   joint search. By eye that could look like a failure to find good graphs.
-6. **Merging `split-merge` would break the GSD search**, with no code conflict from git. See Part 2.
+2. **You are right that the search can fail to find good graphs, but the weakness is in the graph search, not the
+   lattice.** It usually gets the spending parameter right or close, then lands on graphs of varying quality. With one
+   parameter per hypothesis on H4xi, 9 of 15 runs fell below a gain inside their own search space, by up to 0.0023.
+3. **The fixed-node GA has the same weakness, so this is not specific to the joint search.** At m = 4 the joint search is
+   within the fixed-node GA's own seed noise at 5 of the 6 nodes where they can be compared. At m = 6 the same node gives
+   gains up to 0.0069 apart across seeds with the fixed-node GA, and the joint search does at least as well.
+4. **The GA matters less as m grows.** Without it, gains are up to 0.004 to 0.005 lower at m = 4, from any start. At
+   m = 6 the one run without it was level with the GA runs.
+5. **Starting in the middle is not established as a cause.** None of 14 comparisons of start or initial population reaches
+   2 SE, and the direction changes between designs. The strongest hint in its favour is on H4xi, and is being re-run with
+   more seeds in Part 4.
+6. **Repeated runs give very different graphs with almost the same gain**, for the fixed-node GA as much as for the joint
+   search. By eye that could look like a failure to find good graphs.
+7. **Merging `split-merge` would break the GSD search**, with no code conflict from git. See Part 2.
 
-**Your evidence is still unexplained.** I have not seen your design, and it may differ from these in a way that matters:
-more hypotheses, several spending parameters, a constrained graph, more analyses or a stopping rule. Part 4 tests the
-first two. Sending me the design and what you compared it with is the most direct next step.
+**Your own evidence is still unexplained in detail.** I have not seen your design. Sending me the design and what you
+compared it with is the most direct next step.
 
 ### Correction to what I said during the session
 
@@ -226,16 +228,82 @@ Each cell is one run.
 
 ## Part 4: Larger designs
 
-**Pending.** Two cases are running:
+### H6: m = 6, one shared parameter
 
-- **H6:** m = 6, one shared parameter.
-- **H4i and H4xi:** the H4 and H4x gains with one spending parameter per hypothesis, so the search space is 21^4 lattice
-  points. Sharing one value across all hypotheses is inside that space, so these runs should at least match the shared
-  results in Part 3.
+Powers (0.9, 0.85, 0.8, 0.7, 0.6, 0.5), block correlation as before, nsim 1e4, gain
+`0.3 d(t1) + 0.25 d(t2) + 0.2 d(t3) + 0.1 d(t4) + 0.1 d(t5) + 0.05 d(t6)`, `d = c(1, 0.7)`.
+
+| Search | Runs | Mean final gain | SD | Range |
+|---|---|---|---|---|
+| Fixed-node GA at -2 | 2 | 0.554753 | | 0.553040 to 0.556465 |
+| Fixed-node GA at -1 | 5 | 0.554507 | 0.00280 | 0.551965 to 0.557928 |
+| Fixed-node GA at -0.5 | 5 | 0.555566 | 0.00276 | 0.551303 to 0.558234 |
+| Fixed-node GA at 0 | 5 | 0.556448 | 0.00089 | 0.555548 to 0.557581 |
+| Fixed-node GA at 1 | 2 | 0.550857 | | 0.549417 to 0.552296 |
+| Joint search, default start | 5 | 0.557058 | 0.00095 | 0.55588 to 0.55823 |
+| Joint search, low start | 5 | 0.557010 | 0.00194 | 0.55437 to 0.55899 |
+| No GA, default start | 1 | 0.557426 | | |
+
+- **The joint search is not the weak link.** Its mean is above the mean of every fixed node, and it chose -0.50 six times
+  and -0.75 four times.
+- **The graph search as a whole is unreliable at this size.** Seed noise at a single node (SD up to 0.0028, range up to
+  0.0069) is larger than the differences between the node means tested at 5 seeds (at most 0.0019), so a single GA run
+  cannot tell those nodes apart.
+- **The GA adds little here.** The single run without it is level with the GA runs, and the local stage added a median of
+  0.0012 to the GA's result, against about 0.00003 at m = 4. So the GA is further from converged when it stops.
+- **The true optimum is unknown.** The highest gain seen, 0.558995, is only a lower bound on it, so the real shortfall could
+  be larger than these numbers suggest.
+
+### H4i and H4xi: one spending parameter per hypothesis
+
+These use the H4 and H4x gains, with four parameters and a search space of 21^4 lattice points. Sharing one value across
+hypotheses is inside that space, so a sound search should at least match the shared-parameter fixed-node GA at its best
+node, on the same draws. That is the reference below, with 5 seeds.
+
+| Design | Reference, mean (SD) | Arm | Mean final gain (SD) | Range | Minus reference | Runs below reference |
+|---|---|---|---|---|---|---|
+| H4i | 0.612374 (0.000106) | Default start | 0.615300 (0.000450) | 0.614716 to 0.615646 | +0.002926 | 0 of 5 |
+| H4i | | High start | 0.614956 (0.000347) | 0.614563 to 0.615385 | +0.002582 | 0 of 5 |
+| H4i | | Uniform initial genes | 0.614730 (0.000725) | 0.613502 to 0.615241 | +0.002356 | 0 of 5 |
+| H4xi | 0.508430 (0.000146) | Default start | 0.507460 (0.001067) | 0.506134 to 0.508602 | -0.000970 | 4 of 5 |
+| H4xi | | High start | 0.508130 (0.000461) | 0.507320 to 0.508448 | -0.000300 | 4 of 5 |
+| H4xi | | Uniform initial genes | 0.508409 (0.000316) | 0.507850 to 0.508592 | -0.000021 | 1 of 5 |
+
+- **H4i works.** All 15 runs beat the shared-parameter gain by using the extra freedom, and they agree on the pattern:
+  aggressive spending on H1 (0.25 to 1), about -0.5 on H2, -2 on H3 and -3 to -4 on H4. The reported gain is optimistic, as
+  the parameters and graph are chosen on the same draws.
+- **H4xi is the failure.** The extra freedom should not lose anything, yet 9 of 15 runs fall below the reference, by up to
+  0.0023.
+- **That failure is in the graph, not the lattice.** Six H4xi runs chose exactly (1, 1, 1, -0.25) and their gains range
+  from 0.506134 to 0.508590. Same spending parameters, a range of 0.0025.
+- **Convergence:** `profile_converged` was `FALSE` in 3 of 30 runs.
+
+### Is the start involved? More seeds on the strongest hint
+
+Across all designs, 14 comparisons of start or initial population were made against the default start, and none reaches
+2 SE. The largest are on the one-parameter-per-hypothesis designs, and they point in opposite directions:
+
+| Design | High start minus default (SE) | Uniform initial genes minus default (SE) |
+|---|---|---|
+| H4i | -0.000344 (0.000254) | -0.000570 (0.000382) |
+| H4xi | +0.000670 (0.000520) | +0.000949 (0.000498) |
+
+H4xi is the design where your hypothesis should bite hardest: its optimum is in a corner of the lattice where the initial
+population is thinnest. So these two designs are being re-run with 10 more seeds per arm.
+
+**Pending.**
+
+### What I would do with this today
+
+Run several seeds and keep the best. It needs no code change, and these runs suggest it helps: the best of 5 default-start
+runs is within 0.00034 of the highest gain seen on H4 and within 0.00077 on H6, and on H4xi it clears the reference. It
+was not tested as a method. It costs 5 times the computing and increases the optimism in the reported gain, so check the
+chosen design on fresh draws.
 
 ## What has not been tested
 
-Your design, constrained graphs, more than two analyses, stopping rules at m >= 4, and nsim above 2e4.
+Your design, constrained graphs, more than two analyses, stopping rules at m >= 4, nsim above 2e4, and any change to the
+GA's budget, such as a larger `popSize` or `run`.
 
 ## Other observations (none caused by the merge)
 
