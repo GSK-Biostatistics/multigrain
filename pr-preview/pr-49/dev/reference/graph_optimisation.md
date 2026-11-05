@@ -182,22 +182,22 @@ result <- graph_optimise(
   num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [12.7s]
+#> ✔ Running global optimization [15.5s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [13ms]
+#> ✔ Evaluating trial success of globally optimised graph [14ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [48ms]
+#> ✔ Running local optimization [54ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [11ms]
+#> ✔ Evaluating trial success of locally optimised graph [14ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [13ms]
+#> ✔ Pruning redundant weights and edges [16ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [5ms]
+#> ✔ Evaluating trial success of pruned graph [6ms]
 #> 
 # }
 ```
