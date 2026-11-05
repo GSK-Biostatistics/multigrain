@@ -1,0 +1,35 @@
+14:10:59 [S2] design built
+14:11:58 [S2] 21 transforms: 59.0 s (median 2.81 s per node)
+14:11:58 [S2] resuming: 3 outer runs already done
+14:14:25 [S2] outer node -3.00 seed 1: gain 2.431300 w1 0.3414 (local) 147.7 s
+14:16:42 [S2] outer node -3.00 seed 2: gain 2.431330 w1 0.3723 (local) 137.2 s
+14:18:48 [S2] outer node -2.00 seed 1: gain 2.416620 w1 0.3342 (local) 126.0 s
+14:21:28 [S2] outer node -2.00 seed 2: gain 2.416510 w1 0.3678 (local) 159.4 s
+14:24:49 [S2] outer node -1.00 seed 1: gain 2.392650 w1 0.3811 (local) 201.0 s
+14:28:14 [S2] outer node -1.00 seed 2: gain 2.392850 w1 0.3703 (local) 205.3 s
+14:32:04 [S2] outer node  0.00 seed 1: gain 2.359540 w1 0.2904 (local) 229.7 s
+14:35:45 [S2] outer node  0.00 seed 2: gain 2.359720 w1 0.2460 (local) 221.3 s
+14:38:17 [S2] outer node  1.00 seed 1: gain 2.314450 w1 0.2694 (local) 151.7 s
+14:40:34 [S2] outer node  1.00 seed 2: gain 2.314420 w1 0.1777 (local) 137.0 s
+14:40:34 [S2] profile starts at node -4.00
+14:40:35 [S2] profile node -3.75: P~ 2.437850 S 2.437740 n_eval 96 0.5 s
+14:40:36 [S2] profile node -3.50: P~ 2.436120 S 2.435710 n_eval 125 0.6 s
+14:40:36 [S2] profile node -3.25: P~ 2.433630 S 2.433360 n_eval 110 0.6 s
+14:40:37 [S2] profile node -3.00: P~ 2.430660 S 2.430540 n_eval 117 0.7 s
+14:40:38 [S2] profile node -2.75: P~ 2.427620 S 2.427570 n_eval 100 0.6 s
+14:40:38 [S2] profile node -2.50: P~ 2.424020 S 2.423930 n_eval 102 0.6 s
+14:40:39 [S2] profile node -2.25: P~ 2.420030 S 2.420010 n_eval 103 0.5 s
+14:40:39 [S2] profile node -2.00: P~ 2.415870 S 2.415720 n_eval 96 0.6 s
+14:40:40 [S2] profile node -1.75: P~ 2.411170 S 2.410880 n_eval 114 0.7 s
+14:40:41 [S2] profile node -1.50: P~ 2.405900 S 2.405200 n_eval 121 0.8 s
+14:40:42 [S2] profile node -1.25: P~ 2.399800 S 2.398650 n_eval 116 0.7 s
+14:40:42 [S2] profile node -1.00: P~ 2.392920 S 2.391920 n_eval 95 0.5 s
+14:40:43 [S2] profile node -0.75: P~ 2.385850 S 2.384630 n_eval 108 0.6 s
+14:40:43 [S2] profile node -0.50: P~ 2.378190 S 2.376910 n_eval 99 0.6 s
+14:40:44 [S2] profile node -0.25: P~ 2.369220 S 2.367650 n_eval 113 0.7 s
+14:40:44 [S2] profile node  0.00: P~ 2.359420 S 2.358500 n_eval 87 0.5 s
+14:40:45 [S2] profile node  0.25: P~ 2.349060 S 2.347860 n_eval 117 0.7 s
+14:40:46 [S2] profile node  0.50: P~ 2.338070 S 2.336320 n_eval 94 0.5 s
+14:40:46 [S2] profile node  0.75: P~ 2.326260 S 2.324070 n_eval 96 0.5 s
+14:40:47 [S2] profile node  1.00: P~ 2.314060 S 2.311610 n_eval 84 0.5 s
+14:40:47 [S2] done in 1791.0 s

@@ -1,0 +1,136 @@
+# d01_transform_split.R output
+VERDICT: no node in [-10, 2] fails (well-ordering and invertibility, all 4 schedules and both corners).
+
+R 4.3.3; gsDesign 3.11.0; multigrain 0.3.0; 2026-10-14 13:45:43.082793
+
+== (a1) .gsd_boundary_table() time, HSD(-2), median of 5 ==
+    G K table_s ms_per_gsBound1
+  128 2   0.109          0.8516
+  256 2   0.200          0.7813
+  512 2   0.428          0.8359
+ 1024 2   0.887          0.8662
+  128 3   0.145          1.1328
+  256 3   0.309          1.2070
+  512 3   0.613          1.1973
+ 1024 3   1.222          1.1934
+K=2: fit table_s = 0.8769 ms * G + -0.0149 s (slope = ms per gsBound1 call)
+K=3: fit table_s = 1.1976 ms * G + -0.0026 s (slope = ms per gsBound1 call)
+
+== (a2) .gsd_invert() time on G = 1024 tables, median of 11 ==
+     N K per_hyp_ms per_look_ms  m2_ms  m3_ms per_look_ms_per_1e5_rows
+ 1e+04 2      3.404       1.702  6.809 10.213                   17.022
+ 1e+05 2      7.733       3.867 15.466 23.199                    3.867
+ 1e+04 3      3.075       1.025  6.149  9.224                   10.249
+ 1e+05 3     11.642       3.881 23.283 34.925                    3.881
+
+== (a3) full transform_pvalues_gsd(), m = 3, K = 2, N = 1e5, G = 1024 ==
+measured 2.85 s; predicted 3 tables + 3 inversions = 2.68 s; brief 3.2 s
+
+== (a4) interpolation error, K = 2, t = (0.5, 1), 200 log-uniform p in [1e-6, 0.025] ==
+ theta look    G   n max_vs_1024 med_vs_1024 max_vs_exact med_vs_exact
+    -4    1  128 167    7.22e-15    1.78e-15     5.44e-15     1.11e-15
+    -4    1  256 167    8.99e-15    1.78e-15     7.44e-15     1.89e-15
+    -4    1  512 167    8.88e-15    1.78e-15     7.33e-15     2.00e-15
+    -4    1 1024 167    0.00e+00    0.00e+00     7.33e-15     1.78e-15
+    -4    2  128 198    1.29e-05    3.36e-06     1.41e-05     3.39e-06
+    -4    2  256 198    4.55e-06    8.68e-07     4.57e-06     9.23e-07
+    -4    2  512 198    1.23e-06    1.75e-07     2.40e-06     2.35e-07
+    -4    2 1024 198    0.00e+00    0.00e+00     1.17e-06     6.00e-08
+    -2    1  128 167    7.22e-15    1.78e-15     1.10e-14     2.00e-15
+    -2    1  256 167    1.07e-14    1.78e-15     5.77e-15     1.55e-15
+    -2    1  512 167    8.99e-15    1.78e-15     7.55e-15     2.00e-15
+    -2    1 1024 167    0.00e+00    0.00e+00     7.33e-15     1.55e-15
+    -2    2  128 199    4.26e-05    9.07e-06     4.31e-05     9.08e-06
+    -2    2  256 199    9.79e-06    2.23e-06     1.05e-05     2.39e-06
+    -2    2  512 199    2.73e-06    4.02e-07     2.80e-06     5.51e-07
+    -2    2 1024 199    0.00e+00    0.00e+00     6.79e-07     1.57e-07
+     1    1  128 188    7.22e-15    1.78e-15     5.55e-15     1.67e-15
+     1    1  256 188    1.24e-14    1.78e-15     1.08e-14     1.78e-15
+     1    1  512 188    1.07e-14    1.78e-15     1.09e-14     1.89e-15
+     1    1 1024 188    0.00e+00    0.00e+00     7.33e-15     1.78e-15
+     1    2  128 185    1.38e-04    2.31e-05     1.39e-04     2.33e-05
+     1    2  256 185    3.44e-05    5.13e-06     3.51e-05     5.63e-06
+     1    2  512 185    8.18e-06    1.12e-06     8.33e-06     1.54e-06
+     1    2 1024 185    0.00e+00    0.00e+00     1.94e-06     3.10e-07
+Worst case over theta and look, per G:
+    G max_vs_1024 max_vs_exact
+  128    1.38e-04     1.39e-04
+  256    3.44e-05     3.51e-05
+  512    8.18e-06     8.33e-06
+ 1024    0.00e+00     1.94e-06
+
+== (b) well-ordering and invertibility sweep, G = 1024 ==
+198 tables built in 118.8 s on 2 cores
+Pass/fail (node x schedule) and min over columns of distinct positive boundaries:
+       (0.5,1)   (1/3,2/3,1) (0.25,0.5,0.75,1) (0.6,1)  
+-10.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -9.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -9.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -9.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -9.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -8.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -8.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -8.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -8.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -7.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -7.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -7.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -7.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -6.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -6.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -6.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -6.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -5.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -5.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -5.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -5.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -4.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -4.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -4.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -4.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -3.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -3.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -3.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -3.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -2.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -2.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -2.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -2.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -1.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -1.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -1.25 pass 1024 pass 1024   pass 1024         pass 1024
+ -1.00 pass 1024 pass 1024   pass 1024         pass 1024
+ -0.75 pass 1024 pass 1024   pass 1024         pass 1024
+ -0.50 pass 1024 pass 1024   pass 1024         pass 1024
+ -0.25 pass 1024 pass 1024   pass 1024         pass 1024
+  0.00 pass 1024 pass 1024   pass 1024         pass 1024
+  0.25 pass 1024 pass 1024   pass 1024         pass 1024
+  0.50 pass 1024 pass 1024   pass 1024         pass 1024
+  0.75 pass 1024 pass 1024   pass 1024         pass 1024
+  1.00 pass 1024 pass 1024   pass 1024         pass 1024
+  1.25 pass 1024 pass 1024   pass 1024         pass 1024
+  1.50 pass 1024 pass 1024   pass 1024         pass 1024
+  1.75 pass 1024 pass 1024   pass 1024         pass 1024
+  2.00 pass 1024 pass 1024   pass 1024         pass 1024
+Corners:
+ node schedule pass min_distinct min_bound min_pos_bound
+  -10  (0.1,1) TRUE         1024  7.80e-19      7.80e-19
+    2  (0.9,1) TRUE         1024  7.43e-16      7.43e-16
+Per schedule: smallest distinct count, smallest boundary, smallest positive boundary:
+          schedule min_distinct min_bound min_pos_bound
+           (0.1,1)         1024  7.80e-19      7.80e-19
+ (0.25,0.5,0.75,1)         1024  5.08e-18      5.08e-18
+           (0.5,1)         1024  6.69e-17      6.69e-17
+           (0.6,1)         1024  1.83e-16      1.83e-16
+           (0.9,1)         1024  7.43e-16      7.43e-16
+       (1/3,2/3,1)         1024  1.23e-17      1.23e-17
+Boundaries <= 0 anywhere: 0
+
+== (b2) sfHSD identities ==
+sfHSD(0.025, c(0.5, 1), 0)$spend = 0.0125, 0.0250
+max |sfHSD(1,t,g) / closed form - 1| = 0
+max |[spend(1e-14)/1e-14] / [spend(0.025)/0.025] - 1| = 3.33e-16
+smallest spend increment at level 1e-14 = 7.8e-19 (node -10, schedule (0.1,1))
+
+VERDICT: no node in [-10, 2] fails (well-ordering and invertibility, all 4 schedules and both corners).
+Script runtime: 157.5 s

@@ -1,0 +1,206 @@
+<multigrain_pvals_gsd>
+100000 simulation(s), 3 hypothes(es), 2 analys(es); alpha = 0.025
+Information fractions (NA = no data at that analysis):
+   analysis 1 analysis 2
+H1        0.5          1
+H2        0.5          1
+H3        0.5          1
+Look-back: H1 = FALSE, H2 = FALSE, H3 = FALSE
+
+Per-hypothesis detail:
+ hypothesis analyses matured_at look_back spending
+         H1     1, 2          2     FALSE   sfLDOF
+         H2     1, 2          2     FALSE   sfLDOF
+         H3     1, 2          2     FALSE   sfLDOF
+
+Nominal boundaries at the full level (0.025):
+    analysis 1 analysis 2
+H1 0.001525323 0.02449978
+H2 0.001525323 0.02449978
+H3 0.001525323 0.02449978
+v Trial success function compiled and sourced successfully.
+v Trial success function compiled and sourced successfully.
+<multigrain_trial_success_gsd/multigrain_trial_success>
+0.5 * d(t1) + r1 * (0.3 * d(t2) + 0.2 * d(t3))
+Analyses (K): 2
+Discount table d(t): 1.0, 0.8
+i Running global optimization
+v Running global optimization [2m 21.9s]
+
+i Evaluating trial success of globally optimised graph
+v Evaluating trial success of globally optimised graph [44ms]
+
+i Running local optimization
+v Running local optimization [487ms]
+
+i Evaluating trial success of locally optimised graph
+v Evaluating trial success of locally optimised graph [72ms]
+
+i Pruning redundant weights and edges
+v Pruning redundant weights and edges [157ms]
+
+i Evaluating trial success of pruned graph
+v Evaluating trial success of pruned graph [127ms]
+
+i Running global optimization
+v Running global optimization [1m 56.3s]
+
+i Evaluating trial success of globally optimised graph
+v Evaluating trial success of globally optimised graph [48ms]
+
+i Running local optimization
+v Running local optimization [107ms]
+
+i Evaluating trial success of locally optimised graph
+v Evaluating trial success of locally optimised graph [56ms]
+
+i Pruning redundant weights and edges
+v Pruning redundant weights and edges [226ms]
+
+i Evaluating trial success of pruned graph
+v Evaluating trial success of pruned graph [34ms]
+
+i Running global optimization
+v Running global optimization [2m 33.1s]
+
+i Evaluating trial success of globally optimised graph
+v Evaluating trial success of globally optimised graph [46ms]
+
+i Running local optimization
+v Running local optimization [460ms]
+
+i Evaluating trial success of locally optimised graph
+v Evaluating trial success of locally optimised graph [54ms]
+
+i Pruning redundant weights and edges
+v Pruning redundant weights and edges [231ms]
+
+i Evaluating trial success of pruned graph
+v Evaluating trial success of pruned graph [53ms]
+
+<multigrain_graph_optimal>
+Optimal graph found (given user-defined constraints on graph and computational resources):
+
+Hypothesis weights:
+H1 H2 H3 
+ 1  0  0 
+
+Transition matrix:
+   H1     H2     H3
+H1  0 0.9296 0.0704
+H2  1 0.0000 0.0000
+H3  1 0.0000 0.0000
+
+Trial success function:
+0.5 * d(t1) + r1 * (0.3 * d(t2) + 0.2 * d(t3))
+
+Value of trial success measure:
+0.667
+Optimisation summary
+
+Optimisation results:
+
+Hypothesis weights:
+H1 H2 H3 
+ 1  0  0 
+
+Transition matrix:
+   H1     H2     H3
+H1  0 0.9296 0.0704
+H2  1 0.0000 0.0000
+H3  1 0.0000 0.0000
+
+Trial success function (group sequential):
+0.5 * d(t1) + r1 * (0.3 * d(t2) + 0.2 * d(t3))
+Analyses (K): 2
+Discount table d(t): 1.0, 0.8
+
+Value of trial success measure:
+0.667
+
+Power metrics:
+Power for each hypothesis:
+[1] 0.8984 0.7448 0.6077
+Expected number of rejections: 2.25
+Probability of at least one rejection: 0.8984
+Probability of rejecting all hypotheses: 0.5886
+
+Graph constraints:
+Constraints on hypothesis weights:
+H1 H2 H3 
+NA NA NA 
+
+Constraints on transition matrix:
+   H1 H2 H3
+H1  0 NA NA
+H2 NA  0 NA
+H3 NA NA  0
+
+Solution source:
+Local optimisation (nloptr)
+
+Power fields that print() and summary() do not show:
+$local_power_by_analysis
+   analysis 1 analysis 2
+H1    0.25129    0.89841
+H2    0.08433    0.74478
+H3    0.03595    0.60766
+
+$mean_decision_look
+[1] 1.720295 1.886772 1.940839
+
+$time_distribution
+     never analysis 1 analysis 2
+H1 0.10159    0.25129    0.64712
+H2 0.25522    0.08433    0.66045
+H3 0.39234    0.03595    0.57171
+
+
+Comparators (same simulated trials):
+                          graph gain_discounted gain_undiscounted power_H1
+ optimised (discounted, seed 1)          0.6670            0.7942   0.8984
+ optimised (discounted, seed 2)          0.6670            0.7942   0.8984
+       optimised (undiscounted)          0.6669            0.7941   0.8984
+                           Holm          0.6179            0.7502   0.8367
+  fixed sequence H1 -> H2 -> H3          0.6660            0.7927   0.8984
+   H1 gate, then Holm on H2, H3          0.6624            0.7899   0.8984
+ power_H2 power_H3 interim_H1 interim_H2 interim_H3
+   0.7448   0.6077     0.2513    0.08433    0.03595
+   0.7445   0.6081     0.2513    0.08413    0.03605
+   0.7428   0.6104     0.2513    0.08303    0.03617
+   0.7362   0.6491     0.1150    0.07253    0.05070
+   0.7507   0.5916     0.2513    0.08827    0.03600
+   0.7121   0.6352     0.2513    0.05928    0.04524
+
+Optimised graphs:
+optimised (discounted, seed 1) : w = 1, 0, 0 
+   H1   H2   H3
+H1  0 0.93 0.07
+H2  1 0.00 0.00
+H3  1 0.00 0.00
+optimised (discounted, seed 2) : w = 1, 0, 0 
+   H1    H2    H3
+H1  0 0.926 0.074
+H2  1 0.000 0.000
+H3  1 0.000 0.000
+optimised (undiscounted) : w = 1, 0, 0 
+   H1    H2    H3
+H1  0 0.906 0.094
+H2  1 0.000 0.000
+H3  1 0.000 0.000
+
+Random search over 20,000 graphs: best gain 0.66521; optimiser 0.66696 (seed 1), 0.66696 (seed 2)
+Best random graph: w = 0.976, 0.005, 0.019 
+      [,1]  [,2]  [,3]
+[1,] 0.000 0.988 0.012
+[2,] 0.597 0.000 0.403
+[3,] 0.592 0.408 0.000
+Quantiles of the random-search gain:
+     0%     50%     90%     99%   99.9%    100% 
+0.51842 0.61599 0.64310 0.65706 0.66263 0.66521 
+
+Elapsed seconds (2 threads):
+                 simulate                 transform optimise_discounted_seed1 
+                      0.1                       2.6                     142.9 
+optimise_discounted_seed2     optimise_undiscounted       random_search_20000 
+                    116.8                     154.0                      84.1 

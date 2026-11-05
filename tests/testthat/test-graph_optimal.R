@@ -176,6 +176,79 @@ test_that("graph_optimal print & summary methods", {
     expect_snapshot(summary(graph_optimal_example))
 })
 
+test_that("graph_optimal print & summary methods, group sequential", {
+    pvals <- withr::with_seed(31, {
+        simulate_pvalues_gsd(c(0.9, 0.8), info_frac = c(0.5, 1), nsim = 500)
+    })
+    pvals <- transform_pvalues_gsd(
+        pvals,
+        spending = gsDesign::sfLDOF,
+        grid_size = 64L
+    )
+    gain <- trial_success_gsd(
+        d(t1) + d(t2),
+        d = c(1, 0.75),
+        verbose = "silent"
+    )
+    rule <- stopping_rule_gsd(r1)
+    hyp_weight <- c(0.5, 0.5)
+    trans_matrix <- rbind(c(0, 1), c(1, 0))
+
+    power <- calc_power_pvals_gsd(
+        pvals,
+        hyp_weight,
+        trans_matrix,
+        custom_power = list(trial_success = gain),
+        stopping_rule = rule
+    )
+    obj <- graph_optimal(
+        hyp_weight = hyp_weight,
+        trans_matrix = trans_matrix,
+        trial_success = gain,
+        power = power,
+        stopping_rule = rule
+    )
+    expect_identical(obj$stopping_rule, rule)
+    expect_snapshot(print(obj))
+    expect_snapshot(summary(obj))
+
+    # without a rule every trial stops at the last analysis unless it
+    # rejected every hypothesis at the interim
+    power_no_rule <- calc_power_pvals_gsd(
+        pvals,
+        hyp_weight,
+        trans_matrix,
+        custom_power = list(trial_success = gain)
+    )
+    obj_no_rule <- graph_optimal(
+        hyp_weight = hyp_weight,
+        trans_matrix = trans_matrix,
+        trial_success = gain,
+        power = power_no_rule
+    )
+    expect_null(obj_no_rule$stopping_rule)
+    expect_snapshot(summary(obj_no_rule))
+})
+
+test_that("summarise_power_object shows the group sequential fields", {
+    look_names <- c("analysis 1", "analysis 2")
+    power_object <- list(
+        local_power_by_analysis = matrix(
+            c(0.12345, 0.2, 0.8, 0.65432),
+            nrow = 2,
+            dimnames = list(c("H1", "H2"), look_names)
+        ),
+        time_distribution = matrix(
+            c(0.2, 0.34568, 0.12345, 0.2, 0.67655, 0.45432),
+            nrow = 2,
+            dimnames = list(c("H1", "H2"), c("never", look_names))
+        ),
+        stop_distribution = c("analysis 1" = 0.25, "analysis 2" = 0.75),
+        mean_stop_look = 1.75
+    )
+    expect_snapshot(summarise_power_object(power_object))
+})
+
 test_that("is_graph_optimal", {
     graph_custom_power <- readRDS(test_path("data", "graph_custom_power.rds"))
 

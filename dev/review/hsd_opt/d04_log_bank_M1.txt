@@ -1,0 +1,15 @@
+14:56:16 [bank M1] 21 transforms 38.4 s
+14:56:16 [bank M1] bank built 0.14 s; fixed columns identical across nodes: TRUE
+14:57:31 [bank M1] gene, popSize 200 seed 1: iter 223, evals 39594, 75.1 s, node -0.75, best 0.692647, full 0.692738
+14:58:32 [bank M1] no gene (gamma -2), popSize 200 seed 1: iter 213, evals 37860, 60.4 s, node -2.00, best 0.689040, full 0.689574
+14:59:41 [bank M1] gene, popSize 200 seed 2: iter 205, evals 36270, 69.3 s, node -0.75, best 0.692647, full 0.692738
+15:00:40 [bank M1] no gene (gamma -2), popSize 200 seed 2: iter 210, evals 36831, 58.9 s, node -2.00, best 0.690414, full 0.689609
+15:01:51 [bank M1] gene, popSize 200 seed 3: iter 215, evals 37553, 70.9 s, node -0.75, best 0.692647, full 0.692738
+15:02:51 [bank M1] no gene (gamma -2), popSize 200 seed 3: iter 220, evals 38414, 59.9 s, node -2.00, best 0.690143, full 0.689474
+15:04:00 [bank M1] gene, popSize 200 seed 4: iter 215, evals 38063, 69.6 s, node -0.75, best 0.692647, full 0.692738
+15:05:45 [bank M1] no gene (gamma -2), popSize 200 seed 4: iter 380, evals 66189, 105.0 s, node -2.00, best 0.689621, full 0.689619
+15:06:56 [bank M1] gene, popSize 200 seed 5: iter 212, evals 37575, 70.9 s, node -0.75, best 0.692647, full 0.692738
+15:08:41 [bank M1] no gene (gamma -2), popSize 200 seed 5: iter 376, evals 65965, 104.6 s, node -2.00, best 0.689624, full 0.689609
+15:10:22 [bank M1] gene, popSize 300 seed 1: iter 207, evals 53931, 100.8 s, node -0.75, best 0.692647, full 0.692738
+15:12:03 [bank M1] gene, popSize 300 seed 2: iter 201, evals 52148, 100.8 s, node -0.75, best 0.692647, full 0.692738
+15:13:47 [bank M1] gene, popSize 300 seed 3: iter 210, evals 54687, 104.9 s, node -0.75, best 0.692647, full 0.692738

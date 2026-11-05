@@ -239,3 +239,141 @@
       Solution source:
       Local optimisation (nloptr)
 
+# graph_optimal print & summary methods, group sequential
+
+    Code
+      print(obj)
+    Output
+      <multigrain_graph_optimal>
+      Optimal graph found (given user-defined constraints on graph and computational resources):
+      
+      Hypothesis weights:
+      [1] 0.5 0.5
+      
+      Transition matrix:
+           [,1] [,2]
+      [1,]    0    1
+      [2,]    1    0
+      
+      Trial success function:
+      d(t1) + d(t2)
+      
+      Stopping rule:
+      Every interim: r1
+      Hypotheses referenced: up to r1
+      
+      Value of trial success measure:
+      1.227
+
+---
+
+    Code
+      summary(obj)
+    Output
+      Optimisation summary
+      
+      Optimisation results:
+      
+      Hypothesis weights:
+      [1] 0.5 0.5
+      
+      Transition matrix:
+           [,1] [,2]
+      [1,]    0    1
+      [2,]    1    0
+      
+      Trial success function (group sequential):
+      d(t1) + d(t2)
+      Analyses (K): 2
+      Discount table d(t): 1.00, 0.75
+      
+      Stopping rule (group sequential):
+      Every interim: r1
+      Hypotheses referenced: up to r1
+      
+      Value of trial success measure:
+      1.227
+      
+      Power metrics:
+      Power for each hypothesis:
+      [1] 0.864 0.682
+      Expected number of rejections: 1.55
+      Probability of at least one rejection: 0.936
+      Probability of rejecting all hypotheses: 0.61
+      Power by analysis:
+         analysis 1 analysis 2
+      H1      0.162      0.864
+      H2      0.108      0.682
+      Decision-time distribution:
+         never analysis 1 analysis 2
+      H1 0.136      0.162      0.702
+      H2 0.318      0.108      0.574
+      Stopping-look distribution:
+      analysis 1 analysis 2 
+           0.162      0.838 
+      Mean stopping look: 1.838
+
+---
+
+    Code
+      summary(obj_no_rule)
+    Output
+      Optimisation summary
+      
+      Optimisation results:
+      
+      Hypothesis weights:
+      [1] 0.5 0.5
+      
+      Transition matrix:
+           [,1] [,2]
+      [1,]    0    1
+      [2,]    1    0
+      
+      Trial success function (group sequential):
+      d(t1) + d(t2)
+      Analyses (K): 2
+      Discount table d(t): 1.00, 0.75
+      
+      Value of trial success measure:
+      1.3065
+      
+      Power metrics:
+      Power for each hypothesis:
+      [1] 0.864 0.788
+      Expected number of rejections: 1.65
+      Probability of at least one rejection: 0.936
+      Probability of rejecting all hypotheses: 0.716
+      Power by analysis:
+         analysis 1 analysis 2
+      H1      0.162      0.864
+      H2      0.108      0.788
+      Decision-time distribution:
+         never analysis 1 analysis 2
+      H1 0.136      0.162      0.702
+      H2 0.212      0.108      0.680
+      Stopping-look distribution:
+      analysis 1 analysis 2 
+           0.036      0.964 
+      Mean stopping look: 1.964
+
+# summarise_power_object shows the group sequential fields
+
+    Code
+      summarise_power_object(power_object)
+    Output
+      
+      Power metrics:
+      Power by analysis:
+         analysis 1 analysis 2
+      H1     0.1235     0.8000
+      H2     0.2000     0.6543
+      Decision-time distribution:
+          never analysis 1 analysis 2
+      H1 0.2000     0.1235     0.6766
+      H2 0.3457     0.2000     0.4543
+      Stopping-look distribution:
+      analysis 1 analysis 2 
+            0.25       0.75 
+      Mean stopping look: 1.75
+

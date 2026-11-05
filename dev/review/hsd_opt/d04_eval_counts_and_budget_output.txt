@@ -1,0 +1,104 @@
+# d04_eval_counts_and_budget.R output
+R 4.3.3; multigrain 0.3.0; GA 3.2.5; nloptr 2.2.1; 2026-10-14 15:14:05; num_threads = 2; nsim = 1e5
+tracemem()/copy numbers: not repeated, d03 is in (see d03_memory_and_copy_output.txt)
+
+== Table D6: section-2 design (sfLDOF x 3), drivers in graph_optimise_gsd() order ==
+transform (sfLDOF, G = 1024): 2.33 s
+
+-- seed 1, global_search = TRUE --
+ stage iter evals   secs
+    GA  366 59871 184.45
+ local  112   116   0.73
+ prune   NA    10   0.49
+ final   NA     1   0.04
+staged total 185.7 s; one-call graph_optimise_gsd() 172.7 s; identical(hyp_weight) TRUE; identical(trans_matrix too) TRUE
+gain staged 2.448070, one-call 2.448070; source local; GA full-sample 2.447740, local full-sample 2.448070
+GA: 3.08 ms per evaluation (incl. GA overhead); GA share of the staged run 99 %
+
+-- seed 2, global_search = TRUE --
+ stage iter evals   secs
+    GA  499 81864 226.95
+ local   94    98   0.54
+ prune   NA    10   0.31
+ final   NA     1   0.03
+staged total 227.8 s; one-call graph_optimise_gsd() not run s; identical(hyp_weight) NA; identical(trans_matrix too) NA
+gain staged 2.448120, one-call -; source local; GA full-sample 2.448080, local full-sample 2.448120
+GA: 2.77 ms per evaluation (incl. GA overhead); GA share of the staged run 100 %
+
+-- seed 1, global_search = FALSE --
+ stage iter evals secs
+ local   96   100 0.58
+ prune   NA    10 0.24
+ final   NA     1 0.02
+staged total 0.8 s; one-call graph_optimise_gsd() 0.9 s; identical(hyp_weight) TRUE; identical(trans_matrix too) TRUE
+gain staged 2.448120, one-call 2.448120; source local; GA full-sample -, local full-sample 2.448120
+
+== Table D7: warm-started COBYLA counts E_C, section-2 design, from the gamma = -2 optimum ==
+start graph: d02 S2 profile optimum at gamma -2 
+  node evals cobyla_s node_s transform_s gain_start gain_refined     gain ms_per_eval
+ -2.00    95     0.65   0.69        2.52   2.415870     2.415870 2.415870        6.87
+ -2.25   107     0.61   0.63        2.73   2.419680     2.419810 2.419810        5.69
+ -1.75   124     0.74   0.76        2.63   2.410530     2.411170 2.411170        5.93
+ -3.00   103     0.65   0.67        3.24   2.430290     2.431170 2.431170        6.34
+ -1.00   104     0.62   0.64        3.28   2.391980     2.392550 2.392550        6.00
+ -4.00    93     0.44   0.46        3.22   2.439440     2.439510 2.439510        4.76
+  1.00   127     0.79   0.81        2.73   2.311530     2.314170 2.314170        6.23
+E_C over the six off-start nodes: median 105, range 93-127; [derived] design 4.2: 200-800
+
+== Table D8 (M0): GA with and without the parameter gene ==
+21 transforms 38.8 s; bank (21 x 5e4 x 2 slices) 0.13 s; fixed H1 columns identical across nodes: TRUE
+graph genes p_graph = 1; popSize rule min(max(40 (m + d), 200), 500) = 200 at m + d = 3 (inert: default is 200)
+d02 profile argmax -2.75 (P~ 0.711126), plateau [-3.75, -1.75]
+                          config seed generations evals wall_s  node     w1 best_fitness_sub full_gain nodes_visited
+               gene, popSize 200    1         209 36821   68.6 -2.75 0.9555         0.711028  0.711128            21
+ no gene (gamma -2), popSize 200    1         241 41969   67.0 -2.00 0.9020         0.710638  0.710891             1
+               gene, popSize 200    2         205 36324   71.4 -2.75 0.9555         0.711028  0.711128            21
+ no gene (gamma -2), popSize 200    2         252 44143   72.2 -2.00 0.9360         0.711146  0.710867             1
+               gene, popSize 200    3         251 45392   89.6 -2.75 0.9568         0.711029  0.711112            21
+ no gene (gamma -2), popSize 200    3         216 37966   59.8 -2.00 0.9360         0.710818  0.710865             1
+               gene, popSize 200    4         205 36096   67.3 -2.75 0.9555         0.711028  0.711129            21
+ no gene (gamma -2), popSize 200    4         223 38939   60.7 -2.00 0.9367         0.710735  0.710858             1
+               gene, popSize 200    5         203 36027   65.1 -2.75 0.9555         0.711028  0.711128            21
+ no gene (gamma -2), popSize 200    5         227 39799   61.7 -2.00 0.8974         0.711586  0.710846             1
+               gene, popSize 300    1         204 52971   95.9 -2.75 0.9555         0.711028  0.711126            21
+               gene, popSize 300    2         224 57876  106.3 -2.75 0.9555         0.711028  0.711124            21
+               gene, popSize 300    3         203 52661   95.2 -2.75 0.9555         0.711028  0.711129            21
+
+summary:
+                          config n median_generations median_evals median_wall_s                   nodes_found max_full_gain
+               gene, popSize 200 5                205        36324          68.6 -2.75 -2.75 -2.75 -2.75 -2.75      0.711129
+               gene, popSize 300 3                204        52971          95.9             -2.75 -2.75 -2.75      0.711129
+ no gene (gamma -2), popSize 200 5                227        39799          61.7 -2.00 -2.00 -2.00 -2.00 -2.00      0.710891
+generation ratio gene / no gene at popSize 200 (medians): 0.90 (rule threshold 1.5)
+visits per node, summed over gene runs (nodes -4 .. 1):
+-4.00 -3.75 -3.50 -3.25 -3.00 -2.75 -2.50 -2.25 -2.00 -1.75 -1.50 -1.25 -1.00 -0.75 -0.50 -0.25  0.00  0.25  0.50  0.75  1.00 
+11962 13009 14062 15775 17767 43178 22265 20031 19381 18921 18712 18429 17409 16571 15551 14240 13313 12426 11214  9990  9286 
+
+== Table D8 (M1): GA with and without the parameter gene ==
+21 transforms 38.4 s; bank (21 x 5e4 x 2 slices) 0.14 s; fixed H1 columns identical across nodes: TRUE
+graph genes p_graph = 1; popSize rule min(max(40 (m + d), 200), 500) = 200 at m + d = 3 (inert: default is 200)
+d02 profile argmax -0.25 (P~ 0.693038), plateau [-0.75, 0.00]
+                          config seed generations evals wall_s  node     w1 best_fitness_sub full_gain nodes_visited
+               gene, popSize 200    1         223 39594   75.1 -0.75 0.4374         0.692647  0.692738            21
+ no gene (gamma -2), popSize 200    1         213 37860   60.4 -2.00 0.4521         0.689040  0.689574             1
+               gene, popSize 200    2         205 36270   69.3 -0.75 0.4374         0.692647  0.692738            21
+ no gene (gamma -2), popSize 200    2         210 36831   58.9 -2.00 0.4433         0.690414  0.689609             1
+               gene, popSize 200    3         215 37553   70.9 -0.75 0.4374         0.692647  0.692738            21
+ no gene (gamma -2), popSize 200    3         220 38414   59.9 -2.00 0.4090         0.690143  0.689474             1
+               gene, popSize 200    4         215 38063   69.6 -0.75 0.4374         0.692647  0.692738            21
+ no gene (gamma -2), popSize 200    4         380 66189  105.0 -2.00 0.4421         0.689621  0.689619             1
+               gene, popSize 200    5         212 37575   70.9 -0.75 0.4374         0.692647  0.692738            21
+ no gene (gamma -2), popSize 200    5         376 65965  104.6 -2.00 0.4340         0.689624  0.689609             1
+               gene, popSize 300    1         207 53931  100.8 -0.75 0.4374         0.692647  0.692738            21
+               gene, popSize 300    2         201 52148  100.8 -0.75 0.4374         0.692647  0.692738            21
+               gene, popSize 300    3         210 54687  104.9 -0.75 0.4374         0.692647  0.692738            21
+
+summary:
+                          config n median_generations median_evals median_wall_s                   nodes_found max_full_gain
+               gene, popSize 200 5                215        37575          70.9 -0.75 -0.75 -0.75 -0.75 -0.75      0.692738
+               gene, popSize 300 3                207        53931         100.8             -0.75 -0.75 -0.75      0.692738
+ no gene (gamma -2), popSize 200 5                220        38414          60.4 -2.00 -2.00 -2.00 -2.00 -2.00      0.689619
+generation ratio gene / no gene at popSize 200 (medians): 0.98 (rule threshold 1.5)
+visits per node, summed over gene runs (nodes -4 .. 1):
+-4.00 -3.75 -3.50 -3.25 -3.00 -2.75 -2.50 -2.25 -2.00 -1.75 -1.50 -1.25 -1.00 -0.75 -0.50 -0.25  0.00  0.25  0.50  0.75  1.00 
+ 8408  8925  9749 10245 11033 11684 12747 13733 15325 16555 18181 19770 22305 49521 25628 20777 18520 16675 14917 13391 11732 

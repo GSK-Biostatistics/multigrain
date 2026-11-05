@@ -1,0 +1,204 @@
+# d02_warm_start_profile.R output
+R 4.3.3; multigrain 0.3.0; 2026-10-14 14:40:59; num_threads = 2; nsim = 1e5
+Designs reported: M0, M1, S2 
+
+== M0 ==
+simulation seed 20261007; outer runs per node and seed listed below; profile start node -3.00 (best seed-1 outer result)
+
+-- outer-loop reference (full default graph_optimise_gsd per node and seed) --
+ node seed     gain     w1 secs opt_source ga_iter
+   -4    1 0.710438 0.9595 77.1      local     221
+   -4    2 0.710446 0.9593 72.8      local     211
+   -4    3 0.710446 0.9593 67.0      local     208
+   -3    1 0.711060 0.9593 61.8      local     220
+   -3    2 0.711081 0.9568 64.9      local     205
+   -3    3 0.711060 0.9593 78.7      local     259
+   -2    1 0.710895 0.9019 62.2      local     204
+   -2    2 0.710883 0.9531 73.9      local     247
+   -2    3 0.710868 0.9511 61.7      local     216
+   -1    1 0.709570 0.9038 64.6      local     206
+   -1    2 0.709567 0.9034 64.0      local     230
+   -1    3 0.709570 0.9038 66.7      local     204
+    0    1 0.706752 0.9009 66.6      local     204
+    0    2 0.706737 0.8965 59.6      local     201
+    0    3 0.706718 0.8691 60.7      local     217
+    1    1 0.701950 0.8944 57.9      local     204
+    1    2 0.701935 0.8922 59.7      local     205
+    1    3 0.701953 0.8946 62.7      local     214
+
+-- warm-started profile --
+  node  P_tilde S_fixed_graph P_minus_S   start     w1 n_eval transform_s refine_s
+ -4.00 0.710446      0.710442  4.00e-06    prev 0.9593     25        2.26     0.09
+ -3.75 0.710642      0.710641  8.00e-07    prev 0.9593     23        1.77     0.08
+ -3.50 0.710808      0.710797  1.12e-05 overall 0.9593     28        2.05     0.09
+ -3.25 0.710928      0.710922  5.20e-06    prev 0.9555     25        2.10     0.09
+ -3.00 0.711060      0.711060  0.00e+00   seed1 0.9593     25        1.91     0.10
+ -2.75 0.711126      0.711057  6.92e-05    prev 0.9556     26        1.98     0.10
+ -2.50 0.711064      0.710994  7.00e-05    prev 0.9555     27        1.70     0.08
+ -2.25 0.710975      0.710868  1.07e-04    prev 0.9535     27        1.79     0.10
+ -2.00 0.710876      0.710781  9.52e-05    prev 0.9536     28        1.70     0.08
+ -1.75 0.710732      0.710598  1.34e-04    prev 0.9340     27        2.10     0.08
+ -1.50 0.710468      0.710242  2.26e-04    prev 0.9331     30        1.79     0.08
+ -1.25 0.710029      0.709796  2.33e-04    prev 0.9268     25        1.77     0.08
+ -1.00 0.709550      0.709211  3.39e-04    prev 0.8966     27        1.64     0.07
+ -0.75 0.709071      0.708670  4.01e-04    prev 0.9023     28        1.81     0.10
+ -0.50 0.708399      0.707898  5.02e-04    prev 0.9023     25        1.79     0.22
+ -0.25 0.707702      0.707102  6.00e-04    prev 0.9023     24        2.17     0.09
+  0.00 0.706727      0.706069  6.58e-04    prev 0.9023     25        2.02     0.07
+  0.25 0.705690      0.704936  7.53e-04    prev 0.8955     29        2.00     0.08
+  0.50 0.704582      0.703755  8.27e-04    prev 0.8955     26        2.00     0.07
+  0.75 0.703344      0.702448  8.96e-04    prev 0.8955     26        1.61     0.09
+  1.00 0.701950      0.700924  1.03e-03    prev 0.8944     29        1.94     0.12
+argmax P~ = -2.75 (P~ = 0.711126); plateau(P~, 5e-4) = [-3.75, -1.75]; plateau(S, 5e-4) = [-3.75, -1.75]
+
+-- Table D4: gate --
+ node  P_tilde        S  U_seed1  U_seed2  U_seed3    max_U       gap in_plateau
+   -4 0.710446 0.710442 0.710438 0.710446 0.710446 0.710446 +0.00e+00      FALSE
+   -3 0.711060 0.711060 0.711060 0.711081 0.711060 0.711081 +2.08e-05       TRUE
+   -2 0.710876 0.710781 0.710895 0.710883 0.710868 0.710895 +1.88e-05       TRUE
+   -1 0.709550 0.709211 0.709570 0.709567 0.709570 0.709570 +1.92e-05      FALSE
+    0 0.706727 0.706069 0.706752 0.706737 0.706718 0.706752 +2.56e-05      FALSE
+    1 0.701950 0.700924 0.701950 0.701935 0.701953 0.701953 +2.40e-06      FALSE
+max gap inside plateau = +2.08e-05 (2 outer nodes inside); max gap outside = +2.56e-05
+GATE M0: PASS
+
+-- cost --
+outer loop: 18 runs, 1182.6 s in all (median 64.3 s per run; transforms extra)
+profile: 21 transforms 39.9 s (median 1.91 s) + refinement 2.0 s (median 0.09 s, 555 evaluations in all, median 26 per node); total 41.9 s
+COBYLA per evaluation (full nsim): 2.72 ms
+
+== M1 ==
+simulation seed 20261007; outer runs per node and seed listed below; profile start node 0.00 (best seed-1 outer result)
+
+-- outer-loop reference (full default graph_optimise_gsd per node and seed) --
+ node seed     gain     w1 secs opt_source ga_iter
+   -4    1 0.680144 0.3981 66.5      local     235
+   -4    2 0.680167 0.4436 59.2      local     202
+   -4    3 0.680203 0.4381 86.8      local     297
+   -3    1 0.685224 0.4418 67.1      local     234
+   -3    2 0.685146 0.3581 56.5      local     201
+   -3    3 0.685268 0.3982 83.2      local     292
+   -2    1 0.689614 0.4325 73.2      local     262
+   -2    2 0.689636 0.4381 64.8      local     227
+   -2    3 0.689636 0.4381 58.1      local     207
+   -1    1 0.692275 0.4435 64.2      local     224
+   -1    2 0.692265 0.4429 62.5      local     218
+   -1    3 0.692269 0.4437 55.5      local     201
+    0    1 0.692769 0.4389 71.1      local     246
+    0    2 0.692731 0.4649 61.2      local     208
+    0    3 0.692792 0.4520 59.6      local     202
+    1    1 0.690487 0.5503 60.9      local     206
+    1    2 0.690609 0.4548 61.8      local     201
+    1    3 0.690610 0.4526 64.8      local     218
+
+-- warm-started profile --
+  node  P_tilde S_fixed_graph P_minus_S   start     w1 n_eval transform_s refine_s
+ -4.00 0.680199      0.680199  0.00e+00 overall 0.4389     27        1.91     0.10
+ -3.75 0.681492      0.681489  2.40e-06    prev 0.4383     28        1.62     0.11
+ -3.50 0.682816      0.682816  0.00e+00    prev 0.4389     27        2.03     0.12
+ -3.25 0.683984      0.683984  0.00e+00 overall 0.4389     27        1.83     0.09
+ -3.00 0.685203      0.685183  2.00e-05 overall 0.4447     29        1.76     0.10
+ -2.75 0.686451      0.686426  2.48e-05 overall 0.4383     28        1.88     0.08
+ -2.50 0.687584      0.687544  3.96e-05    prev 0.4521     29        1.40     0.09
+ -2.25 0.688523      0.688521  1.60e-06 overall 0.4388     27        1.73     0.08
+ -2.00 0.689636      0.689625  1.08e-05    prev 0.4383     26        1.94     0.08
+ -1.75 0.690580      0.690572  7.20e-06    prev 0.4388     25        2.01     0.09
+ -1.50 0.691262      0.691260  1.60e-06    prev 0.4388     25        1.50     0.09
+ -1.25 0.691800      0.691798  1.60e-06 overall 0.4388     27        1.70     0.09
+ -1.00 0.692275      0.692223  5.20e-05    prev 0.4435     31        1.86     0.11
+ -0.75 0.692730      0.692730  0.00e+00 overall 0.4389     27        1.74     0.10
+ -0.50 0.692929      0.692866  6.24e-05    prev 0.4532     28        1.91     0.09
+ -0.25 0.693038      0.692998  4.04e-05    prev 0.4532     27        1.78     0.08
+  0.00 0.692769      0.692769  0.00e+00   seed1 0.4389     27        1.64     0.10
+  0.25 0.692498      0.692364  1.34e-04    prev 0.4526     29        1.67     0.10
+  0.50 0.692077      0.691990  8.72e-05    prev 0.4526     25        1.69     0.09
+  0.75 0.691420      0.691340  7.96e-05    prev 0.4683     27        1.76     0.10
+  1.00 0.690615      0.690490  1.24e-04 overall 0.4538     28        1.69     0.09
+argmax P~ = -0.25 (P~ = 0.693038); plateau(P~, 5e-4) = [-0.75, 0.00]; plateau(S, 5e-4) = [-0.75, 0.00]
+
+-- Table D4: gate --
+ node  P_tilde        S  U_seed1  U_seed2  U_seed3    max_U       gap in_plateau
+   -4 0.680199 0.680199 0.680144 0.680167 0.680203 0.680203 +4.00e-06      FALSE
+   -3 0.685203 0.685183 0.685224 0.685146 0.685268 0.685268 +6.48e-05      FALSE
+   -2 0.689636 0.689625 0.689614 0.689636 0.689636 0.689636 +0.00e+00      FALSE
+   -1 0.692275 0.692223 0.692275 0.692265 0.692269 0.692275 +0.00e+00      FALSE
+    0 0.692769 0.692769 0.692769 0.692731 0.692792 0.692792 +2.32e-05       TRUE
+    1 0.690615 0.690490 0.690487 0.690609 0.690610 0.690610 -4.40e-06      FALSE
+max gap inside plateau = +2.32e-05 (1 outer nodes inside); max gap outside = +6.48e-05
+GATE M1: PASS
+
+-- cost --
+outer loop: 18 runs, 1177.0 s in all (median 63.3 s per run; transforms extra)
+profile: 21 transforms 37.0 s (median 1.76 s) + refinement 2.0 s (median 0.09 s, 574 evaluations in all, median 27 per node); total 39.0 s
+COBYLA per evaluation (full nsim): 2.90 ms
+
+== S2 ==
+simulation seed 1; outer runs per node and seed listed below; profile start node -4.00 (best seed-1 outer result)
+
+-- outer-loop reference (full default graph_optimise_gsd per node and seed) --
+ node seed     gain     w1  secs opt_source ga_iter
+   -4    1 2.439860 0.3433 276.4      local     547
+   -4    2 2.440100 0.3644 251.6      local     518
+   -4    3 2.440230 0.3681 185.5      local     393
+   -3    1 2.431300 0.3414 147.7      local     294
+   -3    2 2.431330 0.3723 137.2      local     290
+   -2    1 2.416620 0.3342 126.0      local     262
+   -2    2 2.416510 0.3678 159.4      local     323
+   -1    1 2.392650 0.3811 201.0      local     404
+   -1    2 2.392850 0.3703 205.3      local     417
+    0    1 2.359540 0.2904 229.7      local     473
+    0    2 2.359720 0.2460 221.3      local     438
+    1    1 2.314450 0.2694 151.7      local     296
+    1    2 2.314420 0.1777 137.0      local     263
+
+-- warm-started profile --
+  node  P_tilde S_fixed_graph P_minus_S   start     w1 n_eval transform_s refine_s
+ -4.00 2.439860      2.439860  0.00e+00   seed1 0.3433     88        3.27     0.61
+ -3.75 2.437850      2.437740  1.10e-04    prev 0.3430     96        2.34     0.53
+ -3.50 2.436120      2.435710  4.10e-04    prev 0.3608    125        2.55     0.59
+ -3.25 2.433630      2.433360  2.70e-04    prev 0.3608    110        3.01     0.62
+ -3.00 2.430660      2.430540  1.20e-04 overall 0.3411    117        2.69     0.66
+ -2.75 2.427620      2.427570  5.00e-05 overall 0.3430    100        2.75     0.56
+ -2.50 2.424020      2.423930  9.00e-05 overall 0.3438    102        2.96     0.62
+ -2.25 2.420030      2.420010  2.00e-05 overall 0.3434    103        2.80     0.54
+ -2.00 2.415870      2.415720  1.50e-04    prev 0.3419     96        2.84     0.55
+ -1.75 2.411170      2.410880  2.90e-04 overall 0.3383    114        2.83     0.70
+ -1.50 2.405900      2.405200  7.00e-04    prev 0.3361    121        3.03     0.81
+ -1.25 2.399800      2.398650  1.15e-03    prev 0.3775    116        2.78     0.68
+ -1.00 2.392920      2.391920  1.00e-03    prev 0.3771     95        2.72     0.50
+ -0.75 2.385850      2.384630  1.22e-03    prev 0.3663    108        3.04     0.61
+ -0.50 2.378190      2.376910  1.28e-03    prev 0.3645     99        2.89     0.58
+ -0.25 2.369220      2.367650  1.57e-03    prev 0.3342    113        2.60     0.66
+  0.00 2.359420      2.358500  9.20e-04    prev 0.3342     87        2.95     0.55
+  0.25 2.349060      2.347860  1.20e-03    prev 0.3325    117        2.83     0.72
+  0.50 2.338070      2.336320  1.75e-03    prev 0.2840     94        2.81     0.54
+  0.75 2.326260      2.324070  2.19e-03    prev 0.2873     96        2.57     0.52
+  1.00 2.314060      2.311610  2.45e-03    prev 0.2805     84        2.70     0.50
+argmax P~ = -4.00 (P~ = 2.439860); plateau(P~, 5e-4) = [-4.00, -4.00]; plateau(S, 5e-4) = [-4.00, -4.00]
+
+-- Table D4: gate --
+ node  P_tilde        S  U_seed1  U_seed2  U_seed3    max_U       gap in_plateau
+   -4 2.439860 2.439860 2.439860 2.440100 2.440230 2.440230 +3.70e-04       TRUE
+   -3 2.430660 2.430540 2.431300 2.431330       NA 2.431330 +6.70e-04      FALSE
+   -2 2.415870 2.415720 2.416620 2.416510       NA 2.416620 +7.50e-04      FALSE
+   -1 2.392920 2.391920 2.392650 2.392850       NA 2.392850 -7.00e-05      FALSE
+    0 2.359420 2.358500 2.359540 2.359720       NA 2.359720 +3.00e-04      FALSE
+    1 2.314060 2.311610 2.314450 2.314420       NA 2.314450 +3.90e-04      FALSE
+max gap inside plateau = +3.70e-04 (1 outer nodes inside); max gap outside = +7.50e-04
+GATE S2: PASS
+
+-- cost --
+outer loop: 13 runs, 2430.0 s in all (median 185.5 s per run; transforms extra)
+profile: 21 transforms 59.0 s (median 2.81 s) + refinement 12.6 s (median 0.59 s, 2181 evaluations in all, median 102 per node); total 71.6 s
+COBYLA per evaluation (full nsim): 5.54 ms
+
+== README 7.5 reproduction (M1) ==
+M1: P~ at gamma -4 (LDOF-like H2) = 0.680199 with w1 = 0.4389; argmax gamma = -0.25 with P~ = 0.693038 and w1 = 0.4532; gain moved +0.0128
+M0 for contrast: P~ at gamma -4 = 0.710446 (w1 0.9593); argmax gamma = -2.75 with P~ = 0.711126 (w1 0.9556)
+README 7.5 (nsim 2e5, LDOF vs sfLDPocock on H2, grid in w1): 0.6707 at w1 0.32 -> 0.6903 at w1 0.46
+
+== Gate summary ==
+M0: PASS (max gap inside plateau +2.08e-05; plateau [-3.75, -1.75])
+M1: PASS (max gap inside plateau +2.32e-05; plateau [-0.75, 0.00])
+S2: PASS (max gap inside plateau +3.70e-04; plateau [-4.00, -4.00])
+OVERALL WARM-START GATE: PASS

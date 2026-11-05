@@ -32,6 +32,7 @@ Imports:
     ggplot2,
     ggraph,
     glue,
+    gsDesign,
     igraph,
     mvtnorm,
     nloptr,
@@ -47,6 +48,7 @@ Imports:
     withr
 Suggests:
     gMCPLite,
+    graphicalMCP (>= 0.3.0),
     spelling,
     svglite,
     testthat (>= 3.0.0),

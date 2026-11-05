@@ -1,0 +1,101 @@
+
+H1 LDOF, H2 LDOF
+<multigrain_pvals_gsd>
+200000 simulation(s), 2 hypothes(es), 2 analys(es); alpha = 0.025
+Information fractions (NA = no data at that analysis):
+   analysis 1 analysis 2
+H1        0.5          1
+H2        0.5          1
+Look-back: H1 = FALSE, H2 = FALSE
+
+Per-hypothesis detail:
+ hypothesis analyses matured_at look_back spending
+         H1     1, 2          2     FALSE    s$pkg
+         H2     1, 2          2     FALSE    s$pkg
+
+Nominal boundaries at the full level (0.025):
+    analysis 1 analysis 2
+H1 0.001525323 0.02449978
+H2 0.001525323 0.02449978
+
+H1 LDOF, H2 Pocock
+<multigrain_pvals_gsd>
+200000 simulation(s), 2 hypothes(es), 2 analys(es); alpha = 0.025
+Information fractions (NA = no data at that analysis):
+   analysis 1 analysis 2
+H1        0.5          1
+H2        0.5          1
+Look-back: H1 = FALSE, H2 = FALSE
+
+Per-hypothesis detail:
+ hypothesis analyses matured_at look_back   spending
+         H1     1, 2          2     FALSE s$pkg[[1]]
+         H2     1, 2          2     FALSE s$pkg[[2]]
+
+Nominal boundaries at the full level (0.025):
+    analysis 1 analysis 2
+H1 0.001525323 0.02449978
+H2 0.015502863 0.01386883
+v Trial success function compiled and sourced successfully.
+
+1. Three implementations of the stopping rule, graph w = (0.8, 0.2), full recycling
+   H1 LDOF, H2 LDOF     (a) edit in R 0.66591100   (b) existing grammar 0.66591100   difference -1.3e-12
+                        (c) reference that stops, first 50000 trials: 0 of 100000 decision times differ from (a)
+   H1 LDOF, H2 Pocock   (a) edit in R 0.68814700   (b) existing grammar 0.68814700   difference -7.9e-13
+                        (c) reference that stops, first 50000 trials: 0 of 100000 decision times differ from (a)
+
+2. Optimal w1 (grid, full recycling) and gain under each value model
+           spending model w1_opt      plateau gain_opt gain_holm gain_fixed_seq
+   H1 LDOF, H2 LDOF    M0   0.98 [0.94, 0.98]   0.7081    0.6937         0.7074
+   H1 LDOF, H2 LDOF    M1   0.32 [0.22, 0.40]   0.6707    0.6693         0.6619
+   H1 LDOF, H2 LDOF    M2   0.44 [0.30, 0.52]   0.6671    0.6667         0.6619
+ H1 LDOF, H2 Pocock    M0   0.88 [0.78, 0.94]   0.7017    0.6981         0.6976
+ H1 LDOF, H2 Pocock    M1   0.46 [0.40, 0.64]   0.6903    0.6902         0.6812
+ H1 LDOF, H2 Pocock    M2   0.98 [0.92, 1.00]   0.6816    0.6755         0.6812
+ power_H1 power_H2 p_stop_interim
+   0.8965   0.7537         0.0000
+   0.8544   0.7346         0.1301
+   0.8647   0.7124         0.1506
+   0.8901   0.7072         0.0000
+   0.8615   0.7036         0.1950
+   0.8964   0.6493         0.2476
+
+3. Cost of ignoring the stopping rule when choosing the graph
+   H1 LDOF, H2 LDOF     M1: M0-optimal graph (w1 = 0.98) scores 0.6633 under M1; the M1 optimum scores 0.6707 (regret 0.0074). M0 reported 0.7081 for it.
+   H1 LDOF, H2 LDOF     M2: M0-optimal graph (w1 = 0.98) scores 0.6633 under M2; the M2 optimum scores 0.6671 (regret 0.0038). M0 reported 0.7081 for it.
+   H1 LDOF, H2 Pocock   M1: M0-optimal graph (w1 = 0.88) scores 0.6873 under M1; the M1 optimum scores 0.6903 (regret 0.0030). M0 reported 0.7017 for it.
+   H1 LDOF, H2 Pocock   M2: M0-optimal graph (w1 = 0.88) scores 0.6805 under M2; the M2 optimum scores 0.6816 (regret 0.0010). M0 reported 0.7017 for it.
+
+4. graph_optimise_gsd() with the stopping rule written into the gain (H1 LDOF, H2 Pocock)
+   optimiser: w1 = 0.5503, gain 0.69027 (95 s); grid: w1 = 0.46, gain 0.69032
+   What calc_power_pvals_gsd() reports for that graph ignores the stopping rule:
+   reported power H2 = 0.7224; power H2 under the stopping rule = 0.6951
+
+5. Optimal w1 under M1 plus a saving c for stopping at the interim
+           spending saving w1_opt gain_opt p_stop_interim power_H1 power_H2
+   H1 LDOF, H2 LDOF   0.00   0.32   0.6707         0.1301   0.8544   0.7346
+   H1 LDOF, H2 LDOF   0.02   0.32   0.6733         0.1301   0.8544   0.7346
+   H1 LDOF, H2 LDOF   0.05   0.44   0.6777         0.1506   0.8647   0.7124
+   H1 LDOF, H2 LDOF   0.10   0.94   0.6884         0.2401   0.8941   0.6233
+   H1 LDOF, H2 LDOF   0.20   0.98   0.7127         0.2472   0.8965   0.6138
+ H1 LDOF, H2 Pocock   0.00   0.46   0.6903         0.1950   0.8615   0.7036
+ H1 LDOF, H2 Pocock   0.02   0.54   0.6943         0.2007   0.8676   0.6961
+ H1 LDOF, H2 Pocock   0.05   0.56   0.7003         0.2024   0.8690   0.6941
+ H1 LDOF, H2 Pocock   0.10   0.82   0.7108         0.2271   0.8861   0.6683
+ H1 LDOF, H2 Pocock   0.20   0.92   0.7343         0.2391   0.8926   0.6577
+
+6. Futility (stop if the raw interim p-value of H1 exceeds 0.3)
+   trials stopped for futility: 0.0388
+   H1 LDOF, H2 LDOF     futility only: 0 of 100000 decision times differ from the reference; with the efficacy rule: 0 of 100000
+   H1 LDOF, H2 Pocock   futility only: 0 of 100000 decision times differ from the reference; with the efficacy rule: 0 of 100000
+   Optimal w1 and gain with and without the futility rule:
+           spending model w1_opt_no_futility gain_no_futility w1_opt_futility
+   H1 LDOF, H2 LDOF    M0               0.98           0.7081            0.98
+   H1 LDOF, H2 LDOF    M1               0.32           0.6707            0.32
+ H1 LDOF, H2 Pocock    M0               0.88           0.7017            0.88
+ H1 LDOF, H2 Pocock    M1               0.46           0.6903            0.46
+ gain_futility regret_of_ignoring
+        0.6980                  0
+        0.6597                  0
+        0.6921                  0
+        0.6812                  0
