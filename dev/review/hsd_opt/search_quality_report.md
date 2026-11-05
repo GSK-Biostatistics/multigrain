@@ -1,7 +1,6 @@
 # Spending-parameter search: merge check and search quality
 
-**Status, 2026-11-05 01:20:** Parts 1 to 4 are complete, except the last subsection of Part 4 (more seeds on the start
-effect), which was still running when this version was pushed. If it says "pending", those runs did not finish.
+**Status: final, 2026-11-05 02:00.** All runs finished with no failures.
 
 Run with R 4.6.1, GA 3.2.5, nloptr 2.2.1, gsDesign 3.11.0, on `gsd-build-spending` at `e103474`.
 
@@ -11,15 +10,15 @@ Run with R 4.6.1, GA 3.2.5, nloptr 2.2.1, gsDesign 3.11.0, on `gsd-build-spendin
    identical, and the mutation has not changed.
 2. **You are right that the search can fail to find good graphs, but the weakness is in the graph search, not the
    lattice.** It usually gets the spending parameter right or close, then lands on graphs of varying quality. With one
-   parameter per hypothesis on H4xi, 9 of 15 runs fell below a gain inside their own search space, by up to 0.0023.
+   parameter per hypothesis on H4xi, 29 of 45 runs fell below a gain inside their own search space, by up to 0.0038.
 3. **The fixed-node GA has the same weakness, so this is not specific to the joint search.** At m = 4 the joint search is
    within the fixed-node GA's own seed noise at 5 of the 6 nodes where they can be compared. At m = 6 the same node gives
    gains up to 0.0069 apart across seeds with the fixed-node GA, and the joint search does at least as well.
 4. **The GA matters less as m grows.** Without it, gains are up to 0.004 to 0.005 lower at m = 4, from any start. At
    m = 6 the one run without it was level with the GA runs.
 5. **Starting in the middle is not established as a cause.** None of 14 comparisons of start or initial population reaches
-   2 SE, and the direction changes between designs. The strongest hint in its favour is on H4xi, and is being re-run with
-   more seeds in Part 4.
+   2 SE, and the direction changes between designs. The strongest hint in its favour, on H4xi, shrank from 1.9 to 1.2 SE
+   with 15 seeds per arm. One lead remains: on that design the default start has more very poor runs (Part 4).
 6. **Repeated runs give very different graphs with almost the same gain**, for the fixed-node GA as much as for the joint
    search. By eye that could look like a failure to find good graphs.
 7. **Merging `split-merge` would break the GSD search**, with no code conflict from git. See Part 2.
@@ -260,45 +259,61 @@ These use the H4 and H4x gains, with four parameters and a search space of 21^4 
 hypotheses is inside that space, so a sound search should at least match the shared-parameter fixed-node GA at its best
 node, on the same draws. That is the reference below, with 5 seeds.
 
-| Design | Reference, mean (SD) | Arm | Mean final gain (SD) | Range | Minus reference | Runs below reference |
-|---|---|---|---|---|---|---|
-| H4i | 0.612374 (0.000106) | Default start | 0.615300 (0.000450) | 0.614716 to 0.615646 | +0.002926 | 0 of 5 |
-| H4i | | High start | 0.614956 (0.000347) | 0.614563 to 0.615385 | +0.002582 | 0 of 5 |
-| H4i | | Uniform initial genes | 0.614730 (0.000725) | 0.613502 to 0.615241 | +0.002356 | 0 of 5 |
-| H4xi | 0.508430 (0.000146) | Default start | 0.507460 (0.001067) | 0.506134 to 0.508602 | -0.000970 | 4 of 5 |
-| H4xi | | High start | 0.508130 (0.000461) | 0.507320 to 0.508448 | -0.000300 | 4 of 5 |
-| H4xi | | Uniform initial genes | 0.508409 (0.000316) | 0.507850 to 0.508592 | -0.000021 | 1 of 5 |
+| Design | Reference, mean (SD) | Arm | Seeds | Mean final gain (SD) | Range | Minus reference | Runs below reference |
+|---|---|---|---|---|---|---|---|
+| H4i | 0.612374 (0.000106) | Default start | 15 | 0.615256 (0.000411) | 0.614549 to 0.615725 | +0.002882 | 0 |
+| H4i | | High start | 5 | 0.614956 (0.000347) | 0.614563 to 0.615385 | +0.002582 | 0 |
+| H4i | | Uniform initial genes | 15 | 0.614851 (0.000784) | 0.613107 to 0.615786 | +0.002477 | 0 |
+| H4xi | 0.508430 (0.000146) | Default start | 15 | 0.507767 (0.001215) | 0.504630 to 0.508962 | -0.000663 | 10 |
+| H4xi | | High start | 15 | 0.508206 (0.000360) | 0.507320 to 0.508646 | -0.000225 | 10 |
+| H4xi | | Uniform initial genes | 15 | 0.508159 (0.000485) | 0.507346 to 0.508802 | -0.000271 | 9 |
 
-- **H4i works.** All 15 runs beat the shared-parameter gain by using the extra freedom, and they agree on the pattern:
-  aggressive spending on H1 (0.25 to 1), about -0.5 on H2, -2 on H3 and -3 to -4 on H4. The reported gain is optimistic, as
-  the parameters and graph are chosen on the same draws.
-- **H4xi is the failure.** The extra freedom should not lose anything, yet 9 of 15 runs fall below the reference, by up to
-  0.0023.
-- **That failure is in the graph, not the lattice.** Six H4xi runs chose exactly (1, 1, 1, -0.25) and their gains range
-  from 0.506134 to 0.508590. Same spending parameters, a range of 0.0025.
-- **Convergence:** `profile_converged` was `FALSE` in 3 of 30 runs.
+- **H4i works.** All 35 runs beat the shared-parameter gain by using the extra freedom. The default-start runs agree
+  roughly on the pattern: H1 0.25 to 0.75, H2 -0.25 to -1.25, H3 -1.75 to -2.75, H4 -3 to -4. The reported gain is
+  optimistic, as the parameters and graph are chosen on the same draws.
+- **H4xi is the failure.** The extra freedom should not lose anything, yet 29 of 45 runs fall below the reference, by up to
+  0.0038. Since the best run reached 0.508962, every one of those runs missed a better design that was inside its search
+  space.
+- **That failure is in the graph, not the lattice.** All 45 H4xi runs put H1 and H2 at the upper bound or close to it.
+  Twenty-one runs chose exactly (1, 1, 1, -0.25), and their gains range from 0.506134 to 0.508836. Same spending
+  parameters, a range of 0.0027.
+- **Convergence:** `profile_converged` was `FALSE` in 11 of 80 runs.
 
-### Is the start involved? More seeds on the strongest hint
+### Is the start involved? 15 seeds on the strongest hint
 
 Across all designs, 14 comparisons of start or initial population were made against the default start, and none reaches
-2 SE. The largest are on the one-parameter-per-hypothesis designs, and they point in opposite directions:
+2 SE. H4xi is the design where your hypothesis should bite hardest, because its optimum is in a corner of the lattice where
+the initial population is thinnest. At 5 seeds the uniform arm looked better by +0.000949 (1.9 SE), so I re-ran the
+comparison with 10 more seeds per arm:
 
-| Design | High start minus default (SE) | Uniform initial genes minus default (SE) |
-|---|---|---|
-| H4i | -0.000344 (0.000254) | -0.000570 (0.000382) |
-| H4xi | +0.000670 (0.000520) | +0.000949 (0.000498) |
+| Design | Comparison with the default start | Difference (SE) | 95% CI | Welch p | Rank-sum p |
+|---|---|---|---|---|---|
+| H4xi | High start | +0.000439 (0.000327) | -0.00025 to +0.00113 | 0.198 | 0.838 |
+| H4xi | Uniform initial genes | +0.000393 (0.000338) | -0.00032 to +0.00110 | 0.260 | 0.806 |
+| H4i | Uniform initial genes | -0.000405 (0.000229) | -0.00088 to +0.00007 | 0.091 | 0.161 |
 
-H4xi is the design where your hypothesis should bite hardest: its optimum is in a corner of the lattice where the initial
-population is thinnest. So these two designs are being re-run with 10 more seeds per arm.
-
-**Pending.**
+- **The hint shrank.** It fell to 1.2 SE on H4xi, the medians barely differ, and one very poor default-start run (seed 14,
+  0.50463) accounts for much of the gap: without it, the uniform arm's advantage is about 0.00017.
+- **The same change goes the other way on H4i**, where the uniform arm is lower.
+- **Any effect on the mean is small.** Even at the top of its interval, about 0.0011, it is well below the 0.0027 range seen
+  at one fixed set of spending parameters.
+- **One lead remains: the spread.** On H4xi the default start's SD is 0.00122, against 0.00036 and 0.00049, and it has all
+  4 of the runs below 0.507 (4 of 15, against 0 of 30). On H4i it reverses: 0.00041 for the default against 0.00078 for
+  uniform. So the initial population may affect how often a run goes badly, in a way that depends on the design. I noticed
+  this after seeing the data and chose the 0.507 cut-off afterwards, so it is a lead and not a finding.
 
 ### What I would do with this today
 
-Run several seeds and keep the best. It needs no code change, and these runs suggest it helps: the best of 5 default-start
-runs is within 0.00034 of the highest gain seen on H4 and within 0.00077 on H6, and on H4xi it clears the reference. It
-was not tested as a method. It costs 5 times the computing and increases the optimism in the reported gain, so check the
-chosen design on fresh draws.
+Run several seeds and keep the best. It needs no code change, and blocks of 5 default-start runs were repeatable:
+
+| Design | Best of each block of 5 | Single-run SD |
+|---|---|---|
+| H4i | 0.615646, 0.615725, 0.615685 | 0.00041 |
+| H4xi | 0.508602, 0.508836, 0.508962, all above the reference | 0.00122 |
+
+On H6, with one block per start, the bests were 0.55823 and 0.55899, against a single-run SD of 0.00095 to 0.00194, so
+expect less repeatability there. Keeping the best costs 5 times the computing and increases the optimism in the reported
+gain, so check the chosen design on fresh draws.
 
 ## What has not been tested
 
