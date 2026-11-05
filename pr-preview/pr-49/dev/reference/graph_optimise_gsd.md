@@ -327,22 +327,22 @@ result <- graph_optimise_gsd(
     num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [6.7s]
+#> ✔ Running global optimization [5.5s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [15ms]
+#> ✔ Evaluating trial success of globally optimised graph [13ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [12ms]
+#> ✔ Running local optimization [9ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [15ms]
+#> ✔ Evaluating trial success of locally optimised graph [11ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [9ms]
+#> ✔ Pruning redundant weights and edges [7ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [7ms]
+#> ✔ Evaluating trial success of pruned graph [6ms]
 #> 
 
 # choose the spending parameter of H2 jointly with the graph
@@ -359,25 +359,25 @@ result_spending <- graph_optimise_gsd(
     num_threads = 2
 )
 #> ℹ Running global optimization
-#> ✔ Running global optimization [8.6s]
+#> ✔ Running global optimization [6.9s]
 #> 
 #> ℹ Evaluating trial success of globally optimised graph
-#> ✔ Evaluating trial success of globally optimised graph [15ms]
+#> ✔ Evaluating trial success of globally optimised graph [13ms]
 #> 
 #> ℹ Running local optimization
-#> ✔ Running local optimization [15ms]
+#> ✔ Running local optimization [11ms]
 #> 
 #> ℹ Profiling spending parameters: gamma
-#> ✔ Profiling spending parameters: gamma [157ms]
+#> ✔ Profiling spending parameters: gamma [130ms]
 #> 
 #> ℹ Evaluating trial success of locally optimised graph
-#> ✔ Evaluating trial success of locally optimised graph [16ms]
+#> ✔ Evaluating trial success of locally optimised graph [13ms]
 #> 
 #> ℹ Pruning redundant weights and edges
-#> ✔ Pruning redundant weights and edges [8ms]
+#> ✔ Pruning redundant weights and edges [6ms]
 #> 
 #> ℹ Evaluating trial success of pruned graph
-#> ✔ Evaluating trial success of pruned graph [8ms]
+#> ✔ Evaluating trial success of pruned graph [6ms]
 #> 
 result_spending$spending_param
 #> gamma 
