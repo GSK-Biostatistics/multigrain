@@ -147,7 +147,7 @@ test_that("a transfer keeps the pair's total and can add only its recipient", {
     set.seed(42)
     g <- list(latent = 1:4, c = 1, threshold = 1e-5)
     s <- c(0.5, 0.3, 0.2, 0, 0)
-    active_before <- which(s > 0)
+    positive_before <- which(s > 0)
 
     for (i in 1:500) {
         out <- .sm_transfer(g, s, scale = 0.2)
@@ -155,9 +155,8 @@ test_that("a transfer keeps the pair's total and can add only its recipient", {
         expect_lte(length(changed), 2)
         expect_true(all(out[changed] > 0))
         expect_equal(sum(out), sum(s), tolerance = 1e-12)
-        # At most one entry becomes active, and none is lost
-        expect_lte(length(setdiff(which(out > 0), active_before)), 1)
-        expect_true(all(active_before %in% which(out > 0)))
+        expect_lte(length(setdiff(which(out > 0), positive_before)), 1)
+        expect_true(all(positive_before %in% which(out > 0)))
     }
 })
 
@@ -174,6 +173,9 @@ test_that(".make_split_merge_mutation checks its settings", {
     expect_error(make(p_del = -0.1))
     expect_error(make(scale = 0))
     expect_error(make(scale = c(1, 2)))
+    for (scale in c(Inf, -Inf, NA_real_, NaN)) {
+        expect_error(make(scale = scale), "is.finite(scale)", fixed = TRUE)
+    }
 })
 
 test_that("SM keeps the graph valid and fixed entries, changing one group", {

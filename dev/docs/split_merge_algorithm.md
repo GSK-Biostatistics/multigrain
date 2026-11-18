@@ -36,10 +36,12 @@ mutation_fn <- multigrain:::.make_split_merge_mutation(
 
 Think of the mutation operator as the evolutionary analogue of a proposal distribution in Metropolis–Hastings Markov chain Monte Carlo (MCMC): given a parent graph in the current population, it proposes a modified child graph to be evaluated on the simulated $p$-value matrix via `graph_shortcut()`.
 
+The settings `p_del = 0.45` and `scale = 0.2` were selected in screen 2 of `multigrain-benchmark`. Its stage B found non-inferiority to Z+P on four problems with 60 paired seeds each, at comparable kernel-row cost. Those results used different package builds and do not establish Windows stability or equal wall-clock cost. The report recommended SM as a candidate opt-in control; making it the package default is a separate adoption decision.
+
 At a high level, a graphical procedure consists of up to $m + 1$ independent parameter groups—the vector of initial hypothesis weights $\mathbf{w}$ and the $m$ rows of the transition matrix $\mathbf{G}$—each of which sums to $1$. On each call, the split–merge operator selects one group and applies one of two moves:
 
 1. **A merge move** (with probability $p_{\text{del}} = 0.45$), which picks two active entries in the chosen group and folds the smaller entry into the larger one, setting the smaller entry to zero. This removes an edge or initial weight, simplifying the graph.
-2. **A transfer move** (with probability $1 - p_{\text{del}} = 0.55$, or whenever no group has two active entries to merge), which picks one active entry and one other free entry in the same group and shifts a random fraction of their combined mass between them. When the second entry is already positive, this tunes the balance between the two entries; when the second entry is zero, it splits the first entry and activates a previously unused edge or hypothesis weight.
+2. **A transfer move** (with probability $1 - p_{\text{del}} = 0.55$, or whenever no group has two active entries to merge), which picks one active entry and one other free entry in the same group and shifts a random fraction of their combined mass between them. When the second entry is already positive, this tunes the balance between the two entries; when the second entry is zero, it splits the first entry and can activate a previously unused edge or hypothesis weight if the transferred mass reaches the activity threshold.
 
 Within the package, the mutation operator interacts with three components:
 
@@ -98,7 +100,7 @@ Because `GA::ga()` passes the flat parameter vector $\mathbf{x}$ (containing $k 
 The split–merge operator resolves all four issues by:
 
 * **Decoding to simplex shares $\mathbf{s}$ before mutating** (and choosing entries uniformly across all $k$ positions, including the derived $k$-th entry), which eliminates positional bias and guarantees that every mutated group satisfies the sum-to-one constraint.
-* **Separating edge removal from weight tuning**, using a dedicated **merge** move to zero out entries and a **transfer** move with boundary reflection (rather than clipping) so that no mutation ever returns a copy of its parent.
+* **Separating explicit edge removal from weight tuning**, using a dedicated **merge** move to zero out entries and a **transfer** move with boundary reflection rather than clipping. Reflection avoids clipping-induced copies; floating-point rounding can still produce an unchanged child, and the closure returns the parent unchanged when no group is mutable.
 
 ---
 
@@ -113,7 +115,7 @@ When `create_obj_func()` in [`R/objective_function.R`](https://github.com/GSK-Bi
 * Initial hypothesis weights below $\tau_w = 10^{-4}$ are set to $0$.
 * Transition matrix entries below $\tau_g = 10^{-5}$ are set to $0$.
 
-To stay aligned with what the objective function actually sees, `.sm_active()` classifies a free entry $j$ in a group as **active** if its actual weight $c s_j$ is at or above the group's threshold $\tau$ ($\tau_w = 10^{-4}$ for initial weights, $\tau_g = 10^{-5}$ for transition rows), and **inactive** (empty) otherwise.
+To stay aligned with what the objective function actually sees, `.sm_active()` classifies a free entry $j$ in a group as **active** if its actual weight $c s_j$ is at or above the group's threshold $\tau$ ($\tau_w = 10^{-4}$ for initial weights, $\tau_g = 10^{-5}$ for transition rows), and **inactive** otherwise. An inactive entry can be strictly positive: the objective truncates such a small entry to zero, but the mutation still sees its untruncated share.
 
 ### 3.2 Choosing Between Merge and Transfer
 
@@ -129,7 +131,7 @@ Only the single chosen group is modified; all other groups in the parent graph a
 Within the selected group (which has at least two active entries):
 
 1. Pick two distinct active entries uniformly at random.
-2. Identify which of the two chosen entries has the smaller share (`small`) and which has the larger share (`large`, breaking ties in favour of the second entry drawn).
+2. Identify which of the two chosen entries has the smaller share (`small`) and which has the larger share (`large`). On a tie, the second entry drawn is emptied and the first receives its mass.
 3. Add the smaller entry's share to the larger entry, and set the smaller entry to zero:
    $$s_{\text{large}} \leftarrow s_{\text{large}} + s_{\text{small}}, \qquad s_{\text{small}} \leftarrow 0.$$
 
@@ -141,7 +143,7 @@ Because $s_{\text{large}} + s_{\text{small}}$ is unchanged and all other entries
 
 Within the selected group of $k \ge 2$ free entries:
 
-1. **Pick a donor $i$:** Choose $i$ uniformly at random from the group's active entries (or, in the rare case that rounding left no entry above the threshold, choose `which.max(s)`).
+1. **Pick a donor $i$:** Choose $i$ uniformly at random from the group's active entries (or, if none reaches the threshold, choose `which.max(s)`). This fallback can occur when the group's free mass is small.
 2. **Pick a recipient $j$:** Choose $j$ uniformly at random from the remaining $k - 1$ free entries in the group—regardless of whether $j$ is currently active or inactive.
 3. **Compute the pair total and current split:** Let
    $$t = s_i + s_j > 0 \qquad \text{and} \qquad u = \frac{s_i}{t} \in (0, 1]$$
@@ -154,10 +156,12 @@ Within the selected group of $k \ge 2$ free entries:
 
 A Cauchy perturbation is used rather than a Gaussian perturbation because the Cauchy distribution has a sharp peak near zero and heavy tails: most draws make small local adjustments to $u$, while occasional larger draws jump across the interval $(0, 1)$ to explore distant weight allocations.
 
-Depending on whether the randomly chosen recipient $j$ was already active or inactive, the transfer move performs one of two roles:
+Depending on whether the randomly chosen recipient $j$ was positive or exactly zero, the transfer move performs one of two roles:
 
-* **When the recipient $j$ is already active ($s_j > 0$, so $0 < u < 1$): Weight tuning.** Both $s_i$ and $s_j$ start positive and end strictly positive ($0 < u_{\text{new}} < 1$). The move adjusts the relative balance between entries $i$ and $j$ without deleting either entry or changing any other entry in the group.
-* **When the recipient $j$ is inactive ($s_j = 0$, so $u = 1$): Splitting (activating an edge).** Because $s_j = 0$, the donor starts with $100\%$ of the pair's mass ($u = 1$). After reflection into $(0, 1)$, the donor retains fraction $u_{\text{new}} \in (0, 1)$ of its original mass and passes the remaining fraction $1 - u_{\text{new}} > 0$ to the previously empty recipient $j$. This splits a single weight into two positive weights, bringing a dormant edge or hypothesis weight back into the graph.
+* **When the recipient $j$ is positive ($s_j > 0$, so $0 < u < 1$): Weight tuning.** In exact arithmetic, both entries remain positive. The move adjusts their relative balance without changing any other share in the group.
+* **When the recipient $j$ is exactly zero ($s_j = 0$, so $u = 1$): Splitting.** The donor starts with all the pair's mass. After reflection into $(0, 1)$, the donor retains fraction $u_{\text{new}}$ and the recipient receives fraction $1 - u_{\text{new}}$. In exact arithmetic, both entries are positive.
+
+Neither case guarantees that both entries are **active** afterward. A positive entry can fall below $\tau$ and be truncated by the objective; a new positive recipient becomes active only if its actual mass reaches $\tau$. For example, splitting total mass $1$ into $10^{-6}$ and $1 - 10^{-6}$ leaves the smaller entry inactive under either threshold.
 
 ### 3.5 Why Reflection (`.reflect01()`) Instead of Clipping?
 
@@ -177,29 +181,18 @@ To see how this works:
 * **Just below $0$:** If $v = -0.25$ (overshooting $0$ by $0.25$), R's modulo operator returns `(-0.25) %% 2 = 1.75 > 1`, so $2 - 1.75 = 0.25$ (bounced $0.25$ inward from $0$).
 * **Larger steps:** Any real number $v$ is mapped periodically onto $[0, 1]$ by taking $v \bmod 2$ and reflecting values in $(1, 2]$ across $1$.
 
-Using reflection instead of clipping achieves two properties simultaneously:
+Using reflection instead of clipping avoids two boundary effects:
 
-1. **Zero duplicate offspring when splitting ($u = 1$):** When the recipient $j$ is empty ($u = 1$), a positive Cauchy draw $C > 0$ gives $1 + \sigma C > 1$. Clipping would clamp this back to $1$, leaving $s_i = t$ and $s_j = 0$ unchanged ($50\%$ of all draws wasted). Reflection bounces $1 + \sigma C$ inward to $1 - \sigma C$ (for small steps), so positive and negative Cauchy draws both move mass from the donor $i$ into the empty recipient $j$.
-2. **Transfers never accidentally delete an entry:** Because $u + \sigma C$ is a continuous random variable, the reflected value $u_{\text{new}}$ lands in the open interior $(0, 1)$ with probability $1$ (and the `repeat` loop guards against rare floating-point underflow to exact `0` or `1`). Consequently, a transfer never zeroes out either entry; deletions occur *only* through the explicit merge move.
+1. **No clipping-induced copies when splitting ($u = 1$):** When the recipient $j$ is empty, a positive Cauchy draw pushes the donor's share above $1$. Clipping would leave the pair unchanged for those draws. Reflection folds the step inward instead. This does not guarantee distinct encoded vectors under floating-point rounding, or distinct graphs after objective truncation.
+2. **No intentional zeroing in a transfer:** The `repeat` loop accepts only finite $0 < u_{\text{new}} < 1$, giving two positive shares in exact arithmetic. Only a merge explicitly assigns zero to a share. A transfer can nevertheless remove an active edge from the evaluated graph by moving its mass below the threshold.
 
 ### 3.6 How Merge and Transfer Balance Graph Sparsity
 
-Because deletions happen only via merges and activations happen only when a transfer picks an inactive recipient, the balance between sparse and dense graphs is governed directly by the merge probability $p_{\text{del}}$.
+The merge probability controls how often the algorithm attempts explicit sparsification, but it does not determine an equilibrium density by itself.
 
-Consider a group with $k$ free entries, of which $k_{\text{act}}$ are currently active ($2 \le k_{\text{act}} < k$):
+Merge moves choose among groups with at least two active entries, whereas transfer moves choose among all mutable groups. The probability of a merge conditional on a particular group being chosen therefore depends on which other groups are eligible. If no group is eligible, the attempted merge becomes a transfer.
 
-* With probability $p_{\text{del}}$, a **merge** reduces the number of active entries by $1$ ($\Delta k_{\text{act}} = -1$).
-* With probability $1 - p_{\text{del}}$, a **transfer** picks one active donor and chooses a recipient uniformly among the remaining $k - 1$ entries. Since $k - k_{\text{act}}$ of those $k - 1$ entries are inactive, the transfer activates a new entry ($\Delta k_{\text{act}} = +1$) with probability $(k - k_{\text{act}}) / (k - 1)$, and tunes two already-active entries ($\Delta k_{\text{act}} = 0$) otherwise.
-
-The expected change in the number of active entries on a single mutation in that group (in the absence of selection) is therefore:
-
-$$\mathbb{E}[\Delta k_{\text{act}}] = (1 - p_{\text{del}}) \frac{k - k_{\text{act}}}{k - 1} - p_{\text{del}}.$$
-
-Setting $\mathbb{E}[\Delta k_{\text{act}}] = 0$ gives the natural equilibrium number of active entries $k_{\text{act}}^*$ where activations and deletions balance out:
-
-$$k_{\text{act}}^* = k - (k - 1) \frac{p_{\text{del}}}{1 - p_{\text{del}}}.$$
-
-At `multigrain`'s default `p_del = 0.45` (where $\frac{p_{\text{del}}}{1 - p_{\text{del}}} = \frac{9}{11} \approx 0.818$), an unconstrained transition row in a $10$-hypothesis graph ($k = 9$ off-diagonal entries) has an equilibrium density of about $k_{\text{act}}^* \approx 2.5$ to $3.6$ active outgoing edges per row (accounting for the floor at $k_{\text{act}} = 1$, where merges cannot occur). This keeps the population exploring moderately sparse graphs while still proposing plenty of weight-tuning moves ($55\%$ of calls).
+Transfers can cross activity thresholds in either direction, and selection, local search and elitism further affect which graphs survive. Consequently, the default `p_del = 0.45` means a $45\%$ probability of attempting a merge per call, not a guaranteed proportion of active edges or an equilibrium edge count. Such density claims require measurements under the actual constraints and objective.
 
 ---
 
@@ -350,14 +343,14 @@ For that reason, `.sm_groups()` first advances the cursor `pos <- pos + k - 1L` 
 
 ### 6.1 Unit Test Suite
 
-All invariants of the split–merge operator are verified in [`tests/testthat/test-mutation_helpers.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/tests/testthat/test-mutation_helpers.R):
+The tests in [`tests/testthat/test-mutation_helpers.R`](https://github.com/GSK-Biostatistics/multigrain/blob/main/tests/testthat/test-mutation_helpers.R) cover the following properties and sampled cases:
 
 | Test block in `test-mutation_helpers.R` | Property verified |
 |---|---|
 | `.reflect01` tests | Maps arbitrary positive and negative values into $[0, 1]$, acts as the identity on $(0, 1)$, and returns `NaN` for `Inf`. |
 | `.simplex_project` tests | Projects out-of-bounds vectors onto the unit simplex ($p_j \ge 0$, $\sum p_j = 1$) and leaves valid simplex points unchanged. |
 | `.sm_groups` tests | Matches the latent parameter layout of `split_theta()`, `recover_full_weights()`, and `recover_full_trans_matrix()`, including when zero-mass groups ($c = 0, k \ge 2$) are skipped. |
-| `.sm_merge` and `.sm_transfer` tests | Merge zeroes out the smaller of two active entries while preserving the group sum; transfer preserves the pair sum and changes active support only when activating an empty recipient. |
+| `.sm_merge` and `.sm_transfer` tests | Merge zeroes out the smaller of two active entries while preserving the group sum; the sampled transfers preserve the pair sum and can add only their recipient to the strictly positive entries. This is not a threshold-activity guarantee. |
 | Graph validity and single-group mutation | Across 300 random parents on both unconstrained (`free_4`) and constrained (`pinned_h`, `pinned_t`) graphs, every child decodes to a valid graph (`is_graph_valid() == TRUE`), preserves fixed entries, and modifies exactly one group. |
 | Zero duplicate-parent rate | Across 1,000 mutations at `p_del` $\in \{0, 0.45, 1\}$, no child vector equals its parent. |
 | Positional symmetry | On a symmetric 6-hypothesis group, all 6 positions—including the 6th derived entry—are mutated at equal rates under both pure transfer (`p_del = 0`) and pure merge (`p_del = 1`). |

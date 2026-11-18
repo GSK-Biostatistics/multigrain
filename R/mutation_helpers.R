@@ -11,8 +11,10 @@
 # Each call makes one move in one group: with probability p_del a merge (the
 # smaller of two active entries gives its mass to the larger), otherwise a
 # transfer (a reflected Cauchy step in the split of two entries' total mass).
-# SM works on decoded shares, so no entry is special by where it is stored, and
-# every child is a valid graph that differs from its parent. It replaced the
+# SM works on decoded shares, treating the derived entry like stored entries.
+# Valid parents stay valid; invalid parents are repaired only in the mutated
+# group. Reflection avoids clipping-induced copies, but unchanged children
+# remain possible through rounding or when no group is mutable. SM replaced the
 # per-parameter truncated Cauchy mutation (archived in
 # dev/archived_code/cauchy_mutation.R) after screen 2 of multigrain-benchmark,
 # where p_del = 0.45, scale = 0.2 was chosen.
@@ -160,7 +162,7 @@
 #   transition constraints (NA marks a free entry).
 # @param p_del Probability of a merge. Default 0.45. If no group has two
 #   active entries a transfer is made instead.
-# @param scale Scale of the Cauchy step in a transfer. Default 0.2.
+# @param scale Finite positive scale of the Cauchy step. Default 0.2.
 # @returns A function(object, parent) for the [GA::ga()] mutation slot. If no
 #   group can be mutated the closure returns the parent unchanged.
 .make_split_merge_mutation <- function(
@@ -176,6 +178,7 @@
         p_del <= 1,
         is.numeric(scale),
         length(scale) == 1L,
+        is.finite(scale),
         scale > 0
     )
     force(p_del)
