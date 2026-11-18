@@ -306,9 +306,11 @@ graph_optimise <- function(
         lower = rep(0, ncol(x0)),
         upper = rep(1, ncol(x0)),
         population = .cauchy_population,
-        mutation = .make_cauchy_mutation_multi(
-            p_param_mutate = 0.1,
-            scale = 1.0
+        mutation = .make_split_merge_mutation(
+            hyp_constraint = graph_constraint$hyp_constraint,
+            trans_constraint = graph_constraint$trans_constraint,
+            p_del = 0.45,
+            scale = 0.2
         ),
         optim = TRUE,
         suggestions = x0
