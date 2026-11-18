@@ -9,16 +9,18 @@ an expected distribution of test statistics.
 
 A graphical test has:
 
-1.  An **$m$-length hypothesis weight vector** (*$w$*), which determines
-    how $\alpha$ is initially allocated between hypotheses in the graph.
-2.  A **transition matrix** ($\mathbf{G}$) of dimensions $m \times m$
-    which determines how $\alpha$ can be recycled from a null hypothesis
-    after it has been rejected to other unrejected hypotheses.
+1.  An **$`m`$-length hypothesis weight vector** (*$`w`$*), which
+    determines how $`\alpha`$ is initially allocated between hypotheses
+    in the graph.
+2.  A **transition matrix** ($`\mathbf{G}`$) of dimensions
+    $`m \times m`$ which determines how $`\alpha`$ can be recycled from
+    a null hypothesis after it has been rejected to other unrejected
+    hypotheses.
 
 Optimising for different power metrics or trial success criteria will
 often lead to distinct graphs, i.e., distinct values for the parameters
-that make up the hypothesis weight vectors ($w$), and the transition
-matrices ($\mathbf{G}$).
+that make up the hypothesis weight vectors ($`w`$), and the transition
+matrices ($`\mathbf{G}`$).
 
 Each trial success measure has its own optimal configuration of these
 parameters that maximizes the desired success criterion. The
@@ -47,10 +49,10 @@ There are two endpoints included in the multiplicity adjustment:
 - a primary endpoint, FEV1;
 - a secondary endpoint, a patient-report outcome (PRO).
 
-Thus there are four hypotheses, the primary hypotheses $H_{1}$ and
-$H_{2}$ on FEV1 comparing high and low dose of the investigational
-treatment against placebo, and the secondary hypotheses $H_{3}$ and
-$H_{4}$ on the PRO endpoint for the high and low dose comparisons
+Thus there are four hypotheses, the primary hypotheses $`H_1`$ and
+$`H_2`$ on FEV1 comparing high and low dose of the investigational
+treatment against placebo, and the secondary hypotheses $`H_3`$ and
+$`H_4`$ on the PRO endpoint for the high and low dose comparisons
 against placebo.
 
 ![Figure 1: Hypotheses for asthma motivating
@@ -78,18 +80,18 @@ require three things:
 ### P-value matrix approximating the joint distribution of p-values
 
 [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md)
-expects a matrix $\mathbf{P}$ of **raw p-values** with dimension
-$n_{\text{sim}} \times m$.
+expects a matrix $`\mathbf{P}`$ of **raw p-values** with dimension
+$`n_{\text{sim}}\times m`$.
 
-Each row $i$ is a simulation of p-values from the $m$ null hypotheses
-$H_{1},H_{2},...,H_{m}$ under the alternative hypothesis that
+Each row $`i`$ is a simulation of p-values from the $`m`$ null
+hypotheses $`H_1, H_2, ..., H_m`$ under the alternative hypothesis that
 configuration you wish to evaluate.
 
-There are two equivalent ways to provide $\mathbf{P}$:
+There are two equivalent ways to provide $`\mathbf{P}`$:
 
 1.  **Supply your own p-value matrix** (e.g., from end-to-end trial
     simulation).
-2.  **Generate $\mathbf{P}$ with**
+2.  **Generate $`\mathbf{P}`$ with**
     [`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md),
     which uses the standard normal-approximation for one-sided test
     statistics (described next).
@@ -99,36 +101,42 @@ There are two equivalent ways to provide $\mathbf{P}$:
 At the design stage it is common to assume the one-sided test statistics
 are jointly normal:
 
-$$\mathbf{Z} \sim {MVN}(\mathbf{\Delta},\mathbf{\Sigma}),$$
+``` math
+\boldsymbol{Z} \sim \mathrm{MVN}(\boldsymbol{\Delta}, \boldsymbol{\Sigma}),
+```
 
 where:
 
-- $\mathbf{\Delta}$ are the *non-centrality parameters* (NCPs)
+- $`\boldsymbol{\Delta}`$ are the *non-centrality parameters* (NCPs)
   reflecting the standardised effect sizes,
-- $\mathbf{\Sigma}$ is the correlation matrix describing the dependence
-  between the test statistics.
+- $`\boldsymbol{\Sigma}`$ is the correlation matrix describing the
+  dependence between the test statistics.
 
 Each “raw” p-value (a p-value *unadjusted* for multiplicity) arises from
 the transformation:
 
-$$p_{i} = 1 - \Phi\left( z_{i} \right)$$
+``` math
+p_i = 1 - \operatorname{\Phi}(z_i)
+```
 
 so the p-values inherit a joint distribution determined entirely by
-$(\mathbf{\Delta},\mathbf{\Sigma})$.
+$`(\boldsymbol{\Delta}, \boldsymbol{\Sigma})`$.
 
 Often you know the one-sided **nominal per-hypothesis power** (the power
 of each hypothesis unadjusted for multiplicity) -
-$\pi_{i} = 1 - \beta_{i}$ - at level $\alpha$, rather than the
-non-centrality parameter $\Delta_{i}$. There is a one-to-one
-relationship between $\pi_{i}$ and $\Delta_{i}$:
+$`\pi_i = 1 - \beta_i`$ - at level $`\alpha`$, rather than the
+non-centrality parameter $`\Delta_i`$. There is a one-to-one
+relationship between $`\pi_i`$ and $`\Delta_i`$:
 
-$$\Delta_{i}\; = \;\Phi^{- 1}(1 - \alpha)\; - \;\Phi^{- 1}\left( 1 - \pi_{i} \right).$$
+``` math
+\Delta_i \;=\; \Phi^{-1}(1-\alpha)\;-\;\Phi^{-1}(1-\pi_i).
+```
 
 \[[`simulate_pvalues()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/simulate_pvalues.md)\]
 performs this conversion internally, simulates
-$\mathbf{Z} \sim {MVN}(\mathbf{\Delta},\mathbf{\Sigma})$, and returns
-raw p-values $p_{i} = 1 - \Phi\left( Z_{i} \right)$ to generate a matrix
-of `nsim` simulations.
+$`\boldsymbol{Z}\sim\mathrm{MVN}(\boldsymbol{\Delta},\boldsymbol{\Sigma})`$,
+and returns raw p-values $`p_i=1-\Phi(Z_i)`$ to generate a matrix of
+`nsim` simulations.
 
 Important: Note on One-Sided Tests and Power Terminology
 
@@ -137,10 +145,11 @@ Important: Note on One-Sided Tests and Power Terminology
 When designing and optimising a graph, it’s essential to use a
 **one-sided testing framework**. The simulation engine in
 **`multigrain`** is built on a model of one-sided test statistics,
-assuming $z \sim {MVN}(\mathbf{\Delta},\mathbf{\Sigma})$, to correctly
-represent the *direction* of a treatment’s effect. For this reason, you
-should specify a one-sided alpha level (e.g., $\alpha = 0.025$, which is
-also the default being used).
+assuming
+$`z \sim \mathrm{MVN}(\boldsymbol{\Delta}, \boldsymbol{\Sigma})`$, to
+correctly represent the *direction* of a treatment’s effect. For this
+reason, you should specify a one-sided alpha level (e.g.,
+$`\alpha = 0.025`$, which is also the default being used).
 
 ##### **Power Terminology**
 
@@ -155,14 +164,17 @@ procedure is applied.
 
 #### Asthma example: simulating the p-value matrix using `simulate_pvalues()`
 
-with working correlation matrix for $\left( H_{1},\ldots,H_{4} \right)$:
+with working correlation matrix for $`(H_1,\dots,H_4)`$:
 
-$$\mathbf{\Sigma} = \begin{bmatrix}
+``` math
+\boldsymbol{\Sigma} =
+\begin{bmatrix}
 1 & 0.5 & 0.8 & 0.4 \\
 0.5 & 1 & 0.4 & 0.8 \\
 0.8 & 0.4 & 1 & 0.5 \\
 0.4 & 0.8 & 0.5 & 1
-\end{bmatrix}.$$
+\end{bmatrix}.
+```
 
 ``` r
 power_vector <- c(0.97, 0.91, 0.86, 0.83)
@@ -203,28 +215,32 @@ outcomes of the graphical test to a numerical score. (A dedicated
 vignette on trial success measures is planned for a future release.)
 
 After analysing the collected data from our trial, we obtain four raw
-p-values: $p_{1},p_{2},p_{3},p_{4}$, each corresponding to one of our
-hypotheses $H_{1},H_{2},H_{3},H_{4}$.
+p-values: $`p_1, p_2, p_3, p_4`$, each corresponding to one of our
+hypotheses $`H_1, H_2, H_3, H_4`$.
 
 Our output after applying our graphical test to our p-values will be a
 binary rejection vector:
 
-$$\mathbf{r} = \left( r_{1},r_{2},r_{3},r_{4} \right)$$
+``` math
+\boldsymbol{r} = (r_1, r_2, r_3, r_4)
+```
 
-where $r_{i} = 1$ if $H_{i}$ is rejected, and $0$ otherwise.
+where $`r_i = 1`$ if $`H_i`$ is rejected, and $`0`$ otherwise.
 
 The trial success measure is then defined as the expected value of a
-user-specified function of $\mathbf{r}$. In our asthma example, we will
-use two different examples of trial success measures:
+user-specified function of $`\boldsymbol{r}`$. In our asthma example, we
+will use two different examples of trial success measures:
 
 1.  **Average Power:** This measures the mean proportion of hypotheses
     rejected across trials:
-    $$\text{Average Power} = {\mathbb{E}}\left\lbrack \frac{1}{4}\left( r_{1} + r_{2} + r_{3} + r_{4} \right) \right\rbrack$$
+    ``` math
+    \text{Average Power} = \mathbb{E} \left[ \frac{1}{4} ( r_1 + r_2 + r_3 + r_4 ) \right]
+    ```
 
 2.  **Custom Trial Success:** In our example, it seems natural to
     declare a trial successful if at least one of the two primary
-    dose-control comparisons ($H_{1}$ or $H_{2}$) is statistically
-    significant. Rejecting a key secondary ($H_{3}$ or $H_{4}$) would be
+    dose-control comparisons ($`H_1`$ or $`H_2`$) is statistically
+    significant. Rejecting a key secondary ($`H_3`$ or $`H_4`$) would be
     ‘nice to have,’ but not essential for claiming the success of a
     trial. It also seems natural that we should not ascribe additional
     benefit for rejecting a secondary hypothesis without having first
@@ -233,16 +249,22 @@ use two different examples of trial success measures:
     example:
 
     - Success for rejecting at least one of the two primary dose-control
-      comparisons $H_{1}$ or $H_{2}$ (but no extra credit for rejecting
+      comparisons $`H_1`$ or $`H_2`$ (but no extra credit for rejecting
       both)
-    - $H_{3}$ and $H_{4}$ only add value if their corresponding primary
-      endpoints ($H_{1}$ and $H_{2}$) are also rejected.
+    - $`H_3`$ and $`H_4`$ only add value if their corresponding primary
+      endpoints ($`H_1`$ and $`H_2`$) are also rejected.
 
-$$\text{Custom Trial Success} = {\mathbb{E}}\left\lbrack \frac{1}{4}\left( 2 \times {\mathbb{I}}\left( r_{1} + r_{2} \geq 1 \right) + r_{1} \times r_{3} + r_{2} \times r_{4} \right) \right\rbrack$$
-where: $${\mathbb{I}}\left( r_{1} + r_{2} \geq 1 \right) = \begin{cases}
-{1,} & {{\text{if}\mspace{6mu}}r_{1}{\mspace{6mu}\text{or}\mspace{6mu}}r_{2} = 1} \\
-{0,} & \text{otherwise}
-\end{cases}$$
+``` math
+  \text{Custom Trial Success} = \mathbb{E} \left[ \frac{1}{4} \left( 2 \times \mathbb{I}(r_1 + r_2 \geq 1) + r_1 \times   r_3 + r_2 \times r_4 \right) \right]
+```
+where:
+``` math
+  \mathbb{I}(r_1 + r_2 \geq 1) =
+    \begin{cases}
+    1, & \text{if } r_1 \text{ or } r_2 = 1 \\
+    0, & \text{otherwise}
+    \end{cases}
+```
 
 #### Implementing trial success measures using `trial_success()`
 
@@ -266,9 +288,9 @@ custom_trial_success <- trial_success(
 #> ✔ Trial success function compiled and sourced successfully.
 ```
 
-Multiplying our objective functions by $0.25$ scale our objective
-functions so that they are in the interval $\lbrack 0,1\rbrack$, but
-this is not necessary for optimisation.
+Multiplying our objective functions by $`0.25`$ scale our objective
+functions so that they are in the interval $`[0, 1]`$, but this is not
+necessary for optimisation.
 
 ### Constraints on a graph
 
@@ -313,9 +335,8 @@ print(my_constraint)
 ```
 
 - `NA` signifies “no constraint”, i.e., the hypothesis weight or
-  transition weight can take any value within $\lbrack 0,1\rbrack$ (as
-  long as the hypothesis weights or sum of the transition matrix rows
-  sum to 1).
+  transition weight can take any value within $`[0, 1]`$ (as long as the
+  hypothesis weights or sum of the transition matrix rows sum to 1).
 - If a weight vector or matrix element contains a number (e.g., 1), it
   means means the corresponding hypothesis or transition weight is fixed
   and will not be optimised.
@@ -332,8 +353,8 @@ asthma example](images/get-started-graph-constraint-web-version.jpg)
 Figure 2: Graph with constraints for “Getting Started with multigrain”
 asthma example
 
-Only the hypothesis weights $w_{1},w_{2}$ and transition weights
-$g_{12},g_{21},g_{13},g_{24}$ will be optimised.
+Only the hypothesis weights $`w_1, w_2`$ and transition weights
+$`g_{12}, g_{21}, g_{13}, g_{24}`$ will be optimised.
 
 Although not necessary, setting constraints on a graph can speed up the
 optimisation since we will have less parameters to optimise.

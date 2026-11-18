@@ -1,7 +1,7 @@
 # Multigrain verbosity
 
 `multigrain_verbosity()` returns the option named
-`multigrain_verbosity`, which controls multigrain's verbosity. There are
+`multigrain.verbosity`, which controls multigrain's verbosity. There are
 3 possible levels (`"detail"` \> `"info"` \> `"silent"`):
 
 - `"info"` (default): will only show milestones / informational messages
@@ -22,11 +22,11 @@ multigrain_verbosity()
 ## Value
 
 A string indicating the verbosity level as set with options or `"info"`
-if `multigrain_verbosity` is unset.
+if `multigrain.verbosity` is unset.
 
 ## Details
 
-If the `multigrain_verbosity` option is unset, then the `"info"` level
+If the `multigrain.verbosity` option is unset, then the `"info"` level
 will be used.
 
 ## Examples

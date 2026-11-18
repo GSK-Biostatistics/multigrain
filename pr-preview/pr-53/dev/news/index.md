@@ -4,6 +4,13 @@
 
 ### New functionality
 
+### Changes
+
+- Renamed the `multigrain_verbosity`option to `multigrain.verbosity`.
+  The retrieval function
+  ([`multigrain_verbosity()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/multigrain_verbosity.md))
+  remains unchanged.
+
 ### Minor improvements and bug fixes
 
 - The global search in
@@ -12,7 +19,8 @@
   truncated Cauchy mutation. Each mutation works on one decoded weight
   vector or transition row: it either merges two edges (the smaller
   gives its weight to the larger) or moves weight between two edges by a
-  reflected Cauchy step.
+  reflected Cauchy step. The default global search disables crossover
+  (`pcrossover = 0`) and mutates every individual (`pmutation = 1`).
 
 - The graphical shortcut used to score candidate graphs (in
   [`graph_optimise()`](https://gsk-biostatistics.github.io/multigrain/dev/reference/graph_optimisation.md),
