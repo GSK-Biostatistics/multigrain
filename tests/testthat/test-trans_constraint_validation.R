@@ -129,7 +129,8 @@ test_that("assert_trans_constr() works", {
                         0, 0.8, 0.1, 0.1,
                         NA, 0, 0, NA,
                         0, 1, 0, 0,
-                        1, 0, 0, 0                    ),
+                        1, 0, 0, 0
+                    ),
                     nrow = 4,
                     byrow = TRUE
                 )
