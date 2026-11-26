@@ -54,7 +54,7 @@ assert_hyp_constraint_sum <- function(
             c(
                 "The sum of the hypothesis weight constraint vector cannot be \\
                 greater than {.field 1}. It is {cli::col_red(sum_hc)}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -69,7 +69,7 @@ assert_hyp_constraint_sum <- function(
             c(
                 "The sum of a {.emph complete} hypothesis weight constraint \\
                 vector must be {.field 1}. It is {cli::col_red(sum_hc)}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -80,7 +80,7 @@ assert_hyp_constraint_sum <- function(
             c(
                 "The sum of an {.emph incomplete} hypothesis weight \\
                 constraint vector must not be equal to {.field 1}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -102,7 +102,7 @@ assert_hyp_constraint_values <- function(
             c(
                 "Values in the hypothesis weight constraint vector cannot be \\
                 greater than {.field 1}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -113,7 +113,7 @@ assert_hyp_constraint_values <- function(
             c(
                 "Values in the hypothesis weights constraint vector cannot be \\
                 less than {.field 0}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -136,7 +136,7 @@ assert_hyp_constraint_na <- function(
             c(
                 "An {.emph incomplete} hypothesis weight constraint vector \\
                 cannot have a single optimisable (i.e. {.code NA}) value.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )

@@ -48,7 +48,7 @@ assert_trans_constr_diagonal <- function(
             c(
                 "There must not be any {.code NA}s on the transition matrix \\
                 diagonal. All values must be {.field 0}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -59,7 +59,7 @@ assert_trans_constr_diagonal <- function(
             c(
                 "All values on the transition matrix diagonal must be \\
                 {.field 0}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -79,7 +79,7 @@ assert_trans_constr_square <- function(
         cli::cli_abort(
             c(
                 "The transition matrix is not square.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -100,7 +100,7 @@ assert_trans_constr_values <- function(
         cli::cli_abort(
             c(
                 "Some transition matrix values are greater than {.field 1}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -110,7 +110,7 @@ assert_trans_constr_values <- function(
         cli::cli_abort(
             c(
                 "Some transition matrix values are less than {.field 0}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -133,7 +133,7 @@ assert_trans_constr_row_na <- function(
             c(
                 "At least one {.emph incomplete} transition matrix row has a \\
                 single optimisable (i.e. {.code NA}) value.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -163,7 +163,7 @@ assert_trans_constr_row_sums <- function(
             c(
                 "The sum of transition matrix constraint rows cannot be \\
                 greater than {.field 1}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -174,7 +174,7 @@ assert_trans_constr_row_sums <- function(
             c(
                 "The sum of {.emph complete} transition matrix constraint \\
                 rows must be {.field 1}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -185,7 +185,7 @@ assert_trans_constr_row_sums <- function(
             c(
                 "At least one {.emph incomplete} transition matrix row has a \\
                 sum equal to {.field 1}.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )

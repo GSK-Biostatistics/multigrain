@@ -86,10 +86,15 @@ validate_graph_constraint <- function(
     x
 }
 
-info_diagnose <- glue::glue(
-    "For a more detailed diagnosis run `graph_constraint()` with \\
+inform_diagnose <- function(diagnose = FALSE) {
+    msg <- glue::glue(
+        "For a more detailed diagnosis run `graph_constraint()` with \\
     `diagnose = TRUE`."
-)
+    )
+
+    if (diagnose) NULL else msg
+}
+
 
 assert_hc_tc_consistency <- function(
     x,
@@ -107,7 +112,7 @@ assert_hc_tc_consistency <- function(
                 has {cli::col_red(nrow(tc))} rows and \\
                 {cli::col_red(ncol(tc))} columns while the hypothesis weight \\
                 vector contains {cli::col_green(length(hc))} elements.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -159,7 +164,7 @@ assert_graph_constraint_not_full <- function(
         cli::cli_abort(
             c(
                 "No hypothesis or transition weights to optimise.",
-                i = if (diagnose) NULL else info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
