@@ -17,6 +17,9 @@
   is no user-visible API change. The approach follows
   `graph_test_shortcut_fast()` in the graphicalMCP package (Xi and Brockmann,
   2024).
+* When `graph_constraint(..., diagnose = TRUE)` encounters an invalid
+  constraint, the resulting error message no longer includes the suggestion
+  to re-run with `diagnose = TRUE`, since that mode is already active.
 
 # multigrain 1.0.0
 
