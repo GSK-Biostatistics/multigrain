@@ -235,7 +235,7 @@ test_that("diagnose_graph_constraint_not_full() reports no optimisable vals", {
 
 test_that("inform_diagnose", {
     expect_identical(
-        inform_diagnose(FALSE),
+        as.character(inform_diagnose(FALSE)),
         # nolint start: line_length_linter
         "For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`."
         # nolint end
