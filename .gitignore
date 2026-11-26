@@ -2,7 +2,7 @@
 .Rhistory
 vignettes/articles/get-started_cache
 debug
-
+/docs/
 /.quarto/
 **/.quarto/
 **/*.quarto_ipynb

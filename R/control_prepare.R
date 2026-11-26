@@ -19,8 +19,8 @@ default_control <- function() {
     )
 
     global_opt <- list(
-        pcrossover = 0.2,
-        pmutation = 0.8,
+        pcrossover = 0,
+        pmutation = 1,
         maxiter = 1e5,
         popSize = 200,
         run = 200,

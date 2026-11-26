@@ -1,0 +1,157 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 520" width="880" height="520" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2a5ca8"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2c7f55"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#b9382b"/>
+    </marker>
+    <marker id="arr-grey" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#586474"/>
+    </marker>
+  </defs>
+
+  <!-- Outer Background -->
+  <rect x="0" y="0" width="880" height="520" rx="10" fill="#f8fafc" stroke="#d6dce5" stroke-width="1.5"/>
+
+  <!-- Title -->
+  <text x="28" y="34" font-size="16" font-weight="700" fill="#17212d">Figure 2: Transfer Move on Group 2 (Transition Row 1: Tuning vs. Splitting, c = 1.00)</text>
+  <text x="28" y="54" font-size="12.5" fill="#586474">Free entries: (g₁₂, g₁₃, g₁₄*) with parent shares s = (0.50, 0.00, 0.50) · Donor chosen: i = 1 (g₁₂, s₁ = 0.50)</text>
+
+  <!-- ==================== LEFT PANEL: PARENT GROUP ==================== -->
+  <rect x="24" y="74" width="236" height="422" rx="8" fill="#ffffff" stroke="#d6dce5" stroke-width="1.2"/>
+  <text x="40" y="102" font-size="13.5" font-weight="700" fill="#17212d">Parent Shares (Row 1)</text>
+  <text x="40" y="120" font-size="11.5" fill="#586474">Stored: x[3:4] = (0.50, 0.00)</text>
+  <text x="40" y="136" font-size="11.5" fill="#2a5ca8">Derived: g₁₄* = 1 − 0.50 = 0.50</text>
+
+  <!-- Baseline -->
+  <line x1="38" y1="312" x2="244" y2="312" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <!-- s1 = 0.50 (Donor) -->
+  <rect x="48" y="212" width="44" height="100" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#2a5ca8" stroke-width="2.2"/>
+  <text x="70" y="205" font-size="11.5" font-weight="700" fill="#2a5ca8" text-anchor="middle">0.50</text>
+  <text x="70" y="330" font-size="12" font-weight="700" fill="#2a5ca8" text-anchor="middle">s₁ (g₁₂)</text>
+  <text x="70" y="345" font-size="10.5" fill="#2a5ca8" text-anchor="middle">Donor i = 1</text>
+
+  <!-- s2 = 0.00 (Inactive) -->
+  <rect x="118" y="300" width="44" height="12" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="4 3"/>
+  <text x="140" y="293" font-size="11.5" font-weight="600" fill="#64748b" text-anchor="middle">0.00</text>
+  <text x="140" y="330" font-size="12" fill="#64748b" text-anchor="middle">s₂ (g₁₃)</text>
+  <text x="140" y="345" font-size="10.5" fill="#64748b" text-anchor="middle">inactive</text>
+
+  <!-- s3 = 0.50 (Active, derived) -->
+  <rect x="188" y="212" width="44" height="100" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#b45309" stroke-width="1.2"/>
+  <text x="210" y="205" font-size="11.5" font-weight="700" fill="#17212d" text-anchor="middle">0.50</text>
+  <text x="210" y="330" font-size="12" font-weight="700" fill="#2a5ca8" text-anchor="middle">s₃ (g₁₄*)</text>
+  <text x="210" y="345" font-size="10.5" fill="#586474" text-anchor="middle">active</text>
+
+  <rect x="38" y="370" width="208" height="108" rx="6" fill="#f1f5f9"/>
+  <text x="142" y="390" font-size="11.5" font-weight="700" fill="#17212d" text-anchor="middle">Recipient j chosen uniformly</text>
+  <text x="142" y="406" font-size="11.5" fill="#17212d" text-anchor="middle">from remaining entries {2, 3}:</text>
+  <text x="142" y="430" font-size="11" fill="#2a5ca8" text-anchor="middle">• Case A (j = 3, active): Tunes</text>
+  <text x="142" y="445" font-size="11" fill="#2a5ca8" text-anchor="middle">split between g₁₂ and g₁₄</text>
+  <text x="142" y="466" font-size="11" fill="#2c7f55" text-anchor="middle">• Case B (j = 2, empty): Splits</text>
+  <text x="142" y="481" font-size="11" fill="#2c7f55" text-anchor="middle">g₁₂ to activate edge g₁₃</text>
+
+  <!-- Branch arrows from Left Panel to Top-Right and Bottom-Right -->
+  <path d="M 260 220 Q 282 220 282 180 L 304 180" fill="none" stroke="#2a5ca8" stroke-width="2" marker-end="url(#arr-blue)"/>
+  <path d="M 260 260 Q 282 260 282 390 L 304 390" fill="none" stroke="#2c7f55" stroke-width="2" marker-end="url(#arr-green)"/>
+
+  <!-- ==================== TOP-RIGHT PANEL: CASE A (TUNING) ==================== -->
+  <rect x="310" y="74" width="546" height="202" rx="8" fill="#ffffff" stroke="#2a5ca8" stroke-width="1.4"/>
+  <text x="328" y="98" font-size="13.5" font-weight="700" fill="#2a5ca8">Case A — Active Recipient (j = 3, g₁₄*): Weight Tuning</text>
+  <text x="328" y="116" font-size="11.5" fill="#586474">Pair total t = s₁ + s₃ = 1.00 · Initial donor fraction u = s₁ / t = 0.50 · Cauchy draw C = −0.50 (scale σ = 0.2)</text>
+
+  <!-- Number line for Case A -->
+  <rect x="328" y="130" width="276" height="130" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="466" y="149" font-size="11.5" font-weight="600" fill="#17212d" text-anchor="middle">Step on [0, 1] interval (.reflect01)</text>
+  <line x1="356" y1="205" x2="576" y2="205" stroke="#475569" stroke-width="2"/>
+  <!-- Ticks at 0, 0.4, 0.5, 1.0 -->
+  <line x1="356" y1="198" x2="356" y2="212" stroke="#475569" stroke-width="2"/>
+  <text x="356" y="227" font-size="11" fill="#475569" text-anchor="middle">0</text>
+
+  <line x1="444" y1="199" x2="444" y2="211" stroke="#2a5ca8" stroke-width="2"/>
+  <circle cx="444" cy="205" r="4.5" fill="#2a5ca8"/>
+  <text x="444" y="227" font-size="11" font-weight="700" fill="#2a5ca8" text-anchor="middle">u' = 0.40</text>
+
+  <line x1="466" y1="199" x2="466" y2="211" stroke="#17212d" stroke-width="1.5"/>
+  <circle cx="466" cy="205" r="4" fill="#17212d"/>
+  <text x="466" y="191" font-size="11" fill="#17212d" text-anchor="middle">u = 0.50</text>
+
+  <line x1="576" y1="198" x2="576" y2="212" stroke="#475569" stroke-width="2"/>
+  <text x="576" y="227" font-size="11" fill="#475569" text-anchor="middle">1</text>
+
+  <!-- Step arrow from 0.50 to 0.40 -->
+  <path d="M 464 196 Q 454 176 446 196" fill="none" stroke="#2a5ca8" stroke-width="2" marker-end="url(#arr-blue)"/>
+  <text x="466" y="248" font-size="11" fill="#586474" text-anchor="middle">v = 0.50 + 0.2(−0.5) = 0.40 ∈ (0, 1)</text>
+
+  <!-- Resulting bars for Case A -->
+  <line x1="632" y1="226" x2="832" y2="226" stroke="#cbd5e1" stroke-width="1.5"/>
+  <!-- s1 = 0.40 -->
+  <rect x="644" y="154" width="38" height="72" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#2a5ca8" stroke-width="1.5"/>
+  <text x="663" y="148" font-size="11" font-weight="700" fill="#2a5ca8" text-anchor="middle">0.40</text>
+  <text x="663" y="242" font-size="11.5" font-weight="600" fill="#17212d" text-anchor="middle">s₁ (g₁₂)</text>
+  <!-- s2 = 0.00 -->
+  <rect x="712" y="216" width="38" height="10" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.2" stroke-dasharray="3 3"/>
+  <text x="731" y="210" font-size="11" fill="#64748b" text-anchor="middle">0.00</text>
+  <text x="731" y="242" font-size="11.5" fill="#64748b" text-anchor="middle">s₂ (g₁₃)</text>
+  <!-- s3 = 0.60 -->
+  <rect x="780" y="118" width="38" height="108" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#2a5ca8" stroke-width="1.5"/>
+  <text x="799" y="112" font-size="11" font-weight="700" fill="#2a5ca8" text-anchor="middle">0.60</text>
+  <text x="799" y="242" font-size="11.5" font-weight="700" fill="#2a5ca8" text-anchor="middle">s₃ (g₁₄*)</text>
+
+  <text x="732" y="262" font-size="11" fill="#586474" text-anchor="middle">Same 2 active edges; x[3:4] = (0.40, 0.00)</text>
+
+  <!-- ==================== BOTTOM-RIGHT PANEL: CASE B (SPLITTING) ==================== -->
+  <rect x="310" y="294" width="546" height="202" rx="8" fill="#ffffff" stroke="#2c7f55" stroke-width="1.4"/>
+  <text x="328" y="318" font-size="13.5" font-weight="700" fill="#2c7f55">Case B — Inactive Recipient (j = 2, g₁₃): Splitting / Edge Activation</text>
+  <text x="328" y="336" font-size="11.5" fill="#586474">Pair total t = s₁ + s₂ = 0.50 · Initial donor fraction u = s₁ / t = 1.00 · Cauchy draw C = +0.50 (scale σ = 0.2)</text>
+
+  <!-- Number line for Case B (showing reflection at 1.0) -->
+  <rect x="328" y="350" width="276" height="130" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+  <text x="466" y="369" font-size="11.5" font-weight="600" fill="#17212d" text-anchor="middle">Reflection at boundary u = 1 (.reflect01)</text>
+  <line x1="352" y1="425" x2="542" y2="425" stroke="#475569" stroke-width="2"/>
+  <line x1="542" y1="425" x2="584" y2="425" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 3"/>
+
+  <!-- Wall at 1 -->
+  <line x1="542" y1="392" x2="542" y2="442" stroke="#b9382b" stroke-width="2.2"/>
+  <text x="542" y="456" font-size="11" font-weight="700" fill="#17212d" text-anchor="middle">u = 1.00</text>
+
+  <!-- Tick at 0 -->
+  <line x1="352" y1="418" x2="352" y2="432" stroke="#475569" stroke-width="2"/>
+  <text x="352" y="447" font-size="11" fill="#475569" text-anchor="middle">0</text>
+
+  <!-- Unreflected point v = 1.10 -->
+  <circle cx="574" cy="425" r="3.5" fill="none" stroke="#b9382b" stroke-width="1.5"/>
+  <text x="574" y="442" font-size="10" fill="#b9382b" text-anchor="middle">1.10</text>
+
+  <!-- Reflected point u' = 0.90 -->
+  <circle cx="508" cy="425" r="4.5" fill="#2c7f55"/>
+  <text x="500" y="447" font-size="11" font-weight="700" fill="#2c7f55" text-anchor="middle">u' = 0.90</text>
+
+  <!-- Outward & reflected bounce arrow -->
+  <path d="M 542 418 Q 560 400 574 418" fill="none" stroke="#b9382b" stroke-width="1.6" stroke-dasharray="3 2"/>
+  <path d="M 574 416 Q 542 384 510 416" fill="none" stroke="#2c7f55" stroke-width="2" marker-end="url(#arr-green)"/>
+
+  <text x="466" y="470" font-size="10.5" fill="#586474" text-anchor="middle">v = 1.10 bounces off wall 1 → u' = 2 − 1.10 = 0.90</text>
+
+  <!-- Resulting bars for Case B -->
+  <line x1="632" y1="446" x2="832" y2="446" stroke="#cbd5e1" stroke-width="1.5"/>
+  <!-- s1 = 0.45 -->
+  <rect x="644" y="365" width="38" height="81" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#b45309" stroke-width="1.2"/>
+  <text x="663" y="359" font-size="11" font-weight="700" fill="#17212d" text-anchor="middle">0.45</text>
+  <text x="663" y="462" font-size="11.5" font-weight="600" fill="#17212d" text-anchor="middle">s₁ (g₁₂)</text>
+  <!-- s2 = 0.05 (newly activated!) -->
+  <rect x="712" y="434" width="38" height="12" rx="2" fill="#bbf7d0" stroke="#2c7f55" stroke-width="2"/>
+  <text x="731" y="428" font-size="11" font-weight="700" fill="#2c7f55" text-anchor="middle">0.05</text>
+  <text x="731" y="462" font-size="11.5" font-weight="700" fill="#2c7f55" text-anchor="middle">s₂ (g₁₃)</text>
+  <!-- s3 = 0.50 -->
+  <rect x="780" y="356" width="38" height="90" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#b45309" stroke-width="1.2"/>
+  <text x="799" y="350" font-size="11" font-weight="700" fill="#17212d" text-anchor="middle">0.50</text>
+  <text x="799" y="462" font-size="11.5" font-weight="700" fill="#2a5ca8" text-anchor="middle">s₃ (g₁₄*)</text>
+
+  <text x="732" y="482" font-size="11" fill="#2c7f55" font-weight="600" text-anchor="middle">Edge g₁₃ activated (3 active); x[3:4] = (0.45, 0.05)</text>
+</svg>

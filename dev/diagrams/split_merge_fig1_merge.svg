@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 410" width="880" height="410" font-family="Segoe UI, -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#2a5ca8"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#b9382b"/>
+    </marker>
+    <marker id="arrow-grey" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#586474"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect x="0" y="0" width="880" height="410" rx="10" fill="#f8fafc" stroke="#d6dce5" stroke-width="1.5"/>
+
+  <!-- Title Banner -->
+  <text x="28" y="34" font-size="16" font-weight="700" fill="#17212d">Figure 1: Merge Move on Group 1 (Initial Hypothesis Weights, c = 0.80)</text>
+  <text x="28" y="54" font-size="12.5" fill="#586474">Constraint: hyp_constraint = (NA, NA, 0.20, NA) — w₃ = 0.20 is fixed; w₁, w₂ are stored in x[1:2]; w₄* is derived</text>
+
+  <!-- ==================== PANEL 1: PARENT ==================== -->
+  <rect x="24" y="72" width="252" height="314" rx="8" fill="#ffffff" stroke="#d6dce5" stroke-width="1.2"/>
+  <text x="40" y="96" font-size="13.5" font-weight="700" fill="#17212d">1. Decode Parent Group</text>
+  <text x="40" y="114" font-size="11.5" fill="#586474">Stored: x[1:2] = (0.40, 0.16)</text>
+  <text x="40" y="130" font-size="11.5" fill="#2a5ca8">Derived: w₄* = 0.80 − 0.56 = 0.24</text>
+
+  <!-- Bar chart baseline -->
+  <line x1="44" y1="276" x2="256" y2="276" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="44" y="154" font-size="11" font-weight="600" fill="#586474">Simplex shares s = p / 0.80:</text>
+
+  <!-- Bar s1 = 0.50 -->
+  <rect x="56" y="186" width="44" height="90" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#b45309" stroke-width="1.2"/>
+  <text x="78" y="180" font-size="11.5" font-weight="700" fill="#17212d" text-anchor="middle">0.50</text>
+  <text x="78" y="294" font-size="12" font-weight="600" fill="#17212d" text-anchor="middle">s₁ (w₁)</text>
+  <text x="78" y="309" font-size="10.5" fill="#586474" text-anchor="middle">p₁ = 0.40</text>
+
+  <!-- Bar s2 = 0.20 (chosen small) -->
+  <rect x="128" y="240" width="44" height="36" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#b9382b" stroke-width="2"/>
+  <text x="150" y="234" font-size="11.5" font-weight="700" fill="#b9382b" text-anchor="middle">0.20</text>
+  <text x="150" y="294" font-size="12" font-weight="600" fill="#b9382b" text-anchor="middle">s₂ (w₂)</text>
+  <text x="150" y="309" font-size="10.5" fill="#586474" text-anchor="middle">p₂ = 0.16</text>
+
+  <!-- Bar s3 = 0.30 (chosen large, derived) -->
+  <rect x="200" y="222" width="44" height="54" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#2c7f55" stroke-width="2"/>
+  <text x="222" y="216" font-size="11.5" font-weight="700" fill="#2c7f55" text-anchor="middle">0.30</text>
+  <text x="222" y="294" font-size="12" font-weight="700" fill="#2a5ca8" text-anchor="middle">s₃ (w₄*)</text>
+  <text x="222" y="309" font-size="10.5" fill="#2a5ca8" text-anchor="middle">p₃ = 0.24</text>
+
+  <!-- Footer box inside Panel 1 -->
+  <rect x="38" y="324" width="224" height="48" rx="5" fill="#f1f5f9"/>
+  <text x="150" y="342" font-size="11" fill="#17212d" text-anchor="middle">All 3 entries satisfy c·sⱼ ≥ 10⁻⁴</text>
+  <text x="150" y="359" font-size="11" fill="#586474" text-anchor="middle">Active indices: {1, 2, 3}</text>
+
+  <!-- Arrow 1 -> 2 -->
+  <line x1="280" y1="228" x2="308" y2="228" stroke="#586474" stroke-width="2" marker-end="url(#arrow-grey)"/>
+
+  <!-- ==================== PANEL 2: MERGE STEP ==================== -->
+  <rect x="314" y="72" width="252" height="314" rx="8" fill="#ffffff" stroke="#d6dce5" stroke-width="1.2"/>
+  <text x="330" y="96" font-size="13.5" font-weight="700" fill="#17212d">2. Merge Pair (.sm_merge)</text>
+  <text x="330" y="114" font-size="11.5" fill="#586474">Sample 2 active entries: pair = (2, 3)</text>
+  <text x="330" y="130" font-size="11.5" fill="#b9382b">smaller: s₂ = 0.20  →  larger: s₃ = 0.30</text>
+
+  <!-- Bar chart baseline -->
+  <line x1="334" y1="276" x2="546" y2="276" stroke="#cbd5e1" stroke-width="1.5"/>
+
+  <!-- Bar s1 = 0.50 (untouched) -->
+  <rect x="346" y="186" width="44" height="90" rx="3" fill="#eab308" fill-opacity="0.45" stroke="#94a3b8" stroke-width="1.2"/>
+  <text x="368" y="180" font-size="11.5" fill="#586474" text-anchor="middle">0.50</text>
+  <text x="368" y="294" font-size="12" fill="#586474" text-anchor="middle">s₁ (w₁)</text>
+  <text x="368" y="309" font-size="10.5" fill="#586474" text-anchor="middle">unchanged</text>
+
+  <!-- Bar s2 emptying -->
+  <rect x="418" y="240" width="44" height="36" rx="3" fill="#fee2e2" stroke="#b9382b" stroke-width="1.8" stroke-dasharray="4 3"/>
+  <text x="440" y="233" font-size="11" font-weight="700" fill="#b9382b" text-anchor="middle">−0.20</text>
+  <text x="440" y="294" font-size="12" font-weight="600" fill="#b9382b" text-anchor="middle">s₂ → 0</text>
+  <text x="440" y="309" font-size="10.5" fill="#b9382b" text-anchor="middle">emptied</text>
+
+  <!-- Bar s3 receiving +0.20 -->
+  <rect x="490" y="222" width="44" height="54" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#2c7f55" stroke-width="1.5"/>
+  <rect x="490" y="186" width="44" height="36" rx="3" fill="#bbf7d0" stroke="#2c7f55" stroke-width="2"/>
+  <text x="512" y="179" font-size="11.5" font-weight="700" fill="#2c7f55" text-anchor="middle">+0.20</text>
+  <text x="512" y="294" font-size="12" font-weight="700" fill="#2c7f55" text-anchor="middle">s₃ → 0.50</text>
+  <text x="512" y="309" font-size="10.5" fill="#2c7f55" text-anchor="middle">absorbs s₂</text>
+
+  <!-- Curved transfer arrow from s2 to s3 -->
+  <path d="M 442 220 Q 468 155 488 195" fill="none" stroke="#b9382b" stroke-width="2" marker-end="url(#arrow-red)"/>
+
+  <!-- Footer box inside Panel 2 -->
+  <rect x="328" y="324" width="224" height="48" rx="5" fill="#f1f5f9"/>
+  <text x="440" y="342" font-size="11" fill="#17212d" text-anchor="middle">s₃ ← s₃ + s₂ = 0.50,  s₂ ← 0</text>
+  <text x="440" y="359" font-size="11" fill="#586474" text-anchor="middle">Sum of shares remains 1.00</text>
+
+  <!-- Arrow 2 -> 3 -->
+  <line x1="570" y1="228" x2="598" y2="228" stroke="#586474" stroke-width="2" marker-end="url(#arrow-grey)"/>
+
+  <!-- ==================== PANEL 3: CHILD ==================== -->
+  <rect x="604" y="72" width="252" height="314" rx="8" fill="#ffffff" stroke="#d6dce5" stroke-width="1.2"/>
+  <text x="620" y="96" font-size="13.5" font-weight="700" fill="#17212d">3. Re-encode Child Group</text>
+  <text x="620" y="114" font-size="11.5" fill="#586474">New stored: x[1:2] = 0.80 × (0.50, 0)</text>
+  <text x="620" y="130" font-size="11.5" fill="#2a5ca8">x[1:2] = (0.40, 0.00)  (w₄* = 0.40)</text>
+
+  <!-- Bar chart baseline -->
+  <line x1="624" y1="276" x2="836" y2="276" stroke="#cbd5e1" stroke-width="1.5"/>
+  <text x="624" y="154" font-size="11" font-weight="600" fill="#586474">Updated shares s_new:</text>
+
+  <!-- Bar s1 = 0.50 -->
+  <rect x="636" y="186" width="44" height="90" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#b45309" stroke-width="1.2"/>
+  <text x="658" y="180" font-size="11.5" font-weight="700" fill="#17212d" text-anchor="middle">0.50</text>
+  <text x="658" y="294" font-size="12" font-weight="600" fill="#17212d" text-anchor="middle">s₁ (w₁)</text>
+  <text x="658" y="309" font-size="10.5" fill="#586474" text-anchor="middle">w₁ = 0.40</text>
+
+  <!-- Bar s2 = 0.00 (empty slot) -->
+  <rect x="708" y="264" width="44" height="12" rx="2" fill="none" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="4 3"/>
+  <text x="730" y="257" font-size="11.5" font-weight="600" fill="#64748b" text-anchor="middle">0.00</text>
+  <text x="730" y="294" font-size="12" fill="#64748b" text-anchor="middle">s₂ (w₂)</text>
+  <text x="730" y="309" font-size="10.5" fill="#64748b" text-anchor="middle">w₂ = 0.00</text>
+
+  <!-- Bar s3 = 0.50 -->
+  <rect x="780" y="186" width="44" height="90" rx="3" fill="#eab308" fill-opacity="0.85" stroke="#2c7f55" stroke-width="1.8"/>
+  <text x="802" y="180" font-size="11.5" font-weight="700" fill="#2c7f55" text-anchor="middle">0.50</text>
+  <text x="802" y="294" font-size="12" font-weight="700" fill="#2a5ca8" text-anchor="middle">s₃ (w₄*)</text>
+  <text x="802" y="309" font-size="10.5" fill="#2a5ca8" text-anchor="middle">w₄ = 0.40</text>
+
+  <!-- Footer box inside Panel 3 -->
+  <rect x="618" y="324" width="224" height="48" rx="5" fill="#f1f5f9"/>
+  <text x="730" y="342" font-size="11" font-weight="600" fill="#17212d" text-anchor="middle">Decoded: w = (0.40, 0, 0.20, 0.40)</text>
+  <text x="730" y="359" font-size="11" fill="#586474" text-anchor="middle">Active entries reduced from 3 to 2</text>
+</svg>
