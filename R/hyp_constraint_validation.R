@@ -20,11 +20,12 @@
 #' @noRd
 assert_hyp_constraint <- function(
     x,
+    diagnose = FALSE,
     call = rlang::caller_env()
 ) {
-    assert_hyp_constraint_values(x, call = call)
-    assert_hyp_constraint_na(x, call = call)
-    assert_hyp_constraint_sum(x, call = call)
+    assert_hyp_constraint_values(x, diagnose = diagnose, call = call)
+    assert_hyp_constraint_na(x, diagnose = diagnose, call = call)
+    assert_hyp_constraint_sum(x, diagnose = diagnose, call = call)
 
     invisible(x)
 }
@@ -34,6 +35,7 @@ assert_hyp_constraint <- function(
 
 assert_hyp_constraint_sum <- function(
     x,
+    diagnose = FALSE,
     call = rlang::caller_env()
 ) {
     hc <- x$hyp_constraint
@@ -52,7 +54,7 @@ assert_hyp_constraint_sum <- function(
             c(
                 "The sum of the hypothesis weight constraint vector cannot be \\
                 greater than {.field 1}. It is {cli::col_red(sum_hc)}.",
-                i = info_diagnose
+                i = if (diagnose) NULL else info_diagnose
             ),
             call = call
         )
@@ -67,7 +69,7 @@ assert_hyp_constraint_sum <- function(
             c(
                 "The sum of a {.emph complete} hypothesis weight constraint \\
                 vector must be {.field 1}. It is {cli::col_red(sum_hc)}.",
-                i = info_diagnose
+                i = if (diagnose) NULL else info_diagnose
             ),
             call = call
         )
@@ -78,7 +80,7 @@ assert_hyp_constraint_sum <- function(
             c(
                 "The sum of an {.emph incomplete} hypothesis weight \\
                 constraint vector must not be equal to {.field 1}.",
-                i = info_diagnose
+                i = if (diagnose) NULL else info_diagnose
             ),
             call = call
         )
@@ -89,6 +91,7 @@ assert_hyp_constraint_sum <- function(
 
 assert_hyp_constraint_values <- function(
     x,
+    diagnose = FALSE,
     call = rlang::caller_env()
 ) {
     hc <- x$hyp_constraint
@@ -99,7 +102,7 @@ assert_hyp_constraint_values <- function(
             c(
                 "Values in the hypothesis weight constraint vector cannot be \\
                 greater than {.field 1}.",
-                i = info_diagnose
+                i = if (diagnose) NULL else info_diagnose
             ),
             call = call
         )
@@ -110,7 +113,7 @@ assert_hyp_constraint_values <- function(
             c(
                 "Values in the hypothesis weights constraint vector cannot be \\
                 less than {.field 0}.",
-                i = info_diagnose
+                i = if (diagnose) NULL else info_diagnose
             ),
             call = call
         )
@@ -119,7 +122,11 @@ assert_hyp_constraint_values <- function(
     invisible(x)
 }
 
-assert_hyp_constraint_na <- function(x, call = rlang::caller_env()) {
+assert_hyp_constraint_na <- function(
+    x,
+    diagnose = FALSE,
+    call = rlang::caller_env()
+) {
     hc <- x$hyp_constraint
 
     number_nas <- sum(is.na(hc))
@@ -129,7 +136,7 @@ assert_hyp_constraint_na <- function(x, call = rlang::caller_env()) {
             c(
                 "An {.emph incomplete} hypothesis weight constraint vector \\
                 cannot have a single optimisable (i.e. {.code NA}) value.",
-                i = info_diagnose
+                i = if (diagnose) NULL else info_diagnose
             ),
             call = call
         )

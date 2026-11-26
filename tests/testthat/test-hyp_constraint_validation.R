@@ -124,6 +124,18 @@ test_that("sum(hc) == 1 is tolerant of small floating point differences", {
     )
 })
 
+test_that("assert_hyp_constraint_sum does not inform about diagnose mode", {
+    # when already in diagnose mode
+    expect_snapshot(error = TRUE, {
+        assert_hyp_constraint_sum(
+            diagnose = TRUE,
+            new_graph_constraint(
+                c(0.8, 0.3, 0, 0, 0)
+            )
+        )
+    })
+})
+
 test_that("assert_hyp_constraint_values() works", {
     # no error - no values greater than 1
     expect_no_error(
@@ -186,6 +198,18 @@ test_that("assert_hyp_constraint_na() works", {
         suppressMessages(assert_hyp_constraint_na(a)),
         a
     )
+})
+
+test_that("assert_hyp_constraint_na() does not inform on diagnose mode", {
+    # when already in diagnose mode
+    expect_snapshot(error = TRUE, {
+        assert_hyp_constraint_na(
+            diagnose = TRUE,
+            new_graph_constraint(
+                c(NA, 0, 0, 0.2, 0)
+            )
+        )
+    })
 })
 
 test_that("assert_hyp_constraint() works", {
@@ -541,6 +565,18 @@ test_that("assert_hyp_constraint_values() with tolerance", {
             new_graph_constraint(
                 c(NA, NA, 0, 0, 1 + 10e-13),
                 tolerance = 0
+            )
+        )
+    })
+})
+
+test_that("assert_hyp_constraint_values does not inform about diagnose mode", {
+    # when already in diagnose mode
+    expect_snapshot(error = TRUE, {
+        assert_hyp_constraint_values(
+            diagnose = TRUE,
+            new_graph_constraint(
+                c(NA, NA, 0, 0.2, 1.9)
             )
         )
     })
