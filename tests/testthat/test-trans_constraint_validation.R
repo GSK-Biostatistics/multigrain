@@ -139,6 +139,28 @@ test_that("assert_trans_constr() works", {
     )
 })
 
+test_that("assert_trans_constr() does not inform on diagnose mode", {
+    # when already in diagnose mode
+    expect_snapshot(error = TRUE, {
+        assert_trans_constr(
+            diagnose = TRUE,
+            new_graph_constraint(
+                c(NA, NA, 0, 0),
+                matrix(
+                    c(
+                        0, 0.8, NA, NA,
+                        NA, NA, 0, NA,
+                        0, 1, 0, 0,
+                        1, 0, 0, 0
+                    ),
+                    nrow = 4,
+                    byrow = TRUE
+                )
+            )
+        )
+    })
+})
+
 test_that("assert_trans_constr_diagonal() works", {
     # complains with non-zero values on the diagonal
     expect_snapshot(error = TRUE, {
@@ -198,6 +220,28 @@ test_that("assert_trans_constr_diagonal() works", {
     )
 })
 
+test_that("assert_trans_constr_diagonal() does not inform on diagnosis mode", {
+    # when in diagnosis mode
+    expect_snapshot(error = TRUE, {
+        assert_trans_constr_diagonal(
+            new_graph_constraint(
+                c(NA, NA, 0, 0),
+                matrix(
+                    c(
+                        0, 0.8, NA, NA,
+                        NA, NA, 0, NA,
+                        0, 1, 0, 0,
+                        1, 0, 0, 0
+                    ),
+                    nrow = 4,
+                    byrow = TRUE
+                )
+            ),
+            diagnose = TRUE
+        )
+    })
+})
+
 test_that("assert_trans_constr_square() works", {
     # no error: trans_constraint is square
     expect_no_error(
@@ -235,6 +279,28 @@ test_that("assert_trans_constr_square() works", {
                     byrow = TRUE
                 )
             )
+        )
+    })
+})
+
+test_that("assert_trans_constr_square does not inform about diagnosis mode", {
+    # when in diagnosis mode
+    expect_snapshot(error = TRUE, {
+        assert_trans_constr_square(
+            new_graph_constraint(
+                c(NA, NA, 0, 0, 0),
+                matrix(
+                    c(
+                        0, 0.8, 0.2, 0, 0,
+                        NA, 0, 0, NA, 0,
+                        0, 0.9, 0, 0.1, 0,
+                        1, 0, 0, 0, 0
+                    ),
+                    nrow = 4,
+                    byrow = TRUE
+                )
+            ),
+            diagnose = TRUE
         )
     })
 })
@@ -301,6 +367,29 @@ test_that("assert_trans_constr_values() works", {
     )
 })
 
+test_that("assert_trans_constr_values does not inform about diagnose mode", {
+    # when running in diagnose mode
+    expect_snapshot(error = TRUE, {
+        assert_trans_constr_values(
+            diagnose = TRUE,
+            new_graph_constraint(
+                c(NA, NA, 0, 0, 0),
+                matrix(
+                    c(
+                        0, 0.8, 0.2, 0, 0,
+                        NA, 0, 0, NA, 0,
+                        0, 0.9, 0, 0.1, 0,
+                        0, NA, NA, 0, -0.1,
+                        1, 0, 0, 0, 0
+                    ),
+                    nrow = 5,
+                    byrow = TRUE
+                )
+            )
+        )
+    })
+})
+
 test_that("assert_trans_constr_row_na() works", {
     # error: row 4 has a single NA value
     expect_snapshot(error = TRUE, {
@@ -341,6 +430,29 @@ test_that("assert_trans_constr_row_na() works", {
             )
         )
     )
+})
+
+test_that("assert_trans_constr_row_na does not inform about diagnose mode", {
+    # when running in diagnose mode
+    expect_snapshot(error = TRUE, {
+        assert_trans_constr_row_na(
+            diagnose = TRUE,
+            new_graph_constraint(
+                c(NA, NA, 0, 0, 0),
+                matrix(
+                    c(
+                        0, 0.8, 0.2, 0, 0,
+                        NA, 0, 0, NA, 0,
+                        0, 0.9, 0, 0.1, 0,
+                        0, 0, NA, 0, 0.9,
+                        1, 0, 0, 0, 0
+                    ),
+                    nrow = 5,
+                    byrow = TRUE
+                )
+            )
+        )
+    })
 })
 
 test_that("assert_trans_constr_row_sums() works", {
@@ -440,6 +552,29 @@ test_that("assert_trans_constr_row_sums() works", {
         )
     )
 })
+
+test_that("assert_trans_constr_row_sums does not inform about diagnose mode", {
+    # when running in diagnose mode
+    expect_snapshot(error = TRUE, {
+        assert_trans_constr_row_sums(
+            diagnose = TRUE,
+            new_graph_constraint(
+                c(NA, NA, 0, 0),
+                matrix(
+                    c(
+                        0, 0.8, 0.1, 0,
+                        NA, 0, 0, NA,
+                        0, 1, 0, 0,
+                        1, 0, 0, 0
+                    ),
+                    nrow = 4,
+                    byrow = TRUE
+                )
+            )
+        )
+    })
+})
+
 
 test_that("diagnose_trans_constr_diagonal() works", {
     # success: all elements on diagonal are zero

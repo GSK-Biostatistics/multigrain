@@ -116,7 +116,6 @@
     Condition
       Error in `graph_constraint()`:
       ! Values in the hypothesis weight constraint vector cannot be greater than 1.
-      i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
 ---
 
@@ -202,7 +201,6 @@
     Condition
       Error in `graph_constraint()`:
       ! Some transition matrix values are greater than 1.
-      i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
 ---
 

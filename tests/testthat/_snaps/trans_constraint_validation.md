@@ -61,6 +61,16 @@
       ! The sum of complete transition matrix constraint rows must be 1.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
+# assert_trans_constr() does not inform on diagnose mode
+
+    Code
+      assert_trans_constr(diagnose = TRUE, new_graph_constraint(c(NA, NA, 0, 0),
+      matrix(c(0, 0.8, NA, NA, NA, NA, 0, NA, 0, 1, 0, 0, 1, 0, 0, 0), nrow = 4,
+      byrow = TRUE)))
+    Condition
+      Error:
+      ! There must not be any `NA`s on the transition matrix diagonal. All values must be 0.
+
 # assert_trans_constr_diagonal() works
 
     Code
@@ -81,6 +91,16 @@
       ! There must not be any `NA`s on the transition matrix diagonal. All values must be 0.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
+# assert_trans_constr_diagonal() does not inform on diagnosis mode
+
+    Code
+      assert_trans_constr_diagonal(new_graph_constraint(c(NA, NA, 0, 0), matrix(c(0,
+        0.8, NA, NA, NA, NA, 0, NA, 0, 1, 0, 0, 1, 0, 0, 0), nrow = 4, byrow = TRUE)),
+      diagnose = TRUE)
+    Condition
+      Error:
+      ! There must not be any `NA`s on the transition matrix diagonal. All values must be 0.
+
 # assert_trans_constr_square() works
 
     Code
@@ -91,6 +111,16 @@
       Error:
       ! The transition matrix is not square.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
+
+# assert_trans_constr_square does not inform about diagnosis mode
+
+    Code
+      assert_trans_constr_square(new_graph_constraint(c(NA, NA, 0, 0, 0), matrix(c(0,
+        0.8, 0.2, 0, 0, NA, 0, 0, NA, 0, 0, 0.9, 0, 0.1, 0, 1, 0, 0, 0, 0), nrow = 4,
+      byrow = TRUE)), diagnose = TRUE)
+    Condition
+      Error:
+      ! The transition matrix is not square.
 
 # assert_trans_constr_values() works
 
@@ -114,6 +144,16 @@
       ! Some transition matrix values are less than 0.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
+# assert_trans_constr_values does not inform about diagnose mode
+
+    Code
+      assert_trans_constr_values(diagnose = TRUE, new_graph_constraint(c(NA, NA, 0, 0,
+        0), matrix(c(0, 0.8, 0.2, 0, 0, NA, 0, 0, NA, 0, 0, 0.9, 0, 0.1, 0, 0, NA, NA,
+        0, -0.1, 1, 0, 0, 0, 0), nrow = 5, byrow = TRUE)))
+    Condition
+      Error:
+      ! Some transition matrix values are less than 0.
+
 # assert_trans_constr_row_na() works
 
     Code
@@ -124,6 +164,16 @@
       Error:
       ! At least one incomplete transition matrix row has a single optimisable (i.e. `NA`) value.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
+
+# assert_trans_constr_row_na does not inform about diagnose mode
+
+    Code
+      assert_trans_constr_row_na(diagnose = TRUE, new_graph_constraint(c(NA, NA, 0, 0,
+        0), matrix(c(0, 0.8, 0.2, 0, 0, NA, 0, 0, NA, 0, 0, 0.9, 0, 0.1, 0, 0, 0, NA,
+        0, 0.9, 1, 0, 0, 0, 0), nrow = 5, byrow = TRUE)))
+    Condition
+      Error:
+      ! At least one incomplete transition matrix row has a single optimisable (i.e. `NA`) value.
 
 # assert_trans_constr_row_sums() works
 
@@ -165,6 +215,16 @@
       Error:
       ! At least one incomplete transition matrix row has a sum equal to 1.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
+
+# assert_trans_constr_row_sums does not inform about diagnose mode
+
+    Code
+      assert_trans_constr_row_sums(diagnose = TRUE, new_graph_constraint(c(NA, NA, 0,
+        0), matrix(c(0, 0.8, 0.1, 0, NA, 0, 0, NA, 0, 1, 0, 0, 1, 0, 0, 0), nrow = 4,
+      byrow = TRUE)))
+    Condition
+      Error:
+      ! The sum of complete transition matrix constraint rows must be 1.
 
 # diagnose_trans_constr_diagonal() works
 
@@ -517,7 +577,6 @@
     Condition
       Error:
       ! The sum of complete transition matrix constraint rows must be 1.
-      i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
 ---
 

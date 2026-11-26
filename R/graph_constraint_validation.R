@@ -78,20 +78,29 @@ validate_graph_constraint <- function(
         diagnose_hc_tc_consistency(x)
     }
 
-    assert_graph_constraint_not_full(x, call = call)
-    assert_hyp_constraint(x, call = call)
-    assert_trans_constr(x, call = call)
-    assert_hc_tc_consistency(x, call = call)
+    assert_graph_constraint_not_full(x, diagnose = diagnose, call = call)
+    assert_hyp_constraint(x, diagnose = diagnose, call = call)
+    assert_trans_constr(x, diagnose = diagnose, call = call)
+    assert_hc_tc_consistency(x, diagnose = diagnose, call = call)
 
     x
 }
 
-info_diagnose <- glue::glue(
-    "For a more detailed diagnosis run `graph_constraint()` with \\
+inform_diagnose <- function(diagnose = FALSE) {
+    msg <- glue::glue(
+        "For a more detailed diagnosis run `graph_constraint()` with \\
     `diagnose = TRUE`."
-)
+    )
 
-assert_hc_tc_consistency <- function(x, call = rlang::caller_env()) {
+    if (diagnose) NULL else msg
+}
+
+
+assert_hc_tc_consistency <- function(
+    x,
+    diagnose = FALSE,
+    call = rlang::caller_env()
+) {
     hc <- x$hyp_constraint
     tc <- x$trans_constraint
 
@@ -103,7 +112,7 @@ assert_hc_tc_consistency <- function(x, call = rlang::caller_env()) {
                 has {cli::col_red(nrow(tc))} rows and \\
                 {cli::col_red(ncol(tc))} columns while the hypothesis weight \\
                 vector contains {cli::col_green(length(hc))} elements.",
-                i = info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )
@@ -142,7 +151,11 @@ diagnose_hc_tc_consistency <- function(x) {
 }
 
 # nolint start: object_length_linter
-assert_graph_constraint_not_full <- function(x, call = rlang::caller_env()) {
+assert_graph_constraint_not_full <- function(
+    x,
+    diagnose = FALSE,
+    call = rlang::caller_env()
+) {
     # nolint end
     nas_in_hyp_constraint <- sum(is.na(x$hyp_constraint))
     nas_in_trans_constraint <- sum(is.na(x$trans_constraint))
@@ -151,7 +164,7 @@ assert_graph_constraint_not_full <- function(x, call = rlang::caller_env()) {
         cli::cli_abort(
             c(
                 "No hypothesis or transition weights to optimise.",
-                i = info_diagnose
+                i = inform_diagnose(diagnose)
             ),
             call = call
         )

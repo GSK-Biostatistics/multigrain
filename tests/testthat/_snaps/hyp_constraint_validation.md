@@ -57,6 +57,15 @@
     Message
       x The sum of the complete hypothesis weights constraint vector is 1.000000000005. It should be 1.
 
+# assert_hyp_constraint_sum does not inform about diagnose mode
+
+    Code
+      assert_hyp_constraint_sum(diagnose = TRUE, new_graph_constraint(c(0.8, 0.3, 0,
+        0, 0)))
+    Condition
+      Error:
+      ! The sum of the hypothesis weight constraint vector cannot be greater than 1. It is 1.1.
+
 # assert_hyp_constraint_values() works
 
     Code
@@ -84,6 +93,15 @@
       ! An incomplete hypothesis weight constraint vector cannot have a single optimisable (i.e. `NA`) value.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
+# assert_hyp_constraint_na() does not inform on diagnose mode
+
+    Code
+      assert_hyp_constraint_na(diagnose = TRUE, new_graph_constraint(c(NA, 0, 0, 0.2,
+        0)))
+    Condition
+      Error:
+      ! An incomplete hypothesis weight constraint vector cannot have a single optimisable (i.e. `NA`) value.
+
 # assert_hyp_constraint() works
 
     Code
@@ -110,6 +128,14 @@
       Error:
       ! An incomplete hypothesis weight constraint vector cannot have a single optimisable (i.e. `NA`) value.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
+
+# assert_hyp_constraint() does not inform on diagnose mode
+
+    Code
+      assert_hyp_constraint(diagnose = TRUE, new_graph_constraint(c(NA, 0, 0, 0.2, 0)))
+    Condition
+      Error:
+      ! An incomplete hypothesis weight constraint vector cannot have a single optimisable (i.e. `NA`) value.
 
 # diagnose_hyp_constraint_sum() works
 
@@ -326,7 +352,6 @@
     Condition
       Error:
       ! Values in the hypothesis weight constraint vector cannot be greater than 1.
-      i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
 # assert_hyp_constraint_values() with tolerance
 
@@ -342,6 +367,15 @@
       Error:
       ! Values in the hypothesis weight constraint vector cannot be greater than 1.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
+
+# assert_hyp_constraint_values does not inform about diagnose mode
+
+    Code
+      assert_hyp_constraint_values(diagnose = TRUE, new_graph_constraint(c(NA, NA, 0,
+        0.2, 1.9)))
+    Condition
+      Error:
+      ! Values in the hypothesis weight constraint vector cannot be greater than 1.
 
 # diagnose_hyp_constraint_gt1() with tolerance
 
