@@ -7,6 +7,10 @@
 
 [![R-CMD-check](https://github.com/GSK-Biostatistics/multigrain/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/GSK-Biostatistics/multigrain/actions/workflows/R-CMD-check.yaml)
 [![covr2gh-coverage](https://raw.githubusercontent.com/GSK-Biostatistics/multigrain/covr2gh-storage/badges/main/coverage_badge.svg)](https://github.com/GSK-Biostatistics/multigrain/actions/workflows/covr2gh.yaml)
+[![CRAN_Status_Badge](https://www.r-pkg.org/badges/version-last-release/multigrain)](https://cran.r-project.org/package=multigrain)
+[![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/multigrain)](https://cran.r-project.org/package=multigrain)
+[![Download
+counter](https://cranlogs.r-pkg.org/badges/multigrain)](https://cran.r-project.org/package=multigrain)
 <!-- badges: end -->
 
 ## Overview
