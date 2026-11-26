@@ -33,13 +33,11 @@ This text is not a task.
 - [ ] constructors for `multigrain_graph` and `multigrain_graph_optimal`, with `multigrain_graph` as a parent and `multigrain_graph_optimal` to inherit (e.g. plot method)
 - [ ] `graph_optimal` keeps the core elements and everything else gets moved to attributes.
 - [ ] revisit `create_start_params()` when documenting `start_graph` design.
-- [ ] do not inform about the diagnosis mode when running with `diagnosis = TRUE`.
-    - e.g. in tests `gc[["trans_constraint", tolerance = 0, diagnose = TRUE]] <- tolerance_tc`
 - [ ] revisit the idea of redesigning the optimisation interface, e.g., the {httr2} approach:
   - 2 states: unoptimised and optimised.
   - create an unoptimised graph object. this object would collect all the characteristics of the unoptimised graph
   - have a series of functions to operate on it (to modify its various components)
-  - a single optimisation function responsible for taking the object from the unoptimised state into the 
+  - a single optimisation function responsible for taking the object from the unoptimised state into the
     optimised one under the hood we could still keep the various functions, but the user will not need to deal with optimise_graph(), optimise_N(), etc.
   - this should reduce some duplication in code between the several optimisation functions.
   - should also make it easier for users since there is only 1 optimisation function.
@@ -123,6 +121,8 @@ This text is not a task.
 
 # Done ✓
 
+- [x] do not inform about the diagnosis mode when running with `diagnosis = TRUE`.
+    - e.g. in tests `gc[["trans_constraint", tolerance = 0, diagnose = TRUE]] <- tolerance_tc`
 - [x] add package-level verbosity control
 - [x] make the `verbose` argument to `graph_optimise()`, `trial_success()` _et al._ an enumeration - `c("info", "detail", "silent")`
 - [x] introduce `...` to separate required from optional arguments to relevant functions:
