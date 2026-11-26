@@ -129,6 +129,14 @@
       ! An incomplete hypothesis weight constraint vector cannot have a single optimisable (i.e. `NA`) value.
       i For a more detailed diagnosis run `graph_constraint()` with `diagnose = TRUE`.
 
+# assert_hyp_constraint() does not inform on diagnose mode
+
+    Code
+      assert_hyp_constraint(diagnose = TRUE, new_graph_constraint(c(NA, 0, 0, 0.2, 0)))
+    Condition
+      Error:
+      ! An incomplete hypothesis weight constraint vector cannot have a single optimisable (i.e. `NA`) value.
+
 # diagnose_hyp_constraint_sum() works
 
     Code

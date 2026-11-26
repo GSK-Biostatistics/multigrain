@@ -268,6 +268,18 @@ test_that("assert_hyp_constraint() works", {
     )
 })
 
+test_that("assert_hyp_constraint() does not inform on diagnose mode", {
+    # when already in diagnose mode
+    expect_snapshot(error = TRUE, {
+        assert_hyp_constraint(
+            diagnose = TRUE,
+            new_graph_constraint(
+                c(NA, 0, 0, 0.2, 0)
+            )
+        )
+    })
+})
+
 test_that("assert_hyp_constraint() works with empty vector", {
     expect_no_error(
         assert_hyp_constraint(
