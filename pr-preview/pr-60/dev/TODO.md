@@ -63,12 +63,6 @@ to attributes.
 
 revisit `create_start_params()` when documenting `start_graph` design.
 
-do not inform about the diagnosis mode when running with
-`diagnosis = TRUE`.
-
-- e.g. in tests
-  `gc[["trans_constraint", tolerance = 0, diagnose = TRUE]] <- tolerance_tc`
-
 revisit the idea of redesigning the optimisation interface, e.g., the
 {httr2} approach:
 
@@ -240,6 +234,12 @@ behind {multigrain}
 add a GHA workflow for formatting with Air
 
 # Done ✓
+
+do not inform about the diagnosis mode when running with
+`diagnosis = TRUE`.
+
+- e.g. in tests
+  `gc[["trans_constraint", tolerance = 0, diagnose = TRUE]] <- tolerance_tc`
 
 add package-level verbosity control
 
